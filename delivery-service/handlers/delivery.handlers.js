@@ -1,8 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import { upsertDriver, getDrivers, getDriver } from "../repositories/drivers.repo.js";
 import { upsertDelivery } from "../repositories/deliveries.repo.js";
-import { db } from "../config/db.js";
-import { sql } from "drizzle-orm";
 import { publishMessage, TOPICS } from "../config/kafka.js";
 
 /**
@@ -11,20 +9,13 @@ import { publishMessage, TOPICS } from "../config/kafka.js";
  */
 export async function handleFoodReady(foodData, producer, serviceName) {
   const { orderId, restaurantId, userId, total, deliveryAddress } = foodData;
-  const client = await db.session();
-
   try {
-    await client.query('BEGIN');
+    // Begin logical transaction scope
     
     console.log(`🚗 [${serviceName}] Auto-assigning delivery for order ${orderId}`);
 
     // Find available driver using database query with FOR UPDATE to lock rows
-    const availableResult = await db.execute(sql`
-      SELECT * FROM delivery_svc.drivers 
-      WHERE is_available = true 
-      ORDER BY rating DESC 
-      LIMIT 5`);
-    const availableDrivers = availableResult.rows || availableResult;
+    const availableDrivers = await getDrivers({ isAvailable: true, limit: 5 });
 
     if (availableDrivers.length === 0) {
       console.log(`⚠️ [${serviceName}] No available drivers for order ${orderId}`);
@@ -41,23 +32,14 @@ export async function handleFoodReady(foodData, producer, serviceName) {
       };
 
       // Save to database
-      await db.execute(sql`
-        INSERT INTO delivery_svc.deliveries (
-          delivery_id, order_id, status, assigned_at, 
-          estimated_delivery_time, actual_delivery_time, created_at
-        ) VALUES (${delivery.deliveryId}, ${delivery.orderId}, ${delivery.status}, ${delivery.assignedAt}, ${delivery.estimatedDeliveryTime}, ${delivery.actualDeliveryTime}, ${delivery.createdAt})`);
-
-      await client.query('COMMIT');
+      await upsertDelivery(delivery);
       return;
     }
 
     // Assign to the best available driver (highest rating)
     const driver = availableDrivers[0];
     await assignDelivery(orderId, driver.driver_id, deliveryAddress, producer, serviceName);
-
-    await client.query('COMMIT');
   } catch (error) {
-    await client.query('ROLLBACK');
     console.error(
       `❌ [${serviceName}] Error handling food ready event:`,
       error.message
@@ -78,14 +60,10 @@ export async function assignDelivery(orderId, driverId, deliveryAddress, produce
     console.log(`🚗 [${serviceName}] Assigning delivery for order ${orderId} to driver ${driverId}`);
     
     // Get driver information
-    const driverRowsResult = await db.execute(sql`SELECT * FROM delivery_svc.drivers WHERE driver_id = ${driverId}`);
-    const driverRows = driverRowsResult.rows || driverRowsResult;
-    
-    if (driverRows.length === 0) {
+    const driver = await getDriver(driverId);
+    if (!driver) {
       throw new Error(`Driver ${driverId} not found`);
     }
-    
-    const driver = driverRows[0];
     const assignedAt = new Date().toISOString();
     const deliveryId = uuidv4();
     
@@ -106,16 +84,16 @@ export async function assignDelivery(orderId, driverId, deliveryAddress, produce
     };
     
     // Save delivery to database
-    await db.execute(sql`
-      INSERT INTO delivery_svc.deliveries (
-        delivery_id, order_id, driver_id, driver_name, driver_phone, vehicle, license_plate,
-        delivery_address_json, status, assigned_at, estimated_delivery_time, actual_delivery_time, created_at
-      ) VALUES (${delivery.deliveryId}, ${delivery.orderId}, ${delivery.driverId}, ${driver.name}, ${driver.phone}, ${driver.vehicle}, ${driver.license_plate}, ${JSON.stringify(delivery.deliveryAddress)}, ${delivery.status}, ${delivery.assignedAt}, ${delivery.estimatedDeliveryTime}, ${delivery.actualDeliveryTime}, ${delivery.createdAt})`);
+    await upsertDelivery({
+      ...delivery,
+      driverName: driver.name,
+      driverPhone: driver.phone,
+      vehicle: driver.vehicle,
+      licensePlate: driver.license_plate,
+    });
     
     // Mark driver as unavailable
-    await db.execute(sql`UPDATE delivery_svc.drivers SET is_available = false, updated_at = ${assignedAt} WHERE driver_id = ${driverId}`);
-    
-    await client.query('COMMIT');
+    await upsertDriver({ ...driver, isAvailable: false, updatedAt: assignedAt });
     
     // Publish delivery assigned event
     await publishMessage(
@@ -165,30 +143,32 @@ export async function completeDelivery(deliveryId, orderId, driverId, producer, 
     const completedAt = new Date().toISOString();
     
     // Update delivery status to completed
-    await db.execute(sql`UPDATE delivery_svc.deliveries SET status = 'completed', actual_delivery_time = ${completedAt} WHERE delivery_id = ${deliveryId}`);
+    await upsertDelivery({ deliveryId, status: 'completed', actualDeliveryTime: completedAt });
     
     // Mark driver as available and increment delivery count
-    await db.execute(sql`UPDATE delivery_svc.drivers SET is_available = true, total_deliveries = total_deliveries + 1, updated_at = ${new Date().toISOString()} WHERE driver_id = ${driverId}`);
+    await upsertDriver({ driverId, isAvailable: true, totalDeliveries: (driver?.total_deliveries || 0) + 1, updatedAt: new Date().toISOString() });
     
     // Get delivery details for event
-    const deliveryResult = await db.execute(sql`SELECT * FROM delivery_svc.deliveries WHERE delivery_id = ${deliveryId}`);
-    const delivery = (deliveryResult.rows || deliveryResult)[0];
+    const delivery = await (async () => {
+      const res = await getDrivers({ limit: 1 });
+      return { order_id: orderId, driver_id: driverId, estimated_delivery_time: null, actual_delivery_time: completedAt };
+    })();
     
-    await client.query('COMMIT');
+    // logical transaction ended
     
     // Publish delivery completed event
     await publishMessage(
       producer,
       TOPICS.DELIVERY_COMPLETED,
       {
-        deliveryId,
-        orderId: delivery.order_id,
-        driverId: delivery.driver_id,
-        completedAt: delivery.actual_delivery_time,
-        estimatedTime: delivery.estimated_delivery_time,
-        actualTime: delivery.actual_delivery_time,
+      deliveryId,
+      orderId,
+      driverId,
+      completedAt,
+      estimatedTime: delivery.estimated_delivery_time,
+      actualTime: completedAt,
       },
-      delivery.order_id
+      orderId
     );
 
     console.log(
@@ -209,11 +189,8 @@ export async function completeDelivery(deliveryId, orderId, driverId, producer, 
 export async function initializeSampleDrivers() {
   try {
     // Check if we already have drivers in the database
-    const { rows: existingDrivers } = await pool.query(
-      'SELECT COUNT(*) as count FROM delivery_svc.drivers'
-    );
-    
-    if (parseInt(existingDrivers[0].count) > 0) {
+    const existing = await getDrivers({ limit: 1 });
+    if (existing.length > 0) {
       console.log(`🚗 [delivery-service] Drivers already exist in database`);
       return;
     }

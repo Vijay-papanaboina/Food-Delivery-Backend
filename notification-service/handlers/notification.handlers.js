@@ -1,6 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
 import { exec } from "child_process";
-import { upsertNotification } from "../config/db.js";
 import { TOPICS } from "../config/kafka.js";
 
 // Notification templates for different event types
@@ -116,10 +115,7 @@ export async function handleEvent(topic, data, serviceName) {
     shouldShowToast: template.shouldShowToast ? template.shouldShowToast(data) : true,
   };
 
-  // Persist to database
-  await upsertNotification(notification);
-
-  // Simulate sending notification (in real app, this would send email, SMS, push notification, etc.)
+  // Simulate sending notification (log-only, no DB persistence)
   await sendNotification(notification, serviceName);
 
   console.log(
@@ -144,7 +140,7 @@ export async function sendNotification(notification, serviceName) {
       `📤 [${serviceName}] Sending notification: ${notification.title}`
     );
 
-    // Simulate different notification channels based on priority
+    // Simulate different notification channels based on priority (log-only)
     if (notification.priority === "high") {
       // High priority: Send email, SMS, and push notification
       console.log(`📧 [${serviceName}] Email sent to user ${notification.userId}`);

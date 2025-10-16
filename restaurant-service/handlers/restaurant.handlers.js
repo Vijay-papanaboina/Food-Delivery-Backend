@@ -1,4 +1,6 @@
-import { upsertRestaurant, upsertMenuItem, upsertKitchenOrder, getKitchenOrder } from "../config/db.js";
+import { upsertRestaurant } from "../repositories/restaurants.repo.js";
+import { upsertMenuItem } from "../repositories/menu.repo.js";
+import { upsertKitchenOrder, getKitchenOrder } from "../repositories/kitchen.repo.js";
 import { publishMessage, TOPICS } from "../config/kafka.js";
 
 // Preparation configuration

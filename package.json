@@ -7,7 +7,10 @@
   "scripts": {
     "start": "node start-all-services.js",
     "dev": "concurrently \"npm run dev --workspace=order-service\" \"npm run dev --workspace=payment-service\" \"npm run dev --workspace=delivery-service\" \"npm run dev --workspace=restaurant-service\" \"npm run dev --workspace=notification-service\"",
-    "install-all": "npm install && npm install --workspace=order-service && npm install --workspace=payment-service && npm install --workspace=delivery-service && npm install --workspace=restaurant-service && npm install --workspace=notification-service"
+    "install-all": "npm install && npm install --workspace=order-service && npm install --workspace=payment-service && npm install --workspace=delivery-service && npm install --workspace=restaurant-service && npm install --workspace=notification-service",
+    "db:generate": "drizzle-kit generate --config=order-service/drizzle.config.js && drizzle-kit generate --config=payment-service/drizzle.config.js && drizzle-kit generate --config=delivery-service/drizzle.config.js && drizzle-kit generate --config=restaurant-service/drizzle.config.js",
+    "db:push": "drizzle-kit push --config=order-service/drizzle.config.js && drizzle-kit push --config=payment-service/drizzle.config.js && drizzle-kit push --config=delivery-service/drizzle.config.js && drizzle-kit push --config=restaurant-service/drizzle.config.js",
+    "db:migrate": "drizzle-kit migrate --config=order-service/drizzle.config.js && drizzle-kit migrate --config=payment-service/drizzle.config.js && drizzle-kit migrate --config=delivery-service/drizzle.config.js && drizzle-kit migrate --config=restaurant-service/drizzle.config.js"
   },
   "keywords": [
     "microservices",

@@ -80,29 +80,31 @@ export async function getPayments(filters = {}) {
 }
 
 export async function getPaymentStats() {
-  const rows = await db.execute(sql`
-    SELECT 
-      COUNT(*) as total,
-      COUNT(*) FILTER (WHERE status = 'success') as successful,
-      COUNT(*) FILTER (WHERE status = 'failed') as failed,
-      COUNT(*) FILTER (WHERE status = 'pending') as pending,
-      COUNT(*) FILTER (WHERE status = 'processing') as processing,
-      SUM(amount) FILTER (WHERE status = 'success') as total_amount,
-      AVG(amount) FILTER (WHERE status = 'success') as average_amount
-    FROM payment_svc.payments
-  `);
-  const stats = rows.rows ? rows.rows[0] : rows[0];
-  const successRate = stats.total > 0 ? ((Number(stats.successful) / Number(stats.total)) * 100).toFixed(2) : '0.00';
-  return {
-    total: parseInt(stats.total),
-    successful: parseInt(stats.successful),
-    failed: parseInt(stats.failed),
-    pending: parseInt(stats.pending),
-    processing: parseInt(stats.processing),
-    totalAmount: parseFloat(stats.total_amount || 0),
-    averageAmount: parseFloat(stats.average_amount || 0),
-    successRate: parseFloat(successRate)
-  };
+  const [totalRows, successRows, failedRows, pendingRows, processingRows, sumSuccessRows, avgSuccessRows] = await Promise.all([
+    db.select({ count: sql`COUNT(*)` }).from(payments),
+    db.select({ count: sql`COUNT(*)` }).from(payments).where(eq(payments.status, 'success')),
+    db.select({ count: sql`COUNT(*)` }).from(payments).where(eq(payments.status, 'failed')),
+    db.select({ count: sql`COUNT(*)` }).from(payments).where(eq(payments.status, 'pending')),
+    db.select({ count: sql`COUNT(*)` }).from(payments).where(eq(payments.status, 'processing')),
+    db.select({ sum: sql`SUM(${payments.amount})` }).from(payments).where(eq(payments.status, 'success')),
+    db.select({ avg: sql`AVG(${payments.amount})` }).from(payments).where(eq(payments.status, 'success')),
+  ]);
+
+  const total = parseInt(totalRows[0]?.count || 0);
+  const successful = parseInt(successRows[0]?.count || 0);
+  const failed = parseInt(failedRows[0]?.count || 0);
+  const pending = parseInt(pendingRows[0]?.count || 0);
+  const processing = parseInt(processingRows[0]?.count || 0);
+  const totalAmount = parseFloat(sumSuccessRows[0]?.sum || 0);
+  const averageAmount = parseFloat(avgSuccessRows[0]?.avg || 0);
+  const successRate = total > 0 ? parseFloat(((successful / total) * 100).toFixed(2)) : 0;
+
+  return { total, successful, failed, pending, processing, totalAmount, averageAmount, successRate };
+}
+
+export async function getPaymentsCount() {
+  const rows = await db.select({ count: sql`COUNT(*)::int` }).from(payments);
+  return rows[0]?.count || 0;
 }
 
 

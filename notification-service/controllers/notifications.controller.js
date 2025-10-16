@@ -1,4 +1,4 @@
-import { getNotifications, markNotificationRead, markAllNotificationsReadForUser, getNotificationStats } from "../config/db.js";
+// DB removed: simulate notifications via logs and mock responses
 
 export const listNotifications = async (req, res) => {
   try {
@@ -38,21 +38,8 @@ export const listNotifications = async (req, res) => {
       filters.limit = parsedLimit;
     }
     
-    const notifications = await getNotifications(filters);
-    const formatted = notifications.map(n => ({
-      notificationId: n.notification_id,
-      userId: n.user_id,
-      type: n.type,
-      title: n.title,
-      message: n.message,
-      priority: n.priority,
-      topic: n.topic,
-      eventData: n.event_data ? (typeof n.event_data === 'string' ? JSON.parse(n.event_data) : n.event_data) : null,
-      createdAt: n.created_at,
-      read: n.read,
-      readAt: n.read_at
-    }));
-    res.json({ message: "Notifications retrieved successfully", notifications: formatted, total: formatted.length });
+    console.log(`[notification-service] listNotifications filters=`, filters);
+    res.json({ message: "Notifications are simulated; no persistence", notifications: [], total: 0 });
   } catch (error) {
     console.error(`❌ [notification-service] Error retrieving notifications:`, error.message);
     res.status(500).json({ error: "Failed to retrieve notifications", details: error.message });
@@ -65,33 +52,21 @@ export const getNotificationById = (req, res) => {
 };
 
 export const markRead = async (req, res) => {
-  try {
-    const { id } = req.params;
-    await markNotificationRead(id);
-    res.json({ message: "Notification marked as read", notificationId: id });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to mark notification as read", details: error.message });
-  }
+  const { id } = req.params;
+  console.log(`[notification-service] markRead id=${id}`);
+  res.json({ message: "Notification marked as read (simulated)", notificationId: id });
 };
 
 export const markAllRead = async (req, res) => {
-  try {
-    const { userId } = req.body;
-    if (!userId) return res.status(400).json({ error: "Missing required field: userId" });
-    const updated = await markAllNotificationsReadForUser(userId);
-    res.json({ message: "All notifications marked as read", updatedCount: updated });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to mark all notifications as read", details: error.message });
-  }
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: "Missing required field: userId" });
+  console.log(`[notification-service] markAllRead userId=${userId}`);
+  res.json({ message: "All notifications marked as read (simulated)", updatedCount: 0 });
 };
 
 export const notificationStats = async (req, res) => {
-  try {
-    const stats = await getNotificationStats();
-    res.json({ message: "Notification statistics retrieved successfully", stats });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to retrieve notification statistics", details: error.message });
-  }
+  const stats = { total: 0, unread: 0, byType: {}, byPriority: {} };
+  res.json({ message: "Notification statistics (simulated)", stats });
 };
 
 

@@ -84,4 +84,51 @@ export async function getRestaurants(filters = {}) {
   return await query;
 }
 
+export async function toggleRestaurantStatus(restaurantId, isOpen) {
+  await db
+    .update(restaurants)
+    .set({ isOpen })
+    .where(eq(restaurants.restaurantId, restaurantId));
+}
+
+export async function getRestaurantStatus(restaurantId) {
+  const rows = await db
+    .select({
+      is_open: restaurants.isOpen,
+      opening_time: restaurants.openingTime,
+      closing_time: restaurants.closingTime,
+      is_active: restaurants.isActive,
+    })
+    .from(restaurants)
+    .where(eq(restaurants.restaurantId, restaurantId))
+    .limit(1);
+  return rows[0] || null;
+}
+
+export async function getRestaurantStats() {
+  // total/active/avg rating
+  const summaryRows = await db
+    .select({
+      total_restaurants: sql`COUNT(*)`,
+      active_restaurants: sql`COUNT(*) FILTER (WHERE ${restaurants.isActive} = true)`,
+      average_rating: sql`AVG(${restaurants.rating})`,
+    })
+    .from(restaurants);
+  const summary = summaryRows[0] || {};
+
+  // by cuisine
+  const cuisineRows = await db
+    .select({ cuisine: restaurants.cuisine, count: sql`COUNT(*)` })
+    .from(restaurants)
+    .groupBy(restaurants.cuisine)
+    .orderBy(desc(sql`COUNT(*)`));
+
+  return {
+    totalRestaurants: parseInt(summary.total_restaurants || 0),
+    activeRestaurants: parseInt(summary.active_restaurants || 0),
+    averageRating: Number(parseFloat(summary.average_rating || 0).toFixed(2)),
+    byCuisine: Object.fromEntries(cuisineRows.map((r) => [r.cuisine, parseInt(r.count)])),
+  };
+}
+
 

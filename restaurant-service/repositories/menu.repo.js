@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, sql, inArray } from 'drizzle-orm';
 import { db } from '../config/db.js';
 import { menuItems } from '../db/schema.js';
 
@@ -55,6 +55,51 @@ export async function getMenuItems(restaurantId, filters = {}) {
   }
   if (filters.limit) query = query.limit(Number(filters.limit));
   return await query;
+}
+
+export async function getMenuItemById(itemId) {
+  const rows = await db
+    .select({
+      item_id: menuItems.itemId,
+      restaurant_id: menuItems.restaurantId,
+      name: menuItems.name,
+      description: menuItems.description,
+      price: menuItems.price,
+      category: menuItems.category,
+      is_available: menuItems.isAvailable,
+      preparation_time: menuItems.preparationTime,
+      created_at: menuItems.createdAt,
+    })
+    .from(menuItems)
+    .where(eq(menuItems.itemId, itemId))
+    .limit(1);
+  return rows[0] || null;
+}
+
+export async function deleteMenuItemRow(restaurantId, itemId) {
+  await db
+    .delete(menuItems)
+    .where(and(eq(menuItems.restaurantId, restaurantId), eq(menuItems.itemId, itemId)));
+}
+
+export async function setMenuItemAvailability(restaurantId, itemId, isAvailable) {
+  await db
+    .update(menuItems)
+    .set({ isAvailable })
+    .where(and(eq(menuItems.restaurantId, restaurantId), eq(menuItems.itemId, itemId)));
+}
+
+export async function getMenuItemsByIds(restaurantId, itemIds) {
+  return db
+    .select({
+      item_id: menuItems.itemId,
+      name: menuItems.name,
+      price: menuItems.price,
+      category: menuItems.category,
+      is_available: menuItems.isAvailable,
+    })
+    .from(menuItems)
+    .where(and(eq(menuItems.restaurantId, restaurantId), inArray(menuItems.itemId, itemIds)));
 }
 
 

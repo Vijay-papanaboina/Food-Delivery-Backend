@@ -1,7 +1,6 @@
 import express from "express";
 import cors from "cors";
 import buildRoutes from "./routes/index.routes.js";
-import { upsertNotification, getNotificationStats } from "./config/db.js";
 import { NOTIFICATION_TEMPLATES } from "./handlers/notification.handlers.js";
 
 const SERVICE_NAME = process.env.SERVICE_NAME || "notification-service";
@@ -20,24 +19,15 @@ function createApp() {
 
   // Health check endpoint
   app.get("/health", async (req, res) => {
-    try {
-      const stats = await getNotificationStats();
-      res.json({
-        service: SERVICE_NAME,
-        status: "healthy",
-        port: process.env.PORT || 5003,
-        notificationsCount: stats.total || 0,
-        unreadCount: stats.unread || 0,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      res.status(500).json({
-        service: SERVICE_NAME,
-        status: "error",
-        error: error.message,
-        timestamp: new Date().toISOString(),
-      });
-    }
+    res.json({
+      service: SERVICE_NAME,
+      status: "healthy",
+      port: process.env.PORT || 5003,
+      notificationsCount: 0,
+      unreadCount: 0,
+      simulated: true,
+      timestamp: new Date().toISOString(),
+    });
   });
 
   // Error handling middleware

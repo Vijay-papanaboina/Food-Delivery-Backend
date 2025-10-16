@@ -1,7 +1,6 @@
-import { getRestaurants, getRestaurant } from "../repositories/restaurants.repo.js";
+import { getRestaurants, getRestaurant, getRestaurantStats } from "../repositories/restaurants.repo.js";
 import { getMenuItems } from "../repositories/menu.repo.js";
 import { getKitchenOrders, upsertKitchenOrder } from "../repositories/kitchen.repo.js";
-import { getRestaurantStats } from "../config/db.js";
 
 export const listRestaurants = async (req, res) => {
   try {

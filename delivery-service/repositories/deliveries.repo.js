@@ -1,6 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "../config/db.js";
-import { deliveries } from "../db/schema.js";
+import { deliveries, drivers } from "../db/schema.js";
 
 export async function upsertDelivery(d) {
   await db
@@ -155,6 +155,48 @@ export async function getDeliveries(filters = {}) {
     actualDeliveryTime: delivery.actual_delivery_time,
     createdAt: delivery.created_at,
   }));
+}
+
+export async function getDeliveryStats() {
+  // Totals by status
+  const [allRows, inProgressRows, completedRows, pendingRows] = await Promise.all([
+    db.select({ id: deliveries.deliveryId }).from(deliveries),
+    db.select({ id: deliveries.deliveryId }).from(deliveries).where(eq(deliveries.status, "assigned")),
+    db.select({ id: deliveries.deliveryId }).from(deliveries).where(eq(deliveries.status, "completed")),
+    db.select({ id: deliveries.deliveryId }).from(deliveries).where(eq(deliveries.status, "pending_assignment")),
+  ]);
+
+  // Drivers
+  const [allDrivers, availableDriversRows] = await Promise.all([
+    db.select({ id: drivers.driverId }).from(drivers),
+    db.select({ id: drivers.driverId }).from(drivers).where(eq(drivers.isAvailable, true)),
+  ]);
+
+  // Average delivery time (in minutes) for completed deliveries
+  const completedWithTimes = await db
+    .select({ assignedAt: deliveries.assignedAt, actualDeliveryTime: deliveries.actualDeliveryTime })
+    .from(deliveries)
+    .where(eq(deliveries.status, "completed"));
+
+  let averageDeliveryTimeMinutes = 0;
+  if (completedWithTimes.length > 0) {
+    const minutes = completedWithTimes
+      .filter(r => r.assignedAt && r.actualDeliveryTime)
+      .map(r => (new Date(r.actualDeliveryTime).getTime() - new Date(r.assignedAt).getTime()) / 60000);
+    if (minutes.length > 0) {
+      averageDeliveryTimeMinutes = minutes.reduce((a, b) => a + b, 0) / minutes.length;
+    }
+  }
+
+  return {
+    totalDeliveries: allRows.length,
+    inProgressDeliveries: inProgressRows.length,
+    completedDeliveries: completedRows.length,
+    pendingDeliveries: pendingRows.length,
+    totalDrivers: allDrivers.length,
+    availableDrivers: availableDriversRows.length,
+    averageDeliveryTimeMinutes: Number(averageDeliveryTimeMinutes.toFixed(2)),
+  };
 }
 
 

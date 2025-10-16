@@ -64,16 +64,16 @@ services:
         kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic payment-processed --partitions 2 --replication-factor 1
         
         # inventory-updated removed (inventory service deleted)
+    
+        # Create order-confirmed topic (2 partitions)
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic order-confirmed --partitions 2 --replication-factor 1
         
-            # Create order-confirmed topic (2 partitions)
-            kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic order-confirmed --partitions 2 --replication-factor 1
-            
-            # Create food-ready topic (2 partitions)
-            kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic food-ready --partitions 2 --replication-factor 1
-            
-            # Create delivery-assigned topic (2 partitions)
-            kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic delivery-assigned --partitions 2 --replication-factor 1
+        # Create food-ready topic (2 partitions)
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic food-ready --partitions 2 --replication-factor 1
         
+        # Create delivery-assigned topic (2 partitions)
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic delivery-assigned --partitions 2 --replication-factor 1
+    
         # Create delivery-completed topic (2 partitions)
         kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic delivery-completed --partitions 2 --replication-factor 1
         
@@ -115,7 +115,10 @@ services:
           sleep 2;
         done;
         echo '✅ Postgres is ready, creating schemas...';
-        psql -h postgres -U app -d microservices -c 'CREATE SCHEMA IF NOT EXISTS notification_svc;';
+        psql -h postgres -U app -d microservices -c 'CREATE SCHEMA IF NOT EXISTS order_svc;';
+        psql -h postgres -U app -d microservices -c 'CREATE SCHEMA IF NOT EXISTS restaurant_svc;';
+        psql -h postgres -U app -d microservices -c 'CREATE SCHEMA IF NOT EXISTS delivery_svc;';
+        psql -h postgres -U app -d microservices -c 'CREATE SCHEMA IF NOT EXISTS payment_svc;';
         echo '✅ Schemas created successfully.';
       "
     restart: "no"

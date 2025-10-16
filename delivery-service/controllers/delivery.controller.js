@@ -1,6 +1,5 @@
-import { getDeliveryByOrderId, getDeliveries } from "../repositories/deliveries.repo.js";
+import { getDeliveryByOrderId, getDeliveries, getDeliveryStats } from "../repositories/deliveries.repo.js";
 import { getDrivers } from "../repositories/drivers.repo.js";
-import { getDeliveryStats } from "../config/db.js";
 
 export const getDeliveryByOrder = async (req, res) => {
   try {

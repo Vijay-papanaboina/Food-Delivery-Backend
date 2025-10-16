@@ -1,6 +1,4 @@
-import { db } from "../config/db.js";
-import { sql } from "drizzle-orm";
-import { upsertMenuItem, getMenuItems } from "../repositories/menu.repo.js";
+import { upsertMenuItem, getMenuItems, getMenuItemById, deleteMenuItemRow, setMenuItemAvailability, getMenuItemsByIds } from "../repositories/menu.repo.js";
 import { v4 as uuidv4 } from "uuid";
 
 export const addMenuItem = async (req, res) => {
@@ -44,23 +42,20 @@ export const updateMenuItem = async (req, res) => {
     const { restaurantId, itemId } = req.params;
     const updates = req.body;
 
-    const result = await db.execute(sql`SELECT item_id, restaurant_id, name, description, price, category, is_available, preparation_time
-       FROM restaurant_svc.menu_items WHERE item_id = ${itemId}`);
-    const rows = result.rows || result;
-
-    if (!rows[0] || rows[0].restaurant_id !== restaurantId) {
+    const row = await getMenuItemById(itemId);
+    if (!row || row.restaurant_id !== restaurantId) {
       return res.status(404).json({ error: "Menu item not found" });
     }
 
     const existingItem = {
-      itemId: rows[0].item_id,
-      restaurantId: rows[0].restaurant_id,
-      name: rows[0].name,
-      description: rows[0].description,
-      price: parseFloat(rows[0].price),
-      category: rows[0].category,
-      isAvailable: rows[0].is_available,
-      preparationTime: rows[0].preparation_time,
+      itemId: row.item_id,
+      restaurantId: row.restaurant_id,
+      name: row.name,
+      description: row.description,
+      price: parseFloat(row.price),
+      category: row.category,
+      isAvailable: row.is_available,
+      preparationTime: row.preparation_time,
       createdAt: new Date().toISOString(),
     };
 
@@ -77,7 +72,7 @@ export const updateMenuItem = async (req, res) => {
 export const deleteMenuItem = async (req, res) => {
   try {
     const { restaurantId, itemId } = req.params;
-    await db.execute(sql`DELETE FROM restaurant_svc.menu_items WHERE restaurant_id = ${restaurantId} AND item_id = ${itemId}`);
+    await deleteMenuItemRow(restaurantId, itemId);
     res.json({ message: "Menu item deleted successfully" });
   } catch (error) {
     console.error("Error deleting menu item:", error.message);
@@ -92,7 +87,7 @@ export const toggleMenuItemAvailability = async (req, res) => {
     if (typeof isAvailable !== "boolean") {
       return res.status(400).json({ error: "isAvailable must be a boolean" });
     }
-    await db.execute(sql`UPDATE restaurant_svc.menu_items SET is_available = ${isAvailable} WHERE restaurant_id = ${restaurantId} AND item_id = ${itemId}`);
+    await setMenuItemAvailability(restaurantId, itemId, isAvailable);
     res.json({ message: `Menu item ${isAvailable ? "enabled" : "disabled"} successfully`, itemId, isAvailable });
   } catch (error) {
     console.error("Error toggling menu item availability:", error.message);
@@ -108,8 +103,7 @@ export const validateMenuItemsForOrder = async (req, res) => {
       return res.status(400).json({ error: "Items must be a non-empty array" });
     }
     const itemIds = items.map((i) => i.itemId);
-    const result = await db.execute(sql`SELECT item_id, name, price, category, is_available FROM restaurant_svc.menu_items WHERE restaurant_id = ${restaurantId} AND item_id = ANY(${itemIds})`);
-    const rows = result.rows || result;
+    const rows = await getMenuItemsByIds(restaurantId, itemIds);
     const map = new Map(rows.map((r) => [r.item_id, r]));
     const errors = [];
     const validated = [];

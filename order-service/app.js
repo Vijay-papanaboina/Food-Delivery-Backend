@@ -1,8 +1,7 @@
 import express from "express";
 import cors from "cors";
 import buildRoutes from "./routes/index.routes.js";
-import { db } from "./config/db.js";
-import { sql } from "drizzle-orm";
+import { getOrdersCount } from "./repositories/orders.stats.repo.js";
 
 const SERVICE_NAME = process.env.SERVICE_NAME || "order-service";
 
@@ -20,8 +19,7 @@ function createApp(producer) {
 
   // Health check endpoint
   app.get("/health", async(req, res) => {
-    const result = await db.execute(sql`SELECT COUNT(*)::int as count FROM order_svc.orders`);
-    const count = result.rows ? result.rows[0].count : result[0].count;
+    const count = await getOrdersCount();
     res.json({
       service: SERVICE_NAME,
       status: "healthy",

@@ -1,7 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import { upsertOrder, getOrder } from "../repositories/orders.repo.js";
-import { db } from "../config/db.js";
-import { sql } from "drizzle-orm";
+import { listOrdersDrizzle, getOrderStatsDrizzle } from "../repositories/orders.stats.repo.js";
 import { TOPICS, publishMessage } from "../config/kafka.js";
 
 export const buildCreateOrderController = (producer, serviceName) => async (req, res) => {
@@ -144,33 +143,9 @@ export const getOrderById = async (req, res) => {
 
 export const listOrders = async (req, res) => {
   try {
-    const { status, userId, restaurantId } = req.query;
-    const whereClauses = [];
-    if (status) whereClauses.push(sql`status = ${status}`);
-    if (userId) whereClauses.push(sql`user_id = ${userId}`);
-    if (restaurantId) whereClauses.push(sql`restaurant_id = ${restaurantId}`);
-    const whereSql = whereClauses.length ? sql`WHERE ${sql.join(whereClauses, sql` AND `)}` : sql``;
-    const result = await db.execute(sql`
-      SELECT * FROM order_svc.orders ${whereSql} ORDER BY created_at DESC
-    `);
-    const rows = result.rows || result;
-    
-    // Transform database rows to camelCase and parse JSON fields
-    const transformedOrders = rows.map(row => ({
-      orderId: row.order_id,
-      restaurantId: row.restaurant_id,
-      userId: row.user_id,
-      items: typeof row.items_json === 'string' ? JSON.parse(row.items_json) : row.items_json,
-      deliveryAddress: typeof row.delivery_address_json === 'string' ? JSON.parse(row.delivery_address_json) : row.delivery_address_json,
-      status: row.status,
-      paymentStatus: row.payment_status,
-      total: parseFloat(row.total),
-      createdAt: row.created_at,
-      confirmedAt: row.confirmed_at,
-      deliveredAt: row.delivered_at
-    }));
-    
-    res.json({ message: "Orders retrieved successfully", orders: transformedOrders, total: transformedOrders.length });
+    const { status, userId, restaurantId, limit } = req.query;
+    const orders = await listOrdersDrizzle({ status, userId, restaurantId, limit });
+    res.json({ message: "Orders retrieved successfully", orders, total: orders.length });
   } catch (error) {
     console.error(`❌ [order-service] Error retrieving orders:`, error.message);
     res.status(500).json({ error: "Failed to retrieve orders", details: error.message });
@@ -179,30 +154,7 @@ export const listOrders = async (req, res) => {
 
 export const getOrderStats = async (req, res) => {
   try {
-    const statsResultRows = await db.execute(sql`
-      WITH order_stats AS (
-        SELECT 
-          status,
-          restaurant_id,
-          total,
-          COUNT(*) as count
-        FROM order_svc.orders
-        GROUP BY status, restaurant_id, total
-      )
-      SELECT 
-        (SELECT COUNT(*) FROM order_svc.orders) as total_orders,
-        (SELECT SUM(total) FROM order_svc.orders WHERE status = 'delivered') as total_revenue,
-        jsonb_object_agg(status, count) FILTER (WHERE status IS NOT NULL) as by_status,
-        jsonb_object_agg(restaurant_id, count) FILTER (WHERE restaurant_id IS NOT NULL) as by_restaurant
-      FROM order_stats
-    `);
-    const statsResult = (statsResultRows.rows || statsResultRows)[0];
-    const stats = {
-      total: parseInt(statsResult.total_orders) || 0,
-      byStatus: statsResult.by_status || {},
-      byRestaurant: statsResult.by_restaurant || {},
-      totalRevenue: parseFloat(statsResult.total_revenue) || 0,
-    };
+    const stats = await getOrderStatsDrizzle();
     res.json({ message: "Order statistics retrieved successfully", stats });
   } catch (error) {
     res.status(500).json({ error: "Failed to retrieve order statistics", details: error.message });
