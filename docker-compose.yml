@@ -100,28 +100,28 @@ services:
     volumes:
       - pg-data:/var/lib/postgresql/data
 
-  # 🆕 Schema initialization container
-  schema-init:
-    image: postgres:16
-    container_name: schema-init
-    depends_on:
-      - postgres
-    environment:
-      PGPASSWORD: app
-    command: >
-      bash -c "
-        echo '⏳ Waiting for Postgres to be ready...';
-        until pg_isready -h postgres -p 5432 -U app > /dev/null 2>&1; do
-          sleep 2;
-        done;
-        echo '✅ Postgres is ready, creating schemas...';
-        psql -h postgres -U app -d microservices -c 'CREATE SCHEMA IF NOT EXISTS order_svc;';
-        psql -h postgres -U app -d microservices -c 'CREATE SCHEMA IF NOT EXISTS restaurant_svc;';
-        psql -h postgres -U app -d microservices -c 'CREATE SCHEMA IF NOT EXISTS delivery_svc;';
-        psql -h postgres -U app -d microservices -c 'CREATE SCHEMA IF NOT EXISTS payment_svc;';
-        echo '✅ Schemas created successfully.';
-      "
-    restart: "no"
+  # # 🆕 Schema initialization container
+  # schema-init:
+  #   image: postgres:16
+  #   container_name: schema-init
+  #   depends_on:
+  #     - postgres
+  #   environment:
+  #     PGPASSWORD: app
+  #   command: >
+  #     bash -c "
+  #       echo '⏳ Waiting for Postgres to be ready...';
+  #       until pg_isready -h postgres -p 5432 -U app > /dev/null 2>&1; do
+  #         sleep 2;
+  #       done;
+  #       echo '✅ Postgres is ready, creating schemas...';
+  #       psql -h postgres -U app -d microservices -c 'CREATE SCHEMA IF NOT EXISTS order_svc;';
+  #       psql -h postgres -U app -d microservices -c 'CREATE SCHEMA IF NOT EXISTS restaurant_svc;';
+  #       psql -h postgres -U app -d microservices -c 'CREATE SCHEMA IF NOT EXISTS delivery_svc;';
+  #       psql -h postgres -U app -d microservices -c 'CREATE SCHEMA IF NOT EXISTS payment_svc;';
+  #       echo '✅ Schemas created successfully.';
+  #     "
+  #   restart: "no"
 
 volumes:
   kafka-data:

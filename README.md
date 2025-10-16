@@ -21,10 +21,10 @@ The system consists of 5 microservices that communicate through Kafka events:
                                  │
          ┌───────────────────────┼───────────────────────┐
          │                       │                       │
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│Delivery Service │    │Notification Svc │    │Restaurant Svc   │
-│    Port: 5004   │    │    Port: 5003   │    │    Port: 5006   │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+┌─────────────────┐    ┌─────────────────┐
+│Delivery Service │    │Notification Svc │
+│    Port: 5004   │    │    Port: 5003   │
+└─────────────────┘    └─────────────────┘
 ```
 
 ## 🚀 Services
@@ -106,9 +106,9 @@ Manages restaurant information, menus, availability, and kitchen operations. Inv
 
 ### 5. Notification Service (Port 5003)
 
-**Purpose**: Sends notifications for all system events.
+**Purpose**: Simulates notifications for all system events (log-only; no database persistence).
 
-**REST APIs**:
+**REST APIs** (simulated responses):
 
 - `GET /api/notifications` - List notifications
 - `GET /api/notifications/:id` - Get specific notification
@@ -124,12 +124,11 @@ Manages restaurant information, menus, availability, and kitchen operations. Inv
 
 **Key Features**:
 
-- Event-driven notifications
+- Event-driven notifications (simulated)
 - Multiple notification types
-- Priority-based delivery
-- Notification history
+- Priority-based delivery (simulated)
 
-### 5. Restaurant Service (Port 5006)
+### Restaurant Service (Port 5006)
 
 **Purpose**: Manages restaurant information, menus, AND kitchen operations (food preparation) in a unified service.
 
@@ -175,7 +174,6 @@ sequenceDiagram
     participant OrderService
     participant PaymentService
     participant RestaurantService
-    participant RestaurantService
     participant DeliveryService
     participant NotificationService
     participant Kafka
@@ -213,29 +211,13 @@ sequenceDiagram
     NotificationService->>User: Send notifications
 ```
 
-### Reservation System States
-
-```
-Initial State: Available = 50 units
-                ↓
-Order Created: Reserved = 5 units, Available = 45 units
-                ↓
-        ┌───────┴────────┐
-        ↓                ↓
-  Payment Success   Payment Failed
-        ↓                ↓
-  Committed = 5    Keep Reserved (5 min)
-  Total = 45            ↓
-  Available = 45   After 5 min: Released
-                   Available = 50 again
-```
+<!-- Inventory reservation flow removed: inventory service no longer used -->
 
 ### Service Simulation Timings
 
 | Service   | Action              | Simulation Time | Purpose                         |
 | --------- | ------------------- | --------------- | ------------------------------- |
 | Payment   | Payment processing  | 1.5-3 seconds   | Realistic payment gateway delay |
-| Inventory | Reservation commit  | 20-30 seconds   | Stock processing and validation |
 | Kitchen   | Food preparation    | 20-30 seconds   | Realistic cooking time          |
 | Delivery  | Delivery completion | 20-30 seconds   | Travel and delivery time        |
 
@@ -282,13 +264,10 @@ cd microservices/payment-service && npm run dev
 # Terminal 3 - Delivery Service
 cd microservices/delivery-service && npm run dev
 
-# Terminal 4 - Delivery Service
-cd microservices/delivery-service && npm run dev
-
-# Terminal 5 - Notification Service
+# Terminal 4 - Notification Service
 cd microservices/notification-service && npm run dev
 
-# Terminal 6 - Restaurant Service
+# Terminal 5 - Restaurant Service
 cd microservices/restaurant-service && npm run dev
 ```
 
@@ -317,7 +296,7 @@ curl -X POST http://localhost:5001/api/orders \
       {"itemId": "item-003", "quantity": 1, "price": 8.99}
     ],
     "userId": "user-123",
-    "deliveryAddress": "123 Main St, City, State"
+    "deliveryAddress": {"street":"123 Main St","city":"City","state":"ST","zipCode":"12345"}
   }'
 ```
 
@@ -363,7 +342,7 @@ Each service provides statistics endpoints:
 - Payment statistics: `GET /api/payments/stats`
  
 - Delivery statistics: `GET /api/delivery/stats`
-- Notification statistics: `GET /api/notifications/stats`
+- Notification statistics: `GET /api/notifications/stats` (simulated)
 - Restaurant statistics: `GET /api/restaurants/stats`
 
 ## 🔧 Configuration

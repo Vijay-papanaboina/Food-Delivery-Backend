@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Food Ordering Microservices API",
-    "description": "Comprehensive API documentation for the food ordering microservices system with Kafka integration. This collection includes all 45 endpoints across 6 microservices: Order, Payment, Notification, Delivery, Inventory, and Restaurant services.",
+    "description": "Comprehensive API documentation for the food ordering microservices system with Kafka integration. This collection includes endpoints across 5 microservices: Order, Payment, Notification, Delivery, and Restaurant services.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "version": "1.0.0"
   },
@@ -24,11 +24,6 @@
     {
       "key": "DELIVERY_SERVICE",
       "value": "http://localhost:5004",
-      "type": "string"
-    },
-    {
-      "key": "INVENTORY_SERVICE",
-      "value": "http://localhost:5005",
       "type": "string"
     },
     {
@@ -86,7 +81,7 @@
               "host": ["{{ORDER_SERVICE}}"],
               "path": ["api", "orders"]
             },
-            "description": "Creates a new food order. This triggers the entire order flow: inventory reservation, payment processing, kitchen preparation, and delivery assignment."
+            "description": "Creates a new food order. This triggers the order flow: payment processing, kitchen preparation, and delivery assignment."
           },
           "response": [
             {
@@ -591,7 +586,7 @@
                 }
               ]
             },
-            "description": "Retrieves all notifications with optional filtering by userId, type, and priority."
+            "description": "Retrieves all notifications (simulated; no persistence) with optional filtering by userId, type, and priority."
           },
           "response": [
             {
@@ -621,7 +616,7 @@
                 }
               ],
               "cookie": [],
-              "body": "[\n  {\n    \"notificationId\": \"notif-12345\",\n    \"userId\": \"user-123\",\n    \"type\": \"order_created\",\n    \"title\": \"Order Placed Successfully!\",\n    \"message\": \"Your order #12345 has been placed and is being prepared. Total: $25.98\",\n    \"priority\": \"high\",\n    \"isRead\": false,\n    \"createdAt\": \"2024-01-15T10:30:00.000Z\"\n  }\n]"
+              "body": "{\n  \"message\": \"Notifications are simulated; no persistence\",\n  \"notifications\": [],\n  \"total\": 0\n}"
             }
           ]
         },
@@ -639,7 +634,7 @@
           },
           "response": [
             {
-              "name": "Success Response",
+              "name": "Not Implemented",
               "originalRequest": {
                 "method": "GET",
                 "header": [],
@@ -649,8 +644,8 @@
                   "path": ["api", "notifications", "notif-12345"]
                 }
               },
-              "status": "OK",
-              "code": 200,
+              "status": "Not Implemented",
+              "code": 501,
               "_postman_previewlanguage": "json",
               "header": [
                 {
@@ -659,7 +654,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"notificationId\": \"notif-12345\",\n  \"userId\": \"user-123\",\n  \"type\": \"order_created\",\n  \"title\": \"Order Placed Successfully!\",\n  \"message\": \"Your order #12345 has been placed and is being prepared. Total: $25.98\",\n  \"priority\": \"high\",\n  \"isRead\": false,\n  \"createdAt\": \"2024-01-15T10:30:00.000Z\"\n}"
+              "body": "{\n  \"error\": \"Not implemented\"\n}"
             }
           ]
         },
@@ -710,7 +705,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"notificationId\": \"notif-12345\",\n  \"isRead\": true,\n  \"readAt\": \"2024-01-15T10:35:00.000Z\"\n}"
+              "body": "{\n  \"message\": \"Notification marked as read (simulated)\",\n  \"notificationId\": \"notif-12345\"\n}"
             }
           ]
         },
@@ -761,7 +756,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"userId\": \"user-123\",\n  \"markedAsRead\": 5,\n  \"readAt\": \"2024-01-15T10:35:00.000Z\"\n}"
+              "body": "{\n  \"message\": \"All notifications marked as read (simulated)\",\n  \"updatedCount\": 0\n}"
             }
           ]
         },
@@ -799,7 +794,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"total\": 500,\n  \"unread\": 45,\n  \"read\": 455,\n  \"byType\": {\n    \"order_created\": 150,\n    \"payment_processed\": 150,\n    \"order_confirmed\": 100,\n    \"delivery_assigned\": 50,\n    \"delivery_completed\": 50\n  },\n  \"byPriority\": {\n    \"high\": 200,\n    \"medium\": 250,\n    \"low\": 50\n  }\n}"
+              "body": "{\n  \"message\": \"Notification statistics (simulated)\",\n  \"stats\": {\n    \"total\": 0,\n    \"unread\": 0,\n    \"byType\": {},\n    \"byPriority\": {}\n  }\n}"
             }
           ]
         },
@@ -888,7 +883,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"service\": \"notification-service\",\n  \"status\": \"healthy\",\n  \"port\": 5003,\n  \"notificationsCount\": 500\n}"
+              "body": "{\n  \"service\": \"notification-service\",\n  \"status\": \"healthy\",\n  \"port\": 5003,\n  \"notificationsCount\": 0,\n  \"simulated\": true\n}"
             }
           ]
         }
@@ -1218,436 +1213,6 @@
               ],
               "cookie": [],
               "body": "{\n  \"service\": \"delivery-service\",\n  \"status\": \"healthy\",\n  \"port\": 5004,\n  \"deliveriesCount\": 150,\n  \"driversCount\": 4\n}"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "5. Inventory Service (5005)",
-      "description": "Inventory management microservice - handles stock tracking with reservation system",
-      "item": [
-        {
-          "name": "Get All Inventory",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{INVENTORY_SERVICE}}/api/inventory?restaurantId={{SAMPLE_RESTAURANT_ID}}&category=pizza",
-              "host": ["{{INVENTORY_SERVICE}}"],
-              "path": ["api", "inventory"],
-              "query": [
-                {
-                  "key": "restaurantId",
-                  "value": "{{SAMPLE_RESTAURANT_ID}}",
-                  "description": "Filter by restaurant ID"
-                },
-                {
-                  "key": "category",
-                  "value": "pizza",
-                  "description": "Filter by item category"
-                }
-              ]
-            },
-            "description": "Retrieves all inventory items with optional filtering by restaurant ID and category. Shows available quantities (total - reserved)."
-          },
-          "response": [
-            {
-              "name": "Success Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{INVENTORY_SERVICE}}/api/inventory?restaurantId=rest-001",
-                  "host": ["{{INVENTORY_SERVICE}}"],
-                  "path": ["api", "inventory"],
-                  "query": [
-                    {
-                      "key": "restaurantId",
-                      "value": "rest-001"
-                    }
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "[\n  {\n    \"itemId\": \"item-001\",\n    \"name\": \"Margherita Pizza\",\n    \"restaurantId\": \"rest-001\",\n    \"quantity\": 50,\n    \"reservedQuantity\": 5,\n    \"availableQuantity\": 45,\n    \"price\": 12.99,\n    \"category\": \"pizza\"\n  }\n]"
-            }
-          ]
-        },
-        {
-          "name": "Get Inventory by Item ID",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{INVENTORY_SERVICE}}/api/inventory/{{SAMPLE_ITEM_ID}}",
-              "host": ["{{INVENTORY_SERVICE}}"],
-              "path": ["api", "inventory", "{{SAMPLE_ITEM_ID}}"]
-            },
-            "description": "Retrieves detailed inventory information for a specific item ID."
-          },
-          "response": [
-            {
-              "name": "Success Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{INVENTORY_SERVICE}}/api/inventory/item-001",
-                  "host": ["{{INVENTORY_SERVICE}}"],
-                  "path": ["api", "inventory", "item-001"]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"itemId\": \"item-001\",\n  \"name\": \"Margherita Pizza\",\n  \"restaurantId\": \"rest-001\",\n  \"quantity\": 50,\n  \"reservedQuantity\": 5,\n  \"availableQuantity\": 45,\n  \"price\": 12.99,\n  \"category\": \"pizza\"\n}"
-            }
-          ]
-        },
-        {
-          "name": "Add Stock",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"itemId\": \"{{SAMPLE_ITEM_ID}}\",\n  \"quantity\": 20,\n  \"reason\": \"restock\"\n}"
-            },
-            "url": {
-              "raw": "{{INVENTORY_SERVICE}}/api/inventory/add",
-              "host": ["{{INVENTORY_SERVICE}}"],
-              "path": ["api", "inventory", "add"]
-            },
-            "description": "Adds stock to an existing inventory item. This increases the total quantity available."
-          },
-          "response": [
-            {
-              "name": "Success Response",
-              "originalRequest": {
-                "method": "POST",
-                "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"itemId\": \"item-001\",\n  \"quantity\": 20,\n  \"reason\": \"restock\"\n}"
-                },
-                "url": {
-                  "raw": "{{INVENTORY_SERVICE}}/api/inventory/add",
-                  "host": ["{{INVENTORY_SERVICE}}"],
-                  "path": ["api", "inventory", "add"]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"itemId\": \"item-001\",\n  \"name\": \"Margherita Pizza\",\n  \"previousQuantity\": 50,\n  \"addedQuantity\": 20,\n  \"newQuantity\": 70,\n  \"availableQuantity\": 65,\n  \"reason\": \"restock\",\n  \"updatedAt\": \"2024-01-15T10:30:00.000Z\"\n}"
-            }
-          ]
-        },
-        {
-          "name": "Create New Item",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Supreme Pizza\",\n  \"restaurantId\": \"{{SAMPLE_RESTAURANT_ID}}\",\n  \"quantity\": 30,\n  \"price\": 16.99,\n  \"category\": \"pizza\"\n}"
-            },
-            "url": {
-              "raw": "{{INVENTORY_SERVICE}}/api/inventory/create",
-              "host": ["{{INVENTORY_SERVICE}}"],
-              "path": ["api", "inventory", "create"]
-            },
-            "description": "Creates a new inventory item with initial stock quantity."
-          },
-          "response": [
-            {
-              "name": "Success Response",
-              "originalRequest": {
-                "method": "POST",
-                "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"name\": \"Supreme Pizza\",\n  \"restaurantId\": \"rest-001\",\n  \"quantity\": 30,\n  \"price\": 16.99,\n  \"category\": \"pizza\"\n}"
-                },
-                "url": {
-                  "raw": "{{INVENTORY_SERVICE}}/api/inventory/create",
-                  "host": ["{{INVENTORY_SERVICE}}"],
-                  "path": ["api", "inventory", "create"]
-                }
-              },
-              "status": "Created",
-              "code": 201,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"itemId\": \"item-006\",\n  \"name\": \"Supreme Pizza\",\n  \"restaurantId\": \"rest-001\",\n  \"quantity\": 30,\n  \"reservedQuantity\": 0,\n  \"availableQuantity\": 30,\n  \"price\": 16.99,\n  \"category\": \"pizza\",\n  \"createdAt\": \"2024-01-15T10:30:00.000Z\"\n}"
-            }
-          ]
-        },
-        {
-          "name": "Get Inventory Stats",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{INVENTORY_SERVICE}}/api/inventory/stats",
-              "host": ["{{INVENTORY_SERVICE}}"],
-              "path": ["api", "inventory", "stats"]
-            },
-            "description": "Retrieves inventory statistics including total items, low stock alerts, and reservation metrics."
-          },
-          "response": [
-            {
-              "name": "Success Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{INVENTORY_SERVICE}}/api/inventory/stats",
-                  "host": ["{{INVENTORY_SERVICE}}"],
-                  "path": ["api", "inventory", "stats"]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"totalItems\": 15,\n  \"totalStock\": 500,\n  \"totalReserved\": 25,\n  \"totalAvailable\": 475,\n  \"lowStockItems\": 3,\n  \"activeReservations\": 8,\n  \"byCategory\": {\n    \"pizza\": 5,\n    \"burger\": 4,\n    \"salad\": 3,\n    \"drink\": 3\n  }\n}"
-            }
-          ]
-        },
-        {
-          "name": "Get All Reservations",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{INVENTORY_SERVICE}}/api/inventory/reservations?status=active",
-              "host": ["{{INVENTORY_SERVICE}}"],
-              "path": ["api", "inventory", "reservations"],
-              "query": [
-                {
-                  "key": "status",
-                  "value": "active",
-                  "description": "Filter by reservation status (active, committed, released)"
-                }
-              ]
-            },
-            "description": "Retrieves all inventory reservations with optional filtering by status. Shows which orders have reserved stock."
-          },
-          "response": [
-            {
-              "name": "Success Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{INVENTORY_SERVICE}}/api/inventory/reservations?status=active",
-                  "host": ["{{INVENTORY_SERVICE}}"],
-                  "path": ["api", "inventory", "reservations"],
-                  "query": [
-                    {
-                      "key": "status",
-                      "value": "active"
-                    }
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "[\n  {\n    \"orderId\": \"order-12345\",\n    \"items\": [\n      {\n        \"itemId\": \"item-001\",\n        \"quantity\": 2\n      }\n    ],\n    \"status\": \"active\",\n    \"reservedAt\": \"2024-01-15T10:30:00.000Z\",\n    \"expiresAt\": \"2024-01-15T10:35:00.000Z\"\n  }\n]"
-            }
-          ]
-        },
-        {
-          "name": "Get Available Quantity",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{INVENTORY_SERVICE}}/api/inventory/{{SAMPLE_ITEM_ID}}/available",
-              "host": ["{{INVENTORY_SERVICE}}"],
-              "path": ["api", "inventory", "{{SAMPLE_ITEM_ID}}", "available"]
-            },
-            "description": "Gets the available quantity for a specific item (total quantity minus reserved quantity)."
-          },
-          "response": [
-            {
-              "name": "Success Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{INVENTORY_SERVICE}}/api/inventory/item-001/available",
-                  "host": ["{{INVENTORY_SERVICE}}"],
-                  "path": ["api", "inventory", "item-001", "available"]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"itemId\": \"item-001\",\n  \"name\": \"Margherita Pizza\",\n  \"totalQuantity\": 50,\n  \"reservedQuantity\": 5,\n  \"availableQuantity\": 45\n}"
-            }
-          ]
-        },
-        {
-          "name": "Release Reservation",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"reason\": \"payment_failed\"\n}"
-            },
-            "url": {
-              "raw": "{{INVENTORY_SERVICE}}/api/inventory/reservations/{{SAMPLE_ORDER_ID}}/release",
-              "host": ["{{INVENTORY_SERVICE}}"],
-              "path": [
-                "api",
-                "inventory",
-                "reservations",
-                "{{SAMPLE_ORDER_ID}}",
-                "release"
-              ]
-            },
-            "description": "Manually releases a reservation for a specific order. This makes the reserved stock available again."
-          },
-          "response": [
-            {
-              "name": "Success Response",
-              "originalRequest": {
-                "method": "POST",
-                "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"reason\": \"payment_failed\"\n}"
-                },
-                "url": {
-                  "raw": "{{INVENTORY_SERVICE}}/api/inventory/reservations/order-12345/release",
-                  "host": ["{{INVENTORY_SERVICE}}"],
-                  "path": [
-                    "api",
-                    "inventory",
-                    "reservations",
-                    "order-12345",
-                    "release"
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"orderId\": \"order-12345\",\n  \"status\": \"released\",\n  \"reason\": \"payment_failed\",\n  \"releasedAt\": \"2024-01-15T10:30:00.000Z\",\n  \"itemsReleased\": [\n    {\n      \"itemId\": \"item-001\",\n      \"quantity\": 2\n    }\n  ]\n}"
-            }
-          ]
-        },
-        {
-          "name": "Health Check",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{INVENTORY_SERVICE}}/health",
-              "host": ["{{INVENTORY_SERVICE}}"],
-              "path": ["health"]
-            },
-            "description": "Health check endpoint to verify the service is running and get basic service information."
-          },
-          "response": [
-            {
-              "name": "Success Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{INVENTORY_SERVICE}}/health",
-                  "host": ["{{INVENTORY_SERVICE}}"],
-                  "path": ["health"]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"service\": \"inventory-service\",\n  \"status\": \"healthy\",\n  \"port\": 5005,\n  \"itemsCount\": 15,\n  \"reservationsCount\": 8\n}"
             }
           ]
         }

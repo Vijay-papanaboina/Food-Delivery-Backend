@@ -2,10 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import createApp from "./app.js";
-import {
-  createConsumer,
-} from "./config/kafka.js";
-import { initDb } from "./config/db.js";
+import { createConsumer } from "./config/kafka.js";
 import { initializeKafka, shutdownKafka } from "./utils/kafka.utils.js";
 
 /**
@@ -14,8 +11,7 @@ import { initializeKafka, shutdownKafka } from "./utils/kafka.utils.js";
  * This service handles:
  * - Listening to all Kafka topics for events
  * - Generating appropriate notifications for each event type
- * - Storing notification history
- * - Sending notifications via multiple channels (email, SMS, push, toast)
+ * - Simulating notifications via logs (no database persistence)
  * - Providing notification management APIs
  *
  * Port: 5003
@@ -35,8 +31,7 @@ process.on("SIGINT", async () => {
   process.exit(0);
 });
 
-// Initialize DB before accepting traffic
-await initDb();
+// No DB initialization needed; simulation/log-only mode
 
 // Create app
 const app = createApp();

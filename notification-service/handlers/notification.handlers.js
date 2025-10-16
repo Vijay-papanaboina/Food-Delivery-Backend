@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { exec } from "child_process";
+// Removed PowerShell toast execution; notifications are simulated via logs only
 import { TOPICS } from "../config/kafka.js";
 
 // Notification templates for different event types
