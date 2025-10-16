@@ -1,0 +1,2180 @@
+{
+  "info": {
+    "name": "Food Ordering Microservices API",
+    "description": "Comprehensive API documentation for the food ordering microservices system with Kafka integration. This collection includes all 45 endpoints across 6 microservices: Order, Payment, Notification, Delivery, Inventory, and Restaurant services.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "ORDER_SERVICE",
+      "value": "http://localhost:5001",
+      "type": "string"
+    },
+    {
+      "key": "PAYMENT_SERVICE",
+      "value": "http://localhost:5002",
+      "type": "string"
+    },
+    {
+      "key": "NOTIFICATION_SERVICE",
+      "value": "http://localhost:5003",
+      "type": "string"
+    },
+    {
+      "key": "DELIVERY_SERVICE",
+      "value": "http://localhost:5004",
+      "type": "string"
+    },
+    {
+      "key": "INVENTORY_SERVICE",
+      "value": "http://localhost:5005",
+      "type": "string"
+    },
+    {
+      "key": "RESTAURANT_SERVICE",
+      "value": "http://localhost:5006",
+      "type": "string"
+    },
+    {
+      "key": "SAMPLE_ORDER_ID",
+      "value": "order-12345",
+      "type": "string"
+    },
+    {
+      "key": "SAMPLE_ITEM_ID",
+      "value": "item-001",
+      "type": "string"
+    },
+    {
+      "key": "SAMPLE_RESTAURANT_ID",
+      "value": "rest-001",
+      "type": "string"
+    },
+    {
+      "key": "SAMPLE_USER_ID",
+      "value": "user-123",
+      "type": "string"
+    },
+    {
+      "key": "SAMPLE_DRIVER_ID",
+      "value": "driver-001",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Order Service (5001)",
+      "description": "Order management microservice - handles order creation, retrieval, and status updates",
+      "item": [
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"restaurantId\": \"{{SAMPLE_RESTAURANT_ID}}\",\n  \"items\": [\n    {\n      \"itemId\": \"{{SAMPLE_ITEM_ID}}\",\n      \"quantity\": 2,\n      \"price\": 12.99\n    },\n    {\n      \"itemId\": \"item-002\",\n      \"quantity\": 1,\n      \"price\": 14.99\n    }\n  ],\n  \"userId\": \"{{SAMPLE_USER_ID}}\",\n  \"deliveryAddress\": {\n    \"street\": \"123 Main St\",\n    \"city\": \"New York\",\n    \"state\": \"NY\",\n    \"zipCode\": \"10001\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{ORDER_SERVICE}}/api/orders",
+              "host": ["{{ORDER_SERVICE}}"],
+              "path": ["api", "orders"]
+            },
+            "description": "Creates a new food order. This triggers the entire order flow: inventory reservation, payment processing, kitchen preparation, and delivery assignment."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"restaurantId\": \"rest-001\",\n  \"items\": [\n    {\n      \"itemId\": \"item-001\",\n      \"quantity\": 2,\n      \"price\": 12.99\n    }\n  ],\n  \"userId\": \"user-123\",\n  \"deliveryAddress\": {\n    \"street\": \"123 Main St\",\n    \"city\": \"New York\",\n    \"state\": \"NY\",\n    \"zipCode\": \"10001\"\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{ORDER_SERVICE}}/api/orders",
+                  "host": ["{{ORDER_SERVICE}}"],
+                  "path": ["api", "orders"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"orderId\": \"order-12345\",\n  \"restaurantId\": \"rest-001\",\n  \"items\": [\n    {\n      \"itemId\": \"item-001\",\n      \"quantity\": 2,\n      \"price\": 12.99\n    }\n  ],\n  \"userId\": \"user-123\",\n  \"deliveryAddress\": {\n    \"street\": \"123 Main St\",\n    \"city\": \"New York\",\n    \"state\": \"NY\",\n    \"zipCode\": \"10001\"\n  },\n  \"status\": \"pending\",\n  \"total\": 25.98,\n  \"createdAt\": \"2024-01-15T10:30:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ORDER_SERVICE}}/api/orders/{{SAMPLE_ORDER_ID}}",
+              "host": ["{{ORDER_SERVICE}}"],
+              "path": ["api", "orders", "{{SAMPLE_ORDER_ID}}"]
+            },
+            "description": "Retrieves detailed information about a specific order by its ID."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{ORDER_SERVICE}}/api/orders/order-12345",
+                  "host": ["{{ORDER_SERVICE}}"],
+                  "path": ["api", "orders", "order-12345"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"orderId\": \"order-12345\",\n  \"restaurantId\": \"rest-001\",\n  \"items\": [\n    {\n      \"itemId\": \"item-001\",\n      \"quantity\": 2,\n      \"price\": 12.99\n    }\n  ],\n  \"userId\": \"user-123\",\n  \"deliveryAddress\": {\n    \"street\": \"123 Main St\",\n    \"city\": \"New York\",\n    \"state\": \"NY\",\n    \"zipCode\": \"10001\"\n  },\n  \"status\": \"confirmed\",\n  \"total\": 25.98,\n  \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n  \"confirmedAt\": \"2024-01-15T10:30:15.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get All Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ORDER_SERVICE}}/api/orders?status=confirmed&userId={{SAMPLE_USER_ID}}&restaurantId={{SAMPLE_RESTAURANT_ID}}",
+              "host": ["{{ORDER_SERVICE}}"],
+              "path": ["api", "orders"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "confirmed",
+                  "description": "Filter by order status (pending, confirmed, preparing, ready, delivered)"
+                },
+                {
+                  "key": "userId",
+                  "value": "{{SAMPLE_USER_ID}}",
+                  "description": "Filter by user ID"
+                },
+                {
+                  "key": "restaurantId",
+                  "value": "{{SAMPLE_RESTAURANT_ID}}",
+                  "description": "Filter by restaurant ID"
+                }
+              ]
+            },
+            "description": "Retrieves all orders with optional filtering by status, userId, or restaurantId."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{ORDER_SERVICE}}/api/orders?status=confirmed",
+                  "host": ["{{ORDER_SERVICE}}"],
+                  "path": ["api", "orders"],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "confirmed"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n  {\n    \"orderId\": \"order-12345\",\n    \"restaurantId\": \"rest-001\",\n    \"items\": [\n      {\n        \"itemId\": \"item-001\",\n        \"quantity\": 2,\n        \"price\": 12.99\n      }\n    ],\n    \"userId\": \"user-123\",\n    \"status\": \"confirmed\",\n    \"total\": 25.98,\n    \"createdAt\": \"2024-01-15T10:30:00.000Z\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Get Order Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ORDER_SERVICE}}/api/orders/stats",
+              "host": ["{{ORDER_SERVICE}}"],
+              "path": ["api", "orders", "stats"]
+            },
+            "description": "Retrieves order statistics including total orders, status breakdown, and revenue metrics."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{ORDER_SERVICE}}/api/orders/stats",
+                  "host": ["{{ORDER_SERVICE}}"],
+                  "path": ["api", "orders", "stats"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"total\": 150,\n  \"byStatus\": {\n    \"pending\": 5,\n    \"confirmed\": 12,\n    \"preparing\": 8,\n    \"ready\": 3,\n    \"delivered\": 122\n  },\n  \"totalRevenue\": 12500.50,\n  \"averageOrderValue\": 83.34\n}"
+            }
+          ]
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ORDER_SERVICE}}/health",
+              "host": ["{{ORDER_SERVICE}}"],
+              "path": ["health"]
+            },
+            "description": "Health check endpoint to verify the service is running and get basic service information."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{ORDER_SERVICE}}/health",
+                  "host": ["{{ORDER_SERVICE}}"],
+                  "path": ["health"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"service\": \"order-service\",\n  \"status\": \"healthy\",\n  \"port\": 5001,\n  \"ordersCount\": 150\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Payment Service (5002)",
+      "description": "Payment processing microservice - handles payment processing with idempotent operations and retry capability",
+      "item": [
+        {
+          "name": "Process Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{SAMPLE_ORDER_ID}}\",\n  \"amount\": 25.98,\n  \"method\": \"credit_card\",\n  \"userId\": \"{{SAMPLE_USER_ID}}\"\n}"
+            },
+            "url": {
+              "raw": "{{PAYMENT_SERVICE}}/api/payments",
+              "host": ["{{PAYMENT_SERVICE}}"],
+              "path": ["api", "payments"]
+            },
+            "description": "Processes a payment for an order. This endpoint is idempotent - calling it multiple times with the same orderId will return the existing payment record instead of creating duplicates. Supports different payment methods with varying success rates and processing delays."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"orderId\": \"order-12345\",\n  \"amount\": 25.98,\n  \"method\": \"credit_card\",\n  \"userId\": \"user-123\"\n}"
+                },
+                "url": {
+                  "raw": "{{PAYMENT_SERVICE}}/api/payments",
+                  "host": ["{{PAYMENT_SERVICE}}"],
+                  "path": ["api", "payments"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"paymentId\": \"payment-67890\",\n  \"orderId\": \"order-12345\",\n  \"amount\": 25.98,\n  \"method\": \"credit_card\",\n  \"userId\": \"user-123\",\n  \"status\": \"success\",\n  \"transactionId\": \"TXN_1642248600000_abc123def\",\n  \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n  \"processedAt\": \"2024-01-15T10:30:02.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Payment by Order ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{PAYMENT_SERVICE}}/api/payments/{{SAMPLE_ORDER_ID}}",
+              "host": ["{{PAYMENT_SERVICE}}"],
+              "path": ["api", "payments", "{{SAMPLE_ORDER_ID}}"]
+            },
+            "description": "Retrieves payment information for a specific order ID."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{PAYMENT_SERVICE}}/api/payments/order-12345",
+                  "host": ["{{PAYMENT_SERVICE}}"],
+                  "path": ["api", "payments", "order-12345"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"paymentId\": \"payment-67890\",\n  \"orderId\": \"order-12345\",\n  \"amount\": 25.98,\n  \"method\": \"credit_card\",\n  \"userId\": \"user-123\",\n  \"status\": \"success\",\n  \"transactionId\": \"TXN_1642248600000_abc123def\",\n  \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n  \"processedAt\": \"2024-01-15T10:30:02.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get All Payments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{PAYMENT_SERVICE}}/api/payments?status=success&method=credit_card",
+              "host": ["{{PAYMENT_SERVICE}}"],
+              "path": ["api", "payments"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "success",
+                  "description": "Filter by payment status (pending, processing, success, failed)"
+                },
+                {
+                  "key": "method",
+                  "value": "credit_card",
+                  "description": "Filter by payment method"
+                }
+              ]
+            },
+            "description": "Retrieves all payments with optional filtering by status and payment method."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{PAYMENT_SERVICE}}/api/payments?status=success",
+                  "host": ["{{PAYMENT_SERVICE}}"],
+                  "path": ["api", "payments"],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "success"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n  {\n    \"paymentId\": \"payment-67890\",\n    \"orderId\": \"order-12345\",\n    \"amount\": 25.98,\n    \"method\": \"credit_card\",\n    \"status\": \"success\",\n    \"transactionId\": \"TXN_1642248600000_abc123def\",\n    \"createdAt\": \"2024-01-15T10:30:00.000Z\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Get Payment Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{PAYMENT_SERVICE}}/api/payments/stats",
+              "host": ["{{PAYMENT_SERVICE}}"],
+              "path": ["api", "payments", "stats"]
+            },
+            "description": "Retrieves payment statistics including success rates, method breakdown, and revenue metrics."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{PAYMENT_SERVICE}}/api/payments/stats",
+                  "host": ["{{PAYMENT_SERVICE}}"],
+                  "path": ["api", "payments", "stats"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"total\": 150,\n  \"byStatus\": {\n    \"success\": 135,\n    \"failed\": 15\n  },\n  \"byMethod\": {\n    \"credit_card\": 80,\n    \"debit_card\": 45,\n    \"paypal\": 20,\n    \"cash\": 5\n  },\n  \"totalProcessed\": 12500.50,\n  \"successRate\": 0.90\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Payment Methods",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{PAYMENT_SERVICE}}/api/payments/methods",
+              "host": ["{{PAYMENT_SERVICE}}"],
+              "path": ["api", "payments", "methods"]
+            },
+            "description": "Retrieves available payment methods with their success rates and processing delays."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{PAYMENT_SERVICE}}/api/payments/methods",
+                  "host": ["{{PAYMENT_SERVICE}}"],
+                  "path": ["api", "payments", "methods"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"credit_card\": {\n    \"successRate\": 0.95,\n    \"processingDelay\": 2000\n  },\n  \"debit_card\": {\n    \"successRate\": 0.90,\n    \"processingDelay\": 1500\n  },\n  \"paypal\": {\n    \"successRate\": 0.88,\n    \"processingDelay\": 3000\n  },\n  \"cash\": {\n    \"successRate\": 1.0,\n    \"processingDelay\": 0\n  },\n  \"crypto\": {\n    \"successRate\": 0.75,\n    \"processingDelay\": 5000\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{PAYMENT_SERVICE}}/health",
+              "host": ["{{PAYMENT_SERVICE}}"],
+              "path": ["health"]
+            },
+            "description": "Health check endpoint to verify the service is running and get basic service information."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{PAYMENT_SERVICE}}/health",
+                  "host": ["{{PAYMENT_SERVICE}}"],
+                  "path": ["health"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"service\": \"payment-service\",\n  \"status\": \"healthy\",\n  \"port\": 5002,\n  \"paymentsCount\": 150\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Notification Service (5003)",
+      "description": "Notification microservice - listens to all Kafka events and generates user notifications",
+      "item": [
+        {
+          "name": "Get All Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{NOTIFICATION_SERVICE}}/api/notifications?userId={{SAMPLE_USER_ID}}&type=order_created&priority=high",
+              "host": ["{{NOTIFICATION_SERVICE}}"],
+              "path": ["api", "notifications"],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "{{SAMPLE_USER_ID}}",
+                  "description": "Filter by user ID"
+                },
+                {
+                  "key": "type",
+                  "value": "order_created",
+                  "description": "Filter by notification type"
+                },
+                {
+                  "key": "priority",
+                  "value": "high",
+                  "description": "Filter by priority (high, medium, low)"
+                }
+              ]
+            },
+            "description": "Retrieves all notifications with optional filtering by userId, type, and priority."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{NOTIFICATION_SERVICE}}/api/notifications?userId=user-123",
+                  "host": ["{{NOTIFICATION_SERVICE}}"],
+                  "path": ["api", "notifications"],
+                  "query": [
+                    {
+                      "key": "userId",
+                      "value": "user-123"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n  {\n    \"notificationId\": \"notif-12345\",\n    \"userId\": \"user-123\",\n    \"type\": \"order_created\",\n    \"title\": \"Order Placed Successfully!\",\n    \"message\": \"Your order #12345 has been placed and is being prepared. Total: $25.98\",\n    \"priority\": \"high\",\n    \"isRead\": false,\n    \"createdAt\": \"2024-01-15T10:30:00.000Z\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Get Notification by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{NOTIFICATION_SERVICE}}/api/notifications/notif-12345",
+              "host": ["{{NOTIFICATION_SERVICE}}"],
+              "path": ["api", "notifications", "notif-12345"]
+            },
+            "description": "Retrieves detailed information about a specific notification by its ID."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{NOTIFICATION_SERVICE}}/api/notifications/notif-12345",
+                  "host": ["{{NOTIFICATION_SERVICE}}"],
+                  "path": ["api", "notifications", "notif-12345"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"notificationId\": \"notif-12345\",\n  \"userId\": \"user-123\",\n  \"type\": \"order_created\",\n  \"title\": \"Order Placed Successfully!\",\n  \"message\": \"Your order #12345 has been placed and is being prepared. Total: $25.98\",\n  \"priority\": \"high\",\n  \"isRead\": false,\n  \"createdAt\": \"2024-01-15T10:30:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Mark as Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{NOTIFICATION_SERVICE}}/api/notifications/notif-12345/read",
+              "host": ["{{NOTIFICATION_SERVICE}}"],
+              "path": ["api", "notifications", "notif-12345", "read"]
+            },
+            "description": "Marks a specific notification as read."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}"
+                },
+                "url": {
+                  "raw": "{{NOTIFICATION_SERVICE}}/api/notifications/notif-12345/read",
+                  "host": ["{{NOTIFICATION_SERVICE}}"],
+                  "path": ["api", "notifications", "notif-12345", "read"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"notificationId\": \"notif-12345\",\n  \"isRead\": true,\n  \"readAt\": \"2024-01-15T10:35:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Mark All as Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{SAMPLE_USER_ID}}\"\n}"
+            },
+            "url": {
+              "raw": "{{NOTIFICATION_SERVICE}}/api/notifications/read-all",
+              "host": ["{{NOTIFICATION_SERVICE}}"],
+              "path": ["api", "notifications", "read-all"]
+            },
+            "description": "Marks all notifications for a specific user as read."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"userId\": \"user-123\"\n}"
+                },
+                "url": {
+                  "raw": "{{NOTIFICATION_SERVICE}}/api/notifications/read-all",
+                  "host": ["{{NOTIFICATION_SERVICE}}"],
+                  "path": ["api", "notifications", "read-all"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"userId\": \"user-123\",\n  \"markedAsRead\": 5,\n  \"readAt\": \"2024-01-15T10:35:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Notification Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{NOTIFICATION_SERVICE}}/api/notifications/stats",
+              "host": ["{{NOTIFICATION_SERVICE}}"],
+              "path": ["api", "notifications", "stats"]
+            },
+            "description": "Retrieves notification statistics including total counts, read/unread breakdown, and type distribution."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{NOTIFICATION_SERVICE}}/api/notifications/stats",
+                  "host": ["{{NOTIFICATION_SERVICE}}"],
+                  "path": ["api", "notifications", "stats"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"total\": 500,\n  \"unread\": 45,\n  \"read\": 455,\n  \"byType\": {\n    \"order_created\": 150,\n    \"payment_processed\": 150,\n    \"order_confirmed\": 100,\n    \"delivery_assigned\": 50,\n    \"delivery_completed\": 50\n  },\n  \"byPriority\": {\n    \"high\": 200,\n    \"medium\": 250,\n    \"low\": 50\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Send Manual Notification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{SAMPLE_USER_ID}}\",\n  \"type\": \"manual\",\n  \"title\": \"Special Offer!\",\n  \"message\": \"Get 20% off your next order with code SAVE20\",\n  \"priority\": \"medium\"\n}"
+            },
+            "url": {
+              "raw": "{{NOTIFICATION_SERVICE}}/api/notifications/send",
+              "host": ["{{NOTIFICATION_SERVICE}}"],
+              "path": ["api", "notifications", "send"]
+            },
+            "description": "Sends a manual notification to a specific user. This is useful for promotional messages, announcements, or custom notifications."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"userId\": \"user-123\",\n  \"type\": \"manual\",\n  \"title\": \"Special Offer!\",\n  \"message\": \"Get 20% off your next order with code SAVE20\",\n  \"priority\": \"medium\"\n}"
+                },
+                "url": {
+                  "raw": "{{NOTIFICATION_SERVICE}}/api/notifications/send",
+                  "host": ["{{NOTIFICATION_SERVICE}}"],
+                  "path": ["api", "notifications", "send"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"notificationId\": \"notif-67890\",\n  \"userId\": \"user-123\",\n  \"type\": \"manual\",\n  \"title\": \"Special Offer!\",\n  \"message\": \"Get 20% off your next order with code SAVE20\",\n  \"priority\": \"medium\",\n  \"isRead\": false,\n  \"createdAt\": \"2024-01-15T10:35:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{NOTIFICATION_SERVICE}}/health",
+              "host": ["{{NOTIFICATION_SERVICE}}"],
+              "path": ["health"]
+            },
+            "description": "Health check endpoint to verify the service is running and get basic service information."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{NOTIFICATION_SERVICE}}/health",
+                  "host": ["{{NOTIFICATION_SERVICE}}"],
+                  "path": ["health"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"service\": \"notification-service\",\n  \"status\": \"healthy\",\n  \"port\": 5003,\n  \"notificationsCount\": 500\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Delivery Service (5004)",
+      "description": "Delivery management microservice - handles driver assignment and delivery tracking",
+      "item": [
+        {
+          "name": "Assign Delivery",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{SAMPLE_ORDER_ID}}\",\n  \"restaurantId\": \"{{SAMPLE_RESTAURANT_ID}}\",\n  \"deliveryAddress\": {\n    \"street\": \"123 Main St\",\n    \"city\": \"New York\",\n    \"state\": \"NY\",\n    \"zipCode\": \"10001\"\n  },\n  \"estimatedDeliveryTime\": \"2024-01-15T11:00:00.000Z\"\n}"
+            },
+            "url": {
+              "raw": "{{DELIVERY_SERVICE}}/api/delivery/assign",
+              "host": ["{{DELIVERY_SERVICE}}"],
+              "path": ["api", "delivery", "assign"]
+            },
+            "description": "Manually assigns a delivery driver to an order. This is typically called automatically when food is ready, but can be used for manual assignment or reassignment."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"orderId\": \"order-12345\",\n  \"restaurantId\": \"rest-001\",\n  \"deliveryAddress\": {\n    \"street\": \"123 Main St\",\n    \"city\": \"New York\",\n    \"state\": \"NY\",\n    \"zipCode\": \"10001\"\n  },\n  \"estimatedDeliveryTime\": \"2024-01-15T11:00:00.000Z\"\n}"
+                },
+                "url": {
+                  "raw": "{{DELIVERY_SERVICE}}/api/delivery/assign",
+                  "host": ["{{DELIVERY_SERVICE}}"],
+                  "path": ["api", "delivery", "assign"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"deliveryId\": \"delivery-12345\",\n  \"orderId\": \"order-12345\",\n  \"driverId\": \"driver-001\",\n  \"driverName\": \"John Smith\",\n  \"driverPhone\": \"+1-555-1001\",\n  \"vehicle\": \"Honda Civic\",\n  \"licensePlate\": \"ABC-123\",\n  \"status\": \"assigned\",\n  \"assignedAt\": \"2024-01-15T10:30:00.000Z\",\n  \"estimatedDeliveryTime\": \"2024-01-15T11:00:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Complete Delivery",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{SAMPLE_ORDER_ID}}\",\n  \"deliveryId\": \"delivery-12345\",\n  \"driverId\": \"{{SAMPLE_DRIVER_ID}}\",\n  \"deliveredAt\": \"2024-01-15T11:15:00.000Z\",\n  \"notes\": \"Delivered successfully to customer\"\n}"
+            },
+            "url": {
+              "raw": "{{DELIVERY_SERVICE}}/api/delivery/complete",
+              "host": ["{{DELIVERY_SERVICE}}"],
+              "path": ["api", "delivery", "complete"]
+            },
+            "description": "Marks a delivery as completed. This includes a 20-30 second simulation delay to represent the actual delivery process."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"orderId\": \"order-12345\",\n  \"deliveryId\": \"delivery-12345\",\n  \"driverId\": \"driver-001\",\n  \"deliveredAt\": \"2024-01-15T11:15:00.000Z\",\n  \"notes\": \"Delivered successfully to customer\"\n}"
+                },
+                "url": {
+                  "raw": "{{DELIVERY_SERVICE}}/api/delivery/complete",
+                  "host": ["{{DELIVERY_SERVICE}}"],
+                  "path": ["api", "delivery", "complete"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"deliveryId\": \"delivery-12345\",\n  \"orderId\": \"order-12345\",\n  \"status\": \"completed\",\n  \"deliveredAt\": \"2024-01-15T11:15:00.000Z\",\n  \"completionTime\": \"2024-01-15T11:15:25.000Z\",\n  \"notes\": \"Delivered successfully to customer\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Delivery by Order ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{DELIVERY_SERVICE}}/api/delivery/{{SAMPLE_ORDER_ID}}",
+              "host": ["{{DELIVERY_SERVICE}}"],
+              "path": ["api", "delivery", "{{SAMPLE_ORDER_ID}}"]
+            },
+            "description": "Retrieves delivery information for a specific order ID."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{DELIVERY_SERVICE}}/api/delivery/order-12345",
+                  "host": ["{{DELIVERY_SERVICE}}"],
+                  "path": ["api", "delivery", "order-12345"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"deliveryId\": \"delivery-12345\",\n  \"orderId\": \"order-12345\",\n  \"driverId\": \"driver-001\",\n  \"driverName\": \"John Smith\",\n  \"driverPhone\": \"+1-555-1001\",\n  \"vehicle\": \"Honda Civic\",\n  \"licensePlate\": \"ABC-123\",\n  \"status\": \"completed\",\n  \"assignedAt\": \"2024-01-15T10:30:00.000Z\",\n  \"deliveredAt\": \"2024-01-15T11:15:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get All Deliveries",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{DELIVERY_SERVICE}}/api/delivery?status=completed&driverId={{SAMPLE_DRIVER_ID}}",
+              "host": ["{{DELIVERY_SERVICE}}"],
+              "path": ["api", "delivery"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "completed",
+                  "description": "Filter by delivery status (assigned, in_progress, completed)"
+                },
+                {
+                  "key": "driverId",
+                  "value": "{{SAMPLE_DRIVER_ID}}",
+                  "description": "Filter by driver ID"
+                }
+              ]
+            },
+            "description": "Retrieves all deliveries with optional filtering by status and driver ID."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{DELIVERY_SERVICE}}/api/delivery?status=completed",
+                  "host": ["{{DELIVERY_SERVICE}}"],
+                  "path": ["api", "delivery"],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "completed"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n  {\n    \"deliveryId\": \"delivery-12345\",\n    \"orderId\": \"order-12345\",\n    \"driverId\": \"driver-001\",\n    \"driverName\": \"John Smith\",\n    \"status\": \"completed\",\n    \"assignedAt\": \"2024-01-15T10:30:00.000Z\",\n    \"deliveredAt\": \"2024-01-15T11:15:00.000Z\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Get All Drivers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{DELIVERY_SERVICE}}/api/drivers?available=true",
+              "host": ["{{DELIVERY_SERVICE}}"],
+              "path": ["api", "drivers"],
+              "query": [
+                {
+                  "key": "available",
+                  "value": "true",
+                  "description": "Filter by driver availability"
+                }
+              ]
+            },
+            "description": "Retrieves all delivery drivers with optional filtering by availability."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{DELIVERY_SERVICE}}/api/drivers?available=true",
+                  "host": ["{{DELIVERY_SERVICE}}"],
+                  "path": ["api", "drivers"],
+                  "query": [
+                    {
+                      "key": "available",
+                      "value": "true"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n  {\n    \"driverId\": \"driver-001\",\n    \"name\": \"John Smith\",\n    \"phone\": \"+1-555-1001\",\n    \"vehicle\": \"Honda Civic\",\n    \"licensePlate\": \"ABC-123\",\n    \"isAvailable\": true,\n    \"currentLocation\": {\n      \"lat\": 40.7128,\n      \"lng\": -74.006\n    },\n    \"rating\": 4.8,\n    \"totalDeliveries\": 156\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Get Delivery Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{DELIVERY_SERVICE}}/api/delivery/stats",
+              "host": ["{{DELIVERY_SERVICE}}"],
+              "path": ["api", "delivery", "stats"]
+            },
+            "description": "Retrieves delivery statistics including completion rates, average delivery times, and driver performance metrics."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{DELIVERY_SERVICE}}/api/delivery/stats",
+                  "host": ["{{DELIVERY_SERVICE}}"],
+                  "path": ["api", "delivery", "stats"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"totalDeliveries\": 150,\n  \"byStatus\": {\n    \"assigned\": 5,\n    \"in_progress\": 8,\n    \"completed\": 137\n  },\n  \"averageDeliveryTime\": 25.5,\n  \"totalDrivers\": 4,\n  \"availableDrivers\": 3,\n  \"completionRate\": 0.91\n}"
+            }
+          ]
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{DELIVERY_SERVICE}}/health",
+              "host": ["{{DELIVERY_SERVICE}}"],
+              "path": ["health"]
+            },
+            "description": "Health check endpoint to verify the service is running and get basic service information."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{DELIVERY_SERVICE}}/health",
+                  "host": ["{{DELIVERY_SERVICE}}"],
+                  "path": ["health"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"service\": \"delivery-service\",\n  \"status\": \"healthy\",\n  \"port\": 5004,\n  \"deliveriesCount\": 150,\n  \"driversCount\": 4\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Inventory Service (5005)",
+      "description": "Inventory management microservice - handles stock tracking with reservation system",
+      "item": [
+        {
+          "name": "Get All Inventory",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{INVENTORY_SERVICE}}/api/inventory?restaurantId={{SAMPLE_RESTAURANT_ID}}&category=pizza",
+              "host": ["{{INVENTORY_SERVICE}}"],
+              "path": ["api", "inventory"],
+              "query": [
+                {
+                  "key": "restaurantId",
+                  "value": "{{SAMPLE_RESTAURANT_ID}}",
+                  "description": "Filter by restaurant ID"
+                },
+                {
+                  "key": "category",
+                  "value": "pizza",
+                  "description": "Filter by item category"
+                }
+              ]
+            },
+            "description": "Retrieves all inventory items with optional filtering by restaurant ID and category. Shows available quantities (total - reserved)."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{INVENTORY_SERVICE}}/api/inventory?restaurantId=rest-001",
+                  "host": ["{{INVENTORY_SERVICE}}"],
+                  "path": ["api", "inventory"],
+                  "query": [
+                    {
+                      "key": "restaurantId",
+                      "value": "rest-001"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n  {\n    \"itemId\": \"item-001\",\n    \"name\": \"Margherita Pizza\",\n    \"restaurantId\": \"rest-001\",\n    \"quantity\": 50,\n    \"reservedQuantity\": 5,\n    \"availableQuantity\": 45,\n    \"price\": 12.99,\n    \"category\": \"pizza\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Get Inventory by Item ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{INVENTORY_SERVICE}}/api/inventory/{{SAMPLE_ITEM_ID}}",
+              "host": ["{{INVENTORY_SERVICE}}"],
+              "path": ["api", "inventory", "{{SAMPLE_ITEM_ID}}"]
+            },
+            "description": "Retrieves detailed inventory information for a specific item ID."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{INVENTORY_SERVICE}}/api/inventory/item-001",
+                  "host": ["{{INVENTORY_SERVICE}}"],
+                  "path": ["api", "inventory", "item-001"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"itemId\": \"item-001\",\n  \"name\": \"Margherita Pizza\",\n  \"restaurantId\": \"rest-001\",\n  \"quantity\": 50,\n  \"reservedQuantity\": 5,\n  \"availableQuantity\": 45,\n  \"price\": 12.99,\n  \"category\": \"pizza\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Add Stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"itemId\": \"{{SAMPLE_ITEM_ID}}\",\n  \"quantity\": 20,\n  \"reason\": \"restock\"\n}"
+            },
+            "url": {
+              "raw": "{{INVENTORY_SERVICE}}/api/inventory/add",
+              "host": ["{{INVENTORY_SERVICE}}"],
+              "path": ["api", "inventory", "add"]
+            },
+            "description": "Adds stock to an existing inventory item. This increases the total quantity available."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"itemId\": \"item-001\",\n  \"quantity\": 20,\n  \"reason\": \"restock\"\n}"
+                },
+                "url": {
+                  "raw": "{{INVENTORY_SERVICE}}/api/inventory/add",
+                  "host": ["{{INVENTORY_SERVICE}}"],
+                  "path": ["api", "inventory", "add"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"itemId\": \"item-001\",\n  \"name\": \"Margherita Pizza\",\n  \"previousQuantity\": 50,\n  \"addedQuantity\": 20,\n  \"newQuantity\": 70,\n  \"availableQuantity\": 65,\n  \"reason\": \"restock\",\n  \"updatedAt\": \"2024-01-15T10:30:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create New Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Supreme Pizza\",\n  \"restaurantId\": \"{{SAMPLE_RESTAURANT_ID}}\",\n  \"quantity\": 30,\n  \"price\": 16.99,\n  \"category\": \"pizza\"\n}"
+            },
+            "url": {
+              "raw": "{{INVENTORY_SERVICE}}/api/inventory/create",
+              "host": ["{{INVENTORY_SERVICE}}"],
+              "path": ["api", "inventory", "create"]
+            },
+            "description": "Creates a new inventory item with initial stock quantity."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Supreme Pizza\",\n  \"restaurantId\": \"rest-001\",\n  \"quantity\": 30,\n  \"price\": 16.99,\n  \"category\": \"pizza\"\n}"
+                },
+                "url": {
+                  "raw": "{{INVENTORY_SERVICE}}/api/inventory/create",
+                  "host": ["{{INVENTORY_SERVICE}}"],
+                  "path": ["api", "inventory", "create"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"itemId\": \"item-006\",\n  \"name\": \"Supreme Pizza\",\n  \"restaurantId\": \"rest-001\",\n  \"quantity\": 30,\n  \"reservedQuantity\": 0,\n  \"availableQuantity\": 30,\n  \"price\": 16.99,\n  \"category\": \"pizza\",\n  \"createdAt\": \"2024-01-15T10:30:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Inventory Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{INVENTORY_SERVICE}}/api/inventory/stats",
+              "host": ["{{INVENTORY_SERVICE}}"],
+              "path": ["api", "inventory", "stats"]
+            },
+            "description": "Retrieves inventory statistics including total items, low stock alerts, and reservation metrics."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{INVENTORY_SERVICE}}/api/inventory/stats",
+                  "host": ["{{INVENTORY_SERVICE}}"],
+                  "path": ["api", "inventory", "stats"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"totalItems\": 15,\n  \"totalStock\": 500,\n  \"totalReserved\": 25,\n  \"totalAvailable\": 475,\n  \"lowStockItems\": 3,\n  \"activeReservations\": 8,\n  \"byCategory\": {\n    \"pizza\": 5,\n    \"burger\": 4,\n    \"salad\": 3,\n    \"drink\": 3\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get All Reservations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{INVENTORY_SERVICE}}/api/inventory/reservations?status=active",
+              "host": ["{{INVENTORY_SERVICE}}"],
+              "path": ["api", "inventory", "reservations"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "active",
+                  "description": "Filter by reservation status (active, committed, released)"
+                }
+              ]
+            },
+            "description": "Retrieves all inventory reservations with optional filtering by status. Shows which orders have reserved stock."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{INVENTORY_SERVICE}}/api/inventory/reservations?status=active",
+                  "host": ["{{INVENTORY_SERVICE}}"],
+                  "path": ["api", "inventory", "reservations"],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "active"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n  {\n    \"orderId\": \"order-12345\",\n    \"items\": [\n      {\n        \"itemId\": \"item-001\",\n        \"quantity\": 2\n      }\n    ],\n    \"status\": \"active\",\n    \"reservedAt\": \"2024-01-15T10:30:00.000Z\",\n    \"expiresAt\": \"2024-01-15T10:35:00.000Z\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Get Available Quantity",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{INVENTORY_SERVICE}}/api/inventory/{{SAMPLE_ITEM_ID}}/available",
+              "host": ["{{INVENTORY_SERVICE}}"],
+              "path": ["api", "inventory", "{{SAMPLE_ITEM_ID}}", "available"]
+            },
+            "description": "Gets the available quantity for a specific item (total quantity minus reserved quantity)."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{INVENTORY_SERVICE}}/api/inventory/item-001/available",
+                  "host": ["{{INVENTORY_SERVICE}}"],
+                  "path": ["api", "inventory", "item-001", "available"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"itemId\": \"item-001\",\n  \"name\": \"Margherita Pizza\",\n  \"totalQuantity\": 50,\n  \"reservedQuantity\": 5,\n  \"availableQuantity\": 45\n}"
+            }
+          ]
+        },
+        {
+          "name": "Release Reservation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"payment_failed\"\n}"
+            },
+            "url": {
+              "raw": "{{INVENTORY_SERVICE}}/api/inventory/reservations/{{SAMPLE_ORDER_ID}}/release",
+              "host": ["{{INVENTORY_SERVICE}}"],
+              "path": [
+                "api",
+                "inventory",
+                "reservations",
+                "{{SAMPLE_ORDER_ID}}",
+                "release"
+              ]
+            },
+            "description": "Manually releases a reservation for a specific order. This makes the reserved stock available again."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"payment_failed\"\n}"
+                },
+                "url": {
+                  "raw": "{{INVENTORY_SERVICE}}/api/inventory/reservations/order-12345/release",
+                  "host": ["{{INVENTORY_SERVICE}}"],
+                  "path": [
+                    "api",
+                    "inventory",
+                    "reservations",
+                    "order-12345",
+                    "release"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"orderId\": \"order-12345\",\n  \"status\": \"released\",\n  \"reason\": \"payment_failed\",\n  \"releasedAt\": \"2024-01-15T10:30:00.000Z\",\n  \"itemsReleased\": [\n    {\n      \"itemId\": \"item-001\",\n      \"quantity\": 2\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{INVENTORY_SERVICE}}/health",
+              "host": ["{{INVENTORY_SERVICE}}"],
+              "path": ["health"]
+            },
+            "description": "Health check endpoint to verify the service is running and get basic service information."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{INVENTORY_SERVICE}}/health",
+                  "host": ["{{INVENTORY_SERVICE}}"],
+                  "path": ["health"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"service\": \"inventory-service\",\n  \"status\": \"healthy\",\n  \"port\": 5005,\n  \"itemsCount\": 15,\n  \"reservationsCount\": 8\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. Restaurant Service (5006)",
+      "description": "Restaurant management microservice - handles restaurants, menus, and kitchen operations",
+      "item": [
+        {
+          "name": "Get All Restaurants",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{RESTAURANT_SERVICE}}/api/restaurants?cuisine=Italian&isActive=true",
+              "host": ["{{RESTAURANT_SERVICE}}"],
+              "path": ["api", "restaurants"],
+              "query": [
+                {
+                  "key": "cuisine",
+                  "value": "Italian",
+                  "description": "Filter by cuisine type"
+                },
+                {
+                  "key": "isActive",
+                  "value": "true",
+                  "description": "Filter by active status"
+                }
+              ]
+            },
+            "description": "Retrieves all restaurants with optional filtering by cuisine and active status."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{RESTAURANT_SERVICE}}/api/restaurants?cuisine=Italian",
+                  "host": ["{{RESTAURANT_SERVICE}}"],
+                  "path": ["api", "restaurants"],
+                  "query": [
+                    {
+                      "key": "cuisine",
+                      "value": "Italian"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n  {\n    \"restaurantId\": \"rest-001\",\n    \"name\": \"Mario's Pizza Palace\",\n    \"cuisine\": \"Italian\",\n    \"address\": \"123 Main St, Downtown\",\n    \"phone\": \"+1-555-0123\",\n    \"rating\": 4.5,\n    \"deliveryTime\": \"25-35 min\",\n    \"deliveryFee\": 2.99,\n    \"isActive\": true,\n    \"createdAt\": \"2024-01-15T10:30:00.000Z\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Get Restaurant by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{RESTAURANT_SERVICE}}/api/restaurants/{{SAMPLE_RESTAURANT_ID}}",
+              "host": ["{{RESTAURANT_SERVICE}}"],
+              "path": ["api", "restaurants", "{{SAMPLE_RESTAURANT_ID}}"]
+            },
+            "description": "Retrieves detailed information about a specific restaurant by its ID."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{RESTAURANT_SERVICE}}/api/restaurants/rest-001",
+                  "host": ["{{RESTAURANT_SERVICE}}"],
+                  "path": ["api", "restaurants", "rest-001"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"restaurantId\": \"rest-001\",\n  \"name\": \"Mario's Pizza Palace\",\n  \"cuisine\": \"Italian\",\n  \"address\": \"123 Main St, Downtown\",\n  \"phone\": \"+1-555-0123\",\n  \"rating\": 4.5,\n  \"deliveryTime\": \"25-35 min\",\n  \"deliveryFee\": 2.99,\n  \"isActive\": true,\n  \"createdAt\": \"2024-01-15T10:30:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Restaurant Menu",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{RESTAURANT_SERVICE}}/api/restaurants/{{SAMPLE_RESTAURANT_ID}}/menu?category=pizza",
+              "host": ["{{RESTAURANT_SERVICE}}"],
+              "path": [
+                "api",
+                "restaurants",
+                "{{SAMPLE_RESTAURANT_ID}}",
+                "menu"
+              ],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "pizza",
+                  "description": "Filter menu items by category"
+                }
+              ]
+            },
+            "description": "Retrieves the menu for a specific restaurant with optional filtering by category."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{RESTAURANT_SERVICE}}/api/restaurants/rest-001/menu?category=pizza",
+                  "host": ["{{RESTAURANT_SERVICE}}"],
+                  "path": ["api", "restaurants", "rest-001", "menu"],
+                  "query": [
+                    {
+                      "key": "category",
+                      "value": "pizza"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n  {\n    \"itemId\": \"item-001\",\n    \"name\": \"Margherita Pizza\",\n    \"description\": \"Classic tomato and mozzarella pizza\",\n    \"price\": 12.99,\n    \"category\": \"pizza\",\n    \"isAvailable\": true,\n    \"preparationTime\": \"15-20 min\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Create Restaurant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Italian Bistro\",\n  \"cuisine\": \"Italian\",\n  \"address\": \"456 Oak Ave, Midtown\",\n  \"phone\": \"+1-555-9999\",\n  \"rating\": 4.0,\n  \"deliveryTime\": \"30-40 min\",\n  \"deliveryFee\": 3.99,\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{RESTAURANT_SERVICE}}/api/restaurants",
+              "host": ["{{RESTAURANT_SERVICE}}"],
+              "path": ["api", "restaurants"]
+            },
+            "description": "Creates a new restaurant with basic information."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"New Italian Bistro\",\n  \"cuisine\": \"Italian\",\n  \"address\": \"456 Oak Ave, Midtown\",\n  \"phone\": \"+1-555-9999\",\n  \"rating\": 4.0,\n  \"deliveryTime\": \"30-40 min\",\n  \"deliveryFee\": 3.99,\n  \"isActive\": true\n}"
+                },
+                "url": {
+                  "raw": "{{RESTAURANT_SERVICE}}/api/restaurants",
+                  "host": ["{{RESTAURANT_SERVICE}}"],
+                  "path": ["api", "restaurants"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Restaurant created successfully\",\n  \"restaurant\": {\n    \"restaurantId\": \"rest-001\",\n    \"name\": \"New Italian Bistro\",\n    \"cuisine\": \"Italian\",\n    \"address\": \"456 Oak Ave, Midtown\",\n    \"phone\": \"+1-555-9999\",\n    \"rating\": 4.0,\n    \"deliveryTime\": \"30-40 min\",\n    \"deliveryFee\": 3.99,\n    \"isActive\": true,\n    \"createdAt\": \"2024-01-15T10:30:00.000Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Add Menu Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Supreme Pizza\",\n  \"description\": \"Loaded pizza with pepperoni, sausage, mushrooms, and peppers\",\n  \"price\": 18.99,\n  \"category\": \"pizza\",\n  \"preparationTime\": 20\n}"
+            },
+            "url": {
+              "raw": "{{RESTAURANT_SERVICE}}/api/restaurants/{{SAMPLE_RESTAURANT_ID}}/menu",
+              "host": ["{{RESTAURANT_SERVICE}}"],
+              "path": ["api", "restaurants", "{{SAMPLE_RESTAURANT_ID}}", "menu"]
+            },
+            "description": "Adds a new menu item to a specific restaurant."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Supreme Pizza\",\n  \"description\": \"Loaded pizza with pepperoni, sausage, mushrooms, and peppers\",\n  \"price\": 18.99,\n  \"category\": \"pizza\",\n  \"preparationTime\": 20\n}"
+                },
+                "url": {
+                  "raw": "{{RESTAURANT_SERVICE}}/api/restaurants/rest-001/menu",
+                  "host": ["{{RESTAURANT_SERVICE}}"],
+                  "path": ["api", "restaurants", "rest-001", "menu"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Menu item added successfully\",\n  \"menuItem\": {\n    \"itemId\": \"item-010\",\n    \"restaurantId\": \"rest-001\",\n    \"name\": \"Supreme Pizza\",\n    \"description\": \"Loaded pizza with pepperoni, sausage, mushrooms, and peppers\",\n    \"price\": 18.99,\n    \"category\": \"pizza\",\n    \"isAvailable\": true,\n    \"preparationTime\": 20,\n    \"createdAt\": \"2024-01-15T10:30:00.000Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Restaurant Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{RESTAURANT_SERVICE}}/api/restaurants/stats",
+              "host": ["{{RESTAURANT_SERVICE}}"],
+              "path": ["api", "restaurants", "stats"]
+            },
+            "description": "Retrieves restaurant statistics including total restaurants, average rating, and menu item counts."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{RESTAURANT_SERVICE}}/api/restaurants/stats",
+                  "host": ["{{RESTAURANT_SERVICE}}"],
+                  "path": ["api", "restaurants", "stats"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Restaurant statistics retrieved successfully\",\n  \"stats\": {\n    \"totalRestaurants\": 3,\n    \"activeRestaurants\": 3,\n    \"totalMenuItems\": 9,\n    \"averageRating\": 4.47,\n    \"byCuisine\": {\n      \"Italian\": 1,\n      \"American\": 1,\n      \"Thai\": 1\n    },\n    \"byCategory\": {\n      \"pizza\": 2,\n      \"burger\": 2,\n      \"salad\": 1,\n      \"sides\": 1,\n      \"noodles\": 1,\n      \"curry\": 1,\n      \"appetizer\": 1\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Kitchen Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{RESTAURANT_SERVICE}}/api/kitchen/orders?status=preparing&restaurantId={{SAMPLE_RESTAURANT_ID}}",
+              "host": ["{{RESTAURANT_SERVICE}}"],
+              "path": ["api", "kitchen", "orders"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "preparing",
+                  "description": "Filter by order status (received, preparing, ready)"
+                },
+                {
+                  "key": "restaurantId",
+                  "value": "{{SAMPLE_RESTAURANT_ID}}",
+                  "description": "Filter by restaurant ID"
+                }
+              ]
+            },
+            "description": "Retrieves all kitchen orders with optional filtering by status and restaurant ID."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{RESTAURANT_SERVICE}}/api/kitchen/orders?status=preparing",
+                  "host": ["{{RESTAURANT_SERVICE}}"],
+                  "path": ["api", "kitchen", "orders"],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "preparing"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Kitchen orders retrieved successfully\",\n  \"orders\": [\n    {\n      \"orderId\": \"order-12345\",\n      \"restaurantId\": \"rest-001\",\n      \"userId\": \"user-123\",\n      \"items\": [\n        {\n          \"itemId\": \"item-001\",\n          \"quantity\": 2,\n          \"price\": 12.99\n        }\n      ],\n      \"total\": 25.98,\n      \"status\": \"preparing\",\n      \"receivedAt\": \"2024-01-15T10:30:00.000Z\",\n      \"startedAt\": \"2024-01-15T10:30:05.000Z\",\n      \"estimatedReadyTime\": \"2024-01-15T10:30:25.000Z\",\n      \"preparationTime\": 20\n    }\n  ],\n  \"total\": 1,\n  \"breakdown\": {\n    \"received\": 0,\n    \"preparing\": 1,\n    \"ready\": 0\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Kitchen Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{RESTAURANT_SERVICE}}/api/kitchen/orders/{{SAMPLE_ORDER_ID}}",
+              "host": ["{{RESTAURANT_SERVICE}}"],
+              "path": ["api", "kitchen", "orders", "{{SAMPLE_ORDER_ID}}"]
+            },
+            "description": "Retrieves detailed information about a specific kitchen order by its ID."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{RESTAURANT_SERVICE}}/api/kitchen/orders/order-12345",
+                  "host": ["{{RESTAURANT_SERVICE}}"],
+                  "path": ["api", "kitchen", "orders", "order-12345"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Kitchen order retrieved successfully\",\n  \"order\": {\n    \"orderId\": \"order-12345\",\n    \"restaurantId\": \"rest-001\",\n    \"userId\": \"user-123\",\n    \"items\": [\n      {\n        \"itemId\": \"item-001\",\n        \"quantity\": 2,\n        \"price\": 12.99\n      }\n    ],\n    \"total\": 25.98,\n    \"status\": \"ready\",\n    \"receivedAt\": \"2024-01-15T10:30:00.000Z\",\n    \"startedAt\": \"2024-01-15T10:30:05.000Z\",\n    \"readyAt\": \"2024-01-15T10:30:25.000Z\",\n    \"preparationTime\": 20\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Mark Order as Ready",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{RESTAURANT_SERVICE}}/api/kitchen/orders/{{SAMPLE_ORDER_ID}}/ready",
+              "host": ["{{RESTAURANT_SERVICE}}"],
+              "path": [
+                "api",
+                "kitchen",
+                "orders",
+                "{{SAMPLE_ORDER_ID}}",
+                "ready"
+              ]
+            },
+            "description": "Manually marks a kitchen order as ready for delivery. This bypasses the automatic preparation simulation."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}"
+                },
+                "url": {
+                  "raw": "{{RESTAURANT_SERVICE}}/api/kitchen/orders/order-12345/ready",
+                  "host": ["{{RESTAURANT_SERVICE}}"],
+                  "path": ["api", "kitchen", "orders", "order-12345", "ready"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Order marked as ready successfully\",\n  \"orderId\": \"order-12345\",\n  \"readyAt\": \"2024-01-15T10:30:25.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Kitchen Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{RESTAURANT_SERVICE}}/api/kitchen/stats",
+              "host": ["{{RESTAURANT_SERVICE}}"],
+              "path": ["api", "kitchen", "stats"]
+            },
+            "description": "Retrieves kitchen statistics including order counts, preparation times, and performance metrics."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{RESTAURANT_SERVICE}}/api/kitchen/stats",
+                  "host": ["{{RESTAURANT_SERVICE}}"],
+                  "path": ["api", "kitchen", "stats"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Kitchen statistics retrieved successfully\",\n  \"stats\": {\n    \"totalOrders\": 25,\n    \"byStatus\": {\n      \"received\": 2,\n      \"preparing\": 3,\n      \"ready\": 20\n    },\n    \"byRestaurant\": {\n      \"rest-001\": 10,\n      \"rest-002\": 8,\n      \"rest-003\": 7\n    },\n    \"averagePreparationTime\": 22,\n    \"totalPreparationTime\": 550\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{RESTAURANT_SERVICE}}/health",
+              "host": ["{{RESTAURANT_SERVICE}}"],
+              "path": ["health"]
+            },
+            "description": "Health check endpoint to verify the service is running and get basic service information."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{RESTAURANT_SERVICE}}/health",
+                  "host": ["{{RESTAURANT_SERVICE}}"],
+                  "path": ["health"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"service\": \"restaurant-service\",\n  \"status\": \"healthy\",\n  \"port\": 5006,\n  \"restaurantsCount\": 3,\n  \"kitchenOrders\": {\n    \"total\": 25,\n    \"preparing\": 3,\n    \"ready\": 20\n  },\n  \"preparationTime\": {\n    \"min\": 20,\n    \"max\": 30\n  },\n  \"totalMenuItems\": 9,\n  \"timestamp\": \"2024-01-15T10:30:00.000Z\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

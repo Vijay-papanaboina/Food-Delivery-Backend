@@ -1,0 +1,34 @@
+{
+  "name": "food-ordering-microservices",
+  "version": "1.0.0",
+  "description": "Food ordering system with microservices architecture using Kafka",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node start-all-services.js",
+    "dev": "concurrently \"npm run dev --workspace=order-service\" \"npm run dev --workspace=payment-service\" \"npm run dev --workspace=delivery-service\" \"npm run dev --workspace=restaurant-service\" \"npm run dev --workspace=notification-service\"",
+    "install-all": "npm install && npm install --workspace=order-service && npm install --workspace=payment-service && npm install --workspace=delivery-service && npm install --workspace=restaurant-service && npm install --workspace=notification-service"
+  },
+  "keywords": [
+    "microservices",
+    "kafka",
+    "food-ordering",
+    "nodejs",
+    "express"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "kafkajs": "^2.2.4"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "workspaces": [
+    "order-service",
+    "payment-service",
+    "delivery-service",
+    "restaurant-service",
+    "notification-service"
+  ]
+}

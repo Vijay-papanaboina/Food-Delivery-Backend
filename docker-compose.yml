@@ -1,0 +1,132 @@
+services:
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      # KRaft mode configuration (Kafka without Zookeeper)
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://ocean.agrifacts.space:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CONFLUENT_SCHEMA_REGISTRY_ENABLED: "false"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:29093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+
+      # Topic creation and configuration
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+
+      # Message retention settings
+      KAFKA_LOG_RETENTION_HOURS: 168 # 7 days
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824 # 1GB
+
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "kafka-broker-api-versions",
+          "--bootstrap-server",
+          "localhost:9092",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Topic creation service
+  kafka-topics:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka-topics
+    depends_on:
+      kafka:
+        condition: service_healthy
+    command: >
+      bash -c "
+        echo 'Waiting for Kafka to be ready...'
+        sleep 30
+        
+        echo 'Creating topics for food ordering microservices...'
+        
+        # Create order-created topic (3 partitions for high throughput)
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic order-created --partitions 3 --replication-factor 1
+        
+        # Create payment-processed topic (2 partitions)
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic payment-processed --partitions 2 --replication-factor 1
+        
+        # inventory-updated removed (inventory service deleted)
+        
+            # Create order-confirmed topic (2 partitions)
+            kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic order-confirmed --partitions 2 --replication-factor 1
+            
+            # Create food-ready topic (2 partitions)
+            kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic food-ready --partitions 2 --replication-factor 1
+            
+            # Create delivery-assigned topic (2 partitions)
+            kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic delivery-assigned --partitions 2 --replication-factor 1
+        
+        # Create delivery-completed topic (2 partitions)
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic delivery-completed --partitions 2 --replication-factor 1
+        
+        # Create notifications topic (1 partition for ordered processing)
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic notifications --partitions 1 --replication-factor 1
+        
+        echo 'All topics created successfully!'
+        echo 'Listing all topics:'
+        kafka-topics --list --bootstrap-server kafka:9092
+        
+        echo 'Topic creation completed. Container will exit.'
+      "
+    restart: "no"
+
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: microservices
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+
+  # 🆕 Schema initialization container
+  schema-init:
+    image: postgres:16
+    container_name: schema-init
+    depends_on:
+      - postgres
+    environment:
+      PGPASSWORD: app
+    command: >
+      bash -c "
+        echo '⏳ Waiting for Postgres to be ready...';
+        until pg_isready -h postgres -p 5432 -U app > /dev/null 2>&1; do
+          sleep 2;
+        done;
+        echo '✅ Postgres is ready, creating schemas...';
+        psql -h postgres -U app -d microservices -c 'CREATE SCHEMA IF NOT EXISTS notification_svc;';
+        echo '✅ Schemas created successfully.';
+      "
+    restart: "no"
+
+volumes:
+  kafka-data:
+    driver: local
+
+  pg-data:
+    driver: local
+
+networks:
+  default:
+    name: kafka-network
