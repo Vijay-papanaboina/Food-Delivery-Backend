@@ -67,4 +67,62 @@ export const listPaymentMethods = (req, res) => {
   }
 };
 
+export const processPayment = async (req, res) => {
+  try {
+    const { orderId, amount, method, userId } = req.body;
+    
+    // Validate required fields
+    if (!orderId || !amount || !method || !userId) {
+      return res.status(400).json({
+        error: "Missing required fields: orderId, amount, method, userId",
+      });
+    }
+    
+    // Validate data types
+    if (typeof orderId !== 'string' || typeof userId !== 'string' || typeof method !== 'string') {
+      return res.status(400).json({ 
+        error: "orderId, userId, and method must be strings" 
+      });
+    }
+    
+    if (typeof amount !== 'number' || amount <= 0) {
+      return res.status(400).json({ 
+        error: "amount must be a positive number" 
+      });
+    }
+    
+    // Validate payment method
+    if (!PAYMENT_CONFIG.successRates[method]) {
+      return res.status(400).json({ 
+        error: `Invalid payment method: ${method}. Available methods: ${Object.keys(PAYMENT_CONFIG.successRates).join(', ')}` 
+      });
+    }
+
+    // Import processPayment handler
+    const { processPayment: processPaymentHandler } = await import("../handlers/payment.handlers.js");
+    
+    // Process payment
+    const payment = await processPaymentHandler(orderId, amount, method, userId, req.producer, "payment-service");
+    
+    res.status(201).json({
+      message: "Payment processed successfully",
+      payment: {
+        paymentId: payment.paymentId,
+        orderId: payment.orderId,
+        amount: payment.amount,
+        method: payment.method,
+        userId: payment.userId,
+        status: payment.status,
+        transactionId: payment.transactionId,
+        failureReason: payment.failureReason,
+        createdAt: payment.createdAt,
+        processedAt: payment.processedAt
+      }
+    });
+  } catch (error) {
+    console.error(`❌ [payment-service] Error processing payment:`, error.message);
+    res.status(500).json({ error: "Failed to process payment", details: error.message });
+  }
+};
+
 

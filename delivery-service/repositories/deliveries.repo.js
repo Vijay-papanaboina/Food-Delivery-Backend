@@ -31,6 +31,24 @@ export async function upsertDelivery(d) {
     });
 }
 
+// Update only selected fields on an existing delivery row
+export async function updateDeliveryFields(deliveryId, fields) {
+  const updateSet = {};
+  if (fields.status !== undefined) updateSet.status = fields.status;
+  if (fields.assignedAt !== undefined) updateSet.assignedAt = fields.assignedAt ? new Date(fields.assignedAt) : null;
+  if (fields.estimatedDeliveryTime !== undefined)
+    updateSet.estimatedDeliveryTime = fields.estimatedDeliveryTime ? new Date(fields.estimatedDeliveryTime) : null;
+  if (fields.actualDeliveryTime !== undefined)
+    updateSet.actualDeliveryTime = fields.actualDeliveryTime ? new Date(fields.actualDeliveryTime) : null;
+
+  if (Object.keys(updateSet).length === 0) return;
+
+  await db
+    .update(deliveries)
+    .set(updateSet)
+    .where(eq(deliveries.deliveryId, deliveryId));
+}
+
 export async function getDelivery(deliveryId) {
   const rows = await db
     .select({

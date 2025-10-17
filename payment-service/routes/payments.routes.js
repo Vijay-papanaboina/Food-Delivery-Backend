@@ -1,5 +1,11 @@
 import { Router } from "express";
-import { getPaymentForOrder, listPayments, paymentStats, listPaymentMethods } from "../controllers/payments.controller.js";
+import {
+  getPaymentForOrder,
+  listPayments,
+  paymentStats,
+  listPaymentMethods,
+  processPayment,
+} from "../controllers/payments.controller.js";
 
 export default function paymentsRoutes() {
   const router = Router();
@@ -7,7 +13,6 @@ export default function paymentsRoutes() {
   router.get("/api/payments", listPayments);
   router.get("/api/payments/stats", paymentStats);
   router.get("/api/payments/methods", listPaymentMethods);
+  router.post("/api/payments", processPayment);
   return router;
 }
-
-

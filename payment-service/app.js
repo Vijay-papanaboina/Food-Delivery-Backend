@@ -5,17 +5,23 @@ import { getPaymentsCount } from "./repositories/payments.repo.js";
 
 const SERVICE_NAME = process.env.SERVICE_NAME || "payment-service";
 
-function createApp() {
+function createApp(producer) {
   const app = express();
 
   // Middleware
   app.use(cors());
   app.use(express.json());
 
+  // Make producer available in requests
+  app.use((req, res, next) => {
+    req.producer = producer;
+    next();
+  });
+
   // Database will be used for all payment storage
 
   // Mount routes
-  app.use('/', buildRoutes());
+  app.use("/", buildRoutes());
 
   // Health check endpoint
   app.get("/health", async (req, res) => {

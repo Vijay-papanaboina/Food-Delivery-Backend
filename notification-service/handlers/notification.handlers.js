@@ -117,10 +117,6 @@ export async function handleEvent(topic, data, serviceName) {
 
   // Simulate sending notification (log-only, no DB persistence)
   await sendNotification(notification, serviceName);
-
-  console.log(
-    `📧 [${serviceName}] Generated notification for user ${userId}: ${notification.title}`
-  );
 }
 
 
@@ -136,34 +132,11 @@ export async function sendNotification(notification, serviceName) {
     notification.read = notification.read || false;
     notification.shouldShowToast = notification.shouldShowToast !== false;
 
-    console.log(
-      `📤 [${serviceName}] Sending notification: ${notification.title}`
-    );
-
-    // Simulate different notification channels based on priority (log-only)
-    if (notification.priority === "high") {
-      // High priority: Send email, SMS, and push notification
-      console.log(`📧 [${serviceName}] Email sent to user ${notification.userId}`);
-      console.log(`📱 [${serviceName}] SMS sent to user ${notification.userId}`);
-      console.log(`🔔 [${serviceName}] Push notification sent to user ${notification.userId}`);
-      
-
-    } else if (notification.priority === "medium") {
-      // Medium priority: Send email and push notification
-      console.log(`📧 [${serviceName}] Email sent to user ${notification.userId}`);
-      console.log(`🔔 [${serviceName}] Push notification sent to user ${notification.userId}`);
-      
-    } else {
-      // Low priority: Send push notification only
-      console.log(`🔔 [${serviceName}] Push notification sent to user ${notification.userId}`);
-      
-    }
-
     // Simulate delivery delay
-    await new Promise((resolve) => setTimeout(resolve, 100 + Math.random() * 200));
+    await new Promise((resolve) => setTimeout(resolve, 50 + Math.random() * 100));
 
     console.log(
-      `✅ [${serviceName}] Notification delivered successfully: ${notification.notificationId}`
+      `📱 [${serviceName}] ${notification.title} → ${notification.userId}`
     );
   } catch (error) {
     console.error(

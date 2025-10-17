@@ -14,18 +14,14 @@ export async function upsertDriver(driver) {
       isAvailable: driver.isAvailable,
       currentLocationLat: driver.currentLocation?.lat != null ? String(driver.currentLocation.lat) : null,
       currentLocationLng: driver.currentLocation?.lng != null ? String(driver.currentLocation.lng) : null,
-      rating: driver.rating != null ? String(driver.rating) : undefined,
-      totalDeliveries: driver.totalDeliveries != null ? String(driver.totalDeliveries) : undefined,
+      rating: driver.rating != null ? String(driver.rating) : "0.0",
+      totalDeliveries: driver.totalDeliveries != null ? String(driver.totalDeliveries) : "0",
       createdAt: driver.createdAt ? new Date(driver.createdAt) : undefined,
-      updatedAt: new Date(),
+      updatedAt: driver.updatedAt ? new Date(driver.updatedAt) : new Date(),
     })
     .onConflictDoUpdate({
       target: drivers.driverId,
       set: {
-        name: sql`excluded.name`,
-        phone: sql`excluded.phone`,
-        vehicle: sql`excluded.vehicle`,
-        licensePlate: sql`excluded.license_plate`,
         isAvailable: sql`excluded.is_available`,
         currentLocationLat: sql`excluded.current_location_lat`,
         currentLocationLng: sql`excluded.current_location_lng`,

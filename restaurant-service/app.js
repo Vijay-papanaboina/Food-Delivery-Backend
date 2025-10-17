@@ -1,21 +1,27 @@
 import express from "express";
 import cors from "cors";
 import buildRoutes from "./routes/index.routes.js";
-import { pool, getRestaurantStats } from "./config/db.js";
+import { getRestaurantStats } from "./repositories/restaurants.repo.js";
 
 const SERVICE_NAME = process.env.SERVICE_NAME || "restaurant-service";
 
-function createApp() {
+function createApp(producer) {
   const app = express();
 
   // Middleware
   app.use(cors());
   app.use(express.json());
 
+  // Make producer available in requests
+  app.use((req, res, next) => {
+    req.producer = producer;
+    next();
+  });
+
   // Database will be used for all restaurant storage
 
   // Mount routes
-  app.use('/', buildRoutes());
+  app.use("/", buildRoutes());
 
   // Health check endpoint
   app.get("/health", async (req, res) => {

@@ -64,7 +64,7 @@ services:
         kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic payment-processed --partitions 2 --replication-factor 1
         
         # inventory-updated removed (inventory service deleted)
-    
+
         # Create order-confirmed topic (2 partitions)
         kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic order-confirmed --partitions 2 --replication-factor 1
         
@@ -73,7 +73,10 @@ services:
         
         # Create delivery-assigned topic (2 partitions)
         kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic delivery-assigned --partitions 2 --replication-factor 1
-    
+
+        # Create delivery-picked-up topic (2 partitions)
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic delivery-picked-up --partitions 2 --replication-factor 1
+        
         # Create delivery-completed topic (2 partitions)
         kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic delivery-completed --partitions 2 --replication-factor 1
         

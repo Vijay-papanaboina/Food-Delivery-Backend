@@ -1,23 +1,27 @@
 import { upsertRestaurant } from "../repositories/restaurants.repo.js";
 import { upsertMenuItem } from "../repositories/menu.repo.js";
-import { upsertKitchenOrder, getKitchenOrder } from "../repositories/kitchen.repo.js";
+import {
+  upsertKitchenOrder,
+  getKitchenOrder,
+} from "../repositories/kitchen.repo.js";
 import { publishMessage, TOPICS } from "../config/kafka.js";
 
-// Preparation configuration
+// Preparation configuration (10 seconds fixed)
 const PREPARATION_CONFIG = {
-  minTime: 20000, // 20 seconds in milliseconds
-  maxTime: 30000, // 30 seconds in milliseconds
+  minTime: 10000, // 10 seconds in milliseconds
+  maxTime: 10000, // 10 seconds in milliseconds
 };
 
 /**
  * Handle order confirmed event
- * Starts food preparation process with simulation delay
+ * Creates kitchen order record but does NOT start automatic preparation
  */
 export async function handleOrderConfirmed(orderData, producer, serviceName) {
-  const { orderId, restaurantId, userId, items, total, deliveryAddress } = orderData;
+  const { orderId, restaurantId, userId, items, total, deliveryAddress } =
+    orderData;
 
   console.log(
-    `🍳 [${serviceName}] Starting food preparation for order ${orderId}`
+    `🍳 [${serviceName}] Received order ${orderId} for kitchen preparation`
   );
 
   // Create and persist kitchen order record
@@ -35,55 +39,46 @@ export async function handleOrderConfirmed(orderData, producer, serviceName) {
     readyAt: null,
     preparationTime: null,
   };
-  
+
   await upsertKitchenOrder(kitchenOrder);
 
-  // Start preparation process
-  await startFoodPreparation(orderId, producer, serviceName);
+  console.log(
+    `✅ [${serviceName}] Kitchen order ${orderId} created with status 'received' - waiting for manual preparation`
+  );
 }
 
 /**
- * Start food preparation with simulation delay
+ * Handle delivery completed event -> update kitchen order status to delivered
  */
-async function startFoodPreparation(orderId, producer, serviceName) {
+export async function handleDeliveryCompleted(
+  eventData,
+  producer,
+  serviceName
+) {
+  const { orderId } = eventData || {};
+  if (!orderId) return;
+
   const order = await getKitchenOrder(orderId);
   if (!order) {
-    console.log(`⚠️ [${serviceName}] Kitchen order ${orderId} not found`);
+    console.log(
+      `⚠️ [${serviceName}] Kitchen order ${orderId} not found for delivery-completed`
+    );
     return;
   }
 
-  // Update status to preparing
-  order.status = "preparing";
-  order.startedAt = new Date().toISOString();
+  if (order.status === "delivered") {
+    return;
+  }
 
-  // Calculate random preparation time (20-30 seconds)
-  const preparationTime =
-    PREPARATION_CONFIG.minTime +
-    Math.random() * (PREPARATION_CONFIG.maxTime - PREPARATION_CONFIG.minTime);
-
-  order.estimatedReadyTime = new Date(
-    Date.now() + preparationTime
-  ).toISOString();
-  order.preparationTime = Math.round(preparationTime / 1000); // Store in seconds
-  
-  // Update in database
+  order.status = "delivered";
   await upsertKitchenOrder(order);
-
-  console.log(
-    `🍳 [${serviceName}] Preparing order ${orderId} (estimated ${order.preparationTime}s)`
-  );
-
-  // Simulate preparation delay
-  await new Promise((resolve) => setTimeout(resolve, preparationTime));
-
-  // Mark as ready
-  await markOrderReady(orderId, producer, serviceName);
+  console.log(`🍽️ [${serviceName}] Order ${orderId} marked as delivered`);
 }
 
 /**
  * Mark order as ready and publish food-ready event
  */
-async function markOrderReady(orderId, producer, serviceName) {
+export async function markOrderReady(orderId, producer, serviceName) {
   const order = await getKitchenOrder(orderId);
   if (!order) {
     console.log(`⚠️ [${serviceName}] Kitchen order ${orderId} not found`);
@@ -91,16 +86,14 @@ async function markOrderReady(orderId, producer, serviceName) {
   }
 
   if (order.status === "ready") {
-    console.log(
-      `⚠️ [${serviceName}] Order ${orderId} already marked as ready`
-    );
+    console.log(`⚠️ [${serviceName}] Order ${orderId} already marked as ready`);
     return;
   }
 
   // Update status to ready
   order.status = "ready";
   order.readyAt = new Date().toISOString();
-  
+
   // Update in database
   await upsertKitchenOrder(order);
 

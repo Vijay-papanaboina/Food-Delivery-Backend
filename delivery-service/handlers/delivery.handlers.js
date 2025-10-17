@@ -1,64 +1,33 @@
 import { v4 as uuidv4 } from "uuid";
-import { upsertDriver, getDrivers, getDriver } from "../repositories/drivers.repo.js";
-import { upsertDelivery } from "../repositories/deliveries.repo.js";
+import {
+  upsertDriver,
+  getDrivers,
+  getDriver,
+} from "../repositories/drivers.repo.js";
+import {
+  upsertDelivery,
+  updateDeliveryFields,
+  getDelivery,
+} from "../repositories/deliveries.repo.js";
 import { publishMessage, TOPICS } from "../config/kafka.js";
-
-/**
- * Handle food ready event
- * Automatically assigns delivery driver and creates delivery record
- */
-export async function handleFoodReady(foodData, producer, serviceName) {
-  const { orderId, restaurantId, userId, total, deliveryAddress } = foodData;
-  try {
-    // Begin logical transaction scope
-    
-    console.log(`🚗 [${serviceName}] Auto-assigning delivery for order ${orderId}`);
-
-    // Find available driver using database query with FOR UPDATE to lock rows
-    const availableDrivers = await getDrivers({ isAvailable: true, limit: 5 });
-
-    if (availableDrivers.length === 0) {
-      console.log(`⚠️ [${serviceName}] No available drivers for order ${orderId}`);
-
-      // Create delivery record with pending status in database
-      const delivery = {
-        deliveryId: uuidv4(),
-        orderId,
-        status: "pending_assignment",
-        assignedAt: null,
-        estimatedDeliveryTime: null,
-        actualDeliveryTime: null,
-        createdAt: new Date().toISOString(),
-      };
-
-      // Save to database
-      await upsertDelivery(delivery);
-      return;
-    }
-
-    // Assign to the best available driver (highest rating)
-    const driver = availableDrivers[0];
-    await assignDelivery(orderId, driver.driver_id, deliveryAddress, producer, serviceName);
-  } catch (error) {
-    console.error(
-      `❌ [${serviceName}] Error handling food ready event:`,
-      error.message
-    );
-  } finally {}
-}
 
 /**
  * Assign delivery to a specific driver
  * @param {string} orderId - Order ID
  * @param {string} driverId - Driver ID
  */
-export async function assignDelivery(orderId, driverId, deliveryAddress, producer, serviceName) {
-  
+export async function assignDelivery(
+  orderId,
+  driverId,
+  deliveryAddress,
+  producer,
+  serviceName
+) {
   try {
-    
-    
-    console.log(`🚗 [${serviceName}] Assigning delivery for order ${orderId} to driver ${driverId}`);
-    
+    console.log(
+      `🚗 [${serviceName}] Assigning delivery for order ${orderId} to driver ${driverId}`
+    );
+
     // Get driver information
     const driver = await getDriver(driverId);
     if (!driver) {
@@ -66,10 +35,12 @@ export async function assignDelivery(orderId, driverId, deliveryAddress, produce
     }
     const assignedAt = new Date().toISOString();
     const deliveryId = uuidv4();
-    
-    // Calculate estimated delivery time (20-30 minutes from now)
-    const estimatedDeliveryTime = new Date(Date.now() + (20 + Math.random() * 10) * 60 * 1000).toISOString();
-    
+
+    // Fixed estimated delivery time (10 seconds from now for simulation)
+    const estimatedDeliveryTime = new Date(
+      Date.now() + 10 * 1000
+    ).toISOString();
+
     // Create delivery record
     const delivery = {
       deliveryId,
@@ -82,7 +53,7 @@ export async function assignDelivery(orderId, driverId, deliveryAddress, produce
       actualDeliveryTime: null,
       createdAt: assignedAt,
     };
-    
+
     // Save delivery to database
     await upsertDelivery({
       ...delivery,
@@ -91,10 +62,21 @@ export async function assignDelivery(orderId, driverId, deliveryAddress, produce
       vehicle: driver.vehicle,
       licensePlate: driver.license_plate,
     });
-    
+
     // Mark driver as unavailable
-    await upsertDriver({ ...driver, isAvailable: false, updatedAt: assignedAt });
-    
+    await upsertDriver({
+      driverId: driver.driver_id,
+      name: driver.name,
+      phone: driver.phone,
+      vehicle: driver.vehicle,
+      licensePlate: driver.license_plate,
+      isAvailable: false,
+      currentLocation: driver.current_location,
+      rating: driver.rating,
+      totalDeliveries: driver.total_deliveries,
+      updatedAt: assignedAt,
+    });
+
     // Publish delivery assigned event
     await publishMessage(
       producer,
@@ -108,23 +90,71 @@ export async function assignDelivery(orderId, driverId, deliveryAddress, produce
       },
       orderId
     );
-    
+
     console.log(
       `✅ [${serviceName}] Delivery ${deliveryId} assigned to driver ${driverId} for order ${orderId}`
     );
-    
-    // Simulate delivery completion after a random delay (30-45 seconds)
-    setTimeout(async () => {
-      await completeDelivery(deliveryId, orderId, driverId, producer, serviceName);
-    }, (30 + Math.random() * 15) * 1000);
-    
+
+    // No automatic completion - must be called manually
   } catch (error) {
     console.error(
       `❌ [${serviceName}] Error assigning delivery:`,
       error.message
     );
     throw error;
-  } finally {}
+  } finally {
+  }
+}
+
+/**
+ * Pick up delivery (driver picks up food from restaurant)
+ * @param {string} deliveryId - Delivery ID
+ * @param {string} orderId - Order ID
+ * @param {string} driverId - Driver ID
+ */
+export async function pickupDelivery(
+  deliveryId,
+  orderId,
+  driverId,
+  producer,
+  serviceName
+) {
+  try {
+    console.log(
+      `📦 [${serviceName}] Driver ${driverId} picking up order ${orderId}`
+    );
+
+    const pickedUpAt = new Date().toISOString();
+
+    // Update delivery status to picked_up
+    await updateDeliveryFields(deliveryId, {
+      status: "picked_up",
+      pickedUpAt: pickedUpAt,
+    });
+
+    // Publish delivery picked up event
+    await publishMessage(
+      producer,
+      TOPICS.DELIVERY_PICKED_UP,
+      {
+        deliveryId,
+        orderId,
+        driverId,
+        pickedUpAt,
+      },
+      orderId
+    );
+
+    console.log(
+      `✅ [${serviceName}] Delivery ${deliveryId} picked up by driver ${driverId} for order ${orderId}`
+    );
+  } catch (error) {
+    console.error(
+      `❌ [${serviceName}] Error picking up delivery ${deliveryId}:`,
+      error.message
+    );
+    throw error;
+  }
 }
 
 /**
@@ -133,40 +163,56 @@ export async function assignDelivery(orderId, driverId, deliveryAddress, produce
  * @param {string} orderId - Order ID
  * @param {string} driverId - Driver ID
  */
-export async function completeDelivery(deliveryId, orderId, driverId, producer, serviceName) {
-  
+export async function completeDelivery(
+  deliveryId,
+  orderId,
+  driverId,
+  producer,
+  serviceName
+) {
   try {
-    
-    
-    console.log(`⏳ [${serviceName}] Completing delivery ${deliveryId} for order ${orderId}`);
-    
+    console.log(
+      `⏳ [${serviceName}] Completing delivery ${deliveryId} for order ${orderId}`
+    );
+
     const completedAt = new Date().toISOString();
-    
-    // Update delivery status to completed
-    await upsertDelivery({ deliveryId, status: 'completed', actualDeliveryTime: completedAt });
-    
+
+    // Update delivery status to completed (avoid insert with null NOT NULL columns)
+    await updateDeliveryFields(deliveryId, {
+      status: "completed",
+      actualDeliveryTime: completedAt,
+    });
+
     // Mark driver as available and increment delivery count
-    await upsertDriver({ driverId, isAvailable: true, totalDeliveries: (driver?.total_deliveries || 0) + 1, updatedAt: new Date().toISOString() });
-    
+    const existingDriver = await getDriver(driverId);
+    const incrementedTotal = (existingDriver?.total_deliveries || 0) + 1;
+    await upsertDriver({
+      driverId,
+      name: existingDriver?.name,
+      phone: existingDriver?.phone,
+      vehicle: existingDriver?.vehicle,
+      licensePlate: existingDriver?.license_plate,
+      isAvailable: true,
+      totalDeliveries: incrementedTotal,
+      updatedAt: new Date().toISOString(),
+    });
+
     // Get delivery details for event
-    const delivery = await (async () => {
-      const res = await getDrivers({ limit: 1 });
-      return { order_id: orderId, driver_id: driverId, estimated_delivery_time: null, actual_delivery_time: completedAt };
-    })();
-    
+    const delivery = await getDelivery(deliveryId);
+
     // logical transaction ended
-    
+
     // Publish delivery completed event
     await publishMessage(
       producer,
       TOPICS.DELIVERY_COMPLETED,
       {
-      deliveryId,
-      orderId,
-      driverId,
-      completedAt,
-      estimatedTime: delivery.estimated_delivery_time,
-      actualTime: completedAt,
+        deliveryId,
+        orderId,
+        driverId,
+        completedAt,
+        estimatedTime: delivery?.estimatedDeliveryTime ?? null,
+        actualTime: completedAt,
       },
       orderId
     );
@@ -180,7 +226,8 @@ export async function completeDelivery(deliveryId, orderId, driverId, producer, 
       error.message
     );
     throw error;
-  } finally {}
+  } finally {
+  }
 }
 
 /**
@@ -194,7 +241,7 @@ export async function initializeSampleDrivers() {
       console.log(`🚗 [delivery-service] Drivers already exist in database`);
       return;
     }
-    
+
     const sampleDrivers = [
       {
         driverId: "driver-001",

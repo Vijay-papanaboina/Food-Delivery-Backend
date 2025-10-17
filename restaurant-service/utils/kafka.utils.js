@@ -9,7 +9,7 @@ import {
   logConsumerMessage,
   TOPICS,
 } from "../config/kafka.js";
-import { handleOrderConfirmed } from "../handlers/restaurant.handlers.js";
+import { handleOrderConfirmed, handleDeliveryCompleted } from "../handlers/restaurant.handlers.js";
 
 /**
  * Initialize Kafka connections and start consuming messages
@@ -20,8 +20,8 @@ export async function initializeKafka(producer, consumer, serviceName) {
     await connectProducer(producer, serviceName);
     await connectConsumer(consumer, serviceName);
 
-    // Subscribe to order-confirmed topic
-    await subscribeToTopics(consumer, [TOPICS.ORDER_CONFIRMED]);
+    // Subscribe to order-confirmed and delivery-completed topics
+    await subscribeToTopics(consumer, [TOPICS.ORDER_CONFIRMED, TOPICS.DELIVERY_COMPLETED]);
 
     // Start consuming messages
     await consumer.run({
@@ -50,6 +50,8 @@ export async function initializeKafka(producer, consumer, serviceName) {
           
           if (topic === TOPICS.ORDER_CONFIRMED) {
             await handleOrderConfirmed(messageData, producer, serviceName);
+          } else if (topic === TOPICS.DELIVERY_COMPLETED) {
+            await handleDeliveryCompleted(messageData, producer, serviceName);
           }
         } catch (error) {
           console.error(`❌ [${serviceName}] Error processing message:`, error.message);

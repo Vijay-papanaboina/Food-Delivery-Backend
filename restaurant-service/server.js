@@ -2,10 +2,7 @@ import dotenv from "dotenv";
 dotenv.config({ silent: true });
 
 import createApp from "./app.js";
-import {
-  createProducer,
-  createConsumer,
-} from "./config/kafka.js";
+import { createProducer, createConsumer } from "./config/kafka.js";
 import { initDb } from "./config/db.js";
 import { initializeKafka, shutdownKafka } from "./utils/kafka.utils.js";
 import { initializeSampleData } from "./utils/data.utils.js";
@@ -32,7 +29,6 @@ const SERVICE_NAME = process.env.SERVICE_NAME || "restaurant-service";
 const producer = createProducer(SERVICE_NAME);
 const consumer = createConsumer(SERVICE_NAME);
 
-
 // Graceful shutdown
 process.on("SIGINT", async () => {
   await shutdownKafka(producer, consumer, SERVICE_NAME);
@@ -42,8 +38,8 @@ process.on("SIGINT", async () => {
 // Initialize DB before accepting traffic
 await initDb();
 
-// Create app
-const app = createApp();
+// Create app with producer
+const app = createApp(producer);
 
 // Start server
 app.listen(PORT, async () => {
@@ -53,6 +49,9 @@ app.listen(PORT, async () => {
   console.log(`   GET  /api/restaurants/:id - Get restaurant by ID`);
   console.log(`   GET  /api/restaurants/:id/menu - Get restaurant menu`);
   console.log(`   GET  /api/kitchen/orders - List kitchen orders`);
+  console.log(
+    `   POST /api/kitchen/orders/:orderId/ready - Mark order as ready`
+  );
   console.log(`   GET  /health - Health check`);
 
   // Initialize sample data

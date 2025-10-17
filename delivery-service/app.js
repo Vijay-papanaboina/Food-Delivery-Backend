@@ -5,25 +5,31 @@ import { getDeliveryStats, getDrivers } from "./config/db.js";
 
 const SERVICE_NAME = process.env.SERVICE_NAME || "delivery-service";
 
-function createApp() {
+function createApp(producer) {
   const app = express();
 
   // Middleware
   app.use(cors());
   app.use(express.json());
 
+  // Make producer available in requests
+  app.use((req, res, next) => {
+    req.producer = producer;
+    next();
+  });
+
   // Database will be used for all delivery storage
 
   // Mount routes
-  app.use('/', buildRoutes());
+  app.use("/", buildRoutes());
 
   // Health check endpoint
   app.get("/health", async (req, res) => {
     try {
       const deliveryStats = await getDeliveryStats();
       const driverStats = await getDrivers();
-      const availableDrivers = driverStats.filter(d => d.is_available).length;
-      
+      const availableDrivers = driverStats.filter((d) => d.is_available).length;
+
       res.json({
         service: SERVICE_NAME,
         status: "healthy",

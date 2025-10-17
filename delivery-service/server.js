@@ -2,10 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import createApp from "./app.js";
-import {
-  createProducer,
-  createConsumer,
-} from "./config/kafka.js";
+import { createProducer, createConsumer } from "./config/kafka.js";
 import { initDb } from "./config/db.js";
 import { initializeKafka, shutdownKafka } from "./utils/kafka.utils.js";
 import { initializeSampleData } from "./utils/data.utils.js";
@@ -32,7 +29,6 @@ const SERVICE_NAME = process.env.SERVICE_NAME || "delivery-service";
 const producer = createProducer(SERVICE_NAME);
 const consumer = createConsumer(SERVICE_NAME);
 
-
 // Graceful shutdown
 process.on("SIGINT", async () => {
   await shutdownKafka(producer, consumer, SERVICE_NAME);
@@ -42,14 +38,20 @@ process.on("SIGINT", async () => {
 // Initialize DB before accepting traffic
 await initDb();
 
-// Create app
-const app = createApp();
+// Create app with producer
+const app = createApp(producer);
 
 // Start server
 app.listen(PORT, async () => {
   console.log(`🚀 [${SERVICE_NAME}] Server running on port ${PORT}`);
   console.log(`🚗 [${SERVICE_NAME}] Available endpoints:`);
   console.log(`   POST /api/delivery/assign - Assign delivery manually`);
+  console.log(`   POST /api/delivery/pickup - Pick up delivery manually`);
+  console.log(`   POST /api/delivery/complete - Complete delivery manually`);
+  console.log(`   GET  /api/delivery/:orderId - Get delivery by order ID`);
+  console.log(`   GET  /api/delivery - List all deliveries`);
+  console.log(`   GET  /api/drivers - List all drivers`);
+  console.log(`   GET  /api/delivery/stats - Get delivery statistics`);
   console.log(`   GET  /health - Health check`);
 
   // Initialize sample data

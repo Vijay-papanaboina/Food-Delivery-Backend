@@ -1,20 +1,9 @@
 # Food Ordering Microservices - PowerShell Startup Script
-# This script starts all 6 microservices
+# This script starts all 5 microservices
 
 Write-Host "🚀 Starting Food Ordering Microservices System" -ForegroundColor Green
 Write-Host "==============================================" -ForegroundColor Green
 
-# Check if Kafka is running
-Write-Host "📋 Checking if Kafka is running..." -ForegroundColor Yellow
-$kafkaStatus = docker-compose ps | Select-String "kafka.*Up"
-if (-not $kafkaStatus) {
-    Write-Host "⚠️  Kafka is not running. Starting Kafka..." -ForegroundColor Yellow
-    docker-compose up -d
-    Write-Host "⏳ Waiting for Kafka to be ready..." -ForegroundColor Yellow
-    Start-Sleep -Seconds 30
-} else {
-    Write-Host "✅ Kafka is already running" -ForegroundColor Green
-}
 
 Write-Host ""
 Write-Host "🏗️  Starting all microservices..." -ForegroundColor Cyan
@@ -54,7 +43,7 @@ Write-Host "   Order Service:      http://localhost:5001" -ForegroundColor White
 Write-Host "   Payment Service:    http://localhost:5002" -ForegroundColor White
 Write-Host "   Notification Service: http://localhost:5003" -ForegroundColor White
 Write-Host "   Delivery Service:   http://localhost:5004" -ForegroundColor White
-Write-Host "   Inventory Service:  removed" -ForegroundColor White
+Write-Host "   Inventory Service:  removed (simplified architecture)" -ForegroundColor White
 Write-Host "   Restaurant Service: http://localhost:5006 (includes Kitchen)" -ForegroundColor White
 Write-Host ""
 Write-Host "🔍 Health Check URLs:" -ForegroundColor Cyan
@@ -62,7 +51,6 @@ Write-Host "   curl http://localhost:5001/health" -ForegroundColor Gray
 Write-Host "   curl http://localhost:5002/health" -ForegroundColor Gray
 Write-Host "   curl http://localhost:5003/health" -ForegroundColor Gray
 Write-Host "   curl http://localhost:5004/health" -ForegroundColor Gray
-Write-Host "   curl http://localhost:5005/health" -ForegroundColor Gray
 Write-Host "   curl http://localhost:5006/health" -ForegroundColor Gray
 Write-Host ""
 Write-Host "📚 API Documentation:" -ForegroundColor Cyan
@@ -96,9 +84,14 @@ foreach ($service in $services) {
 
 Write-Host ""
 Write-Host "🎯 Ready to test! Try creating an order:" -ForegroundColor Green
-Write-Host "curl -X POST http://localhost:5001/api/orders \" -ForegroundColor Gray
-Write-Host "  -H \"Content-Type: application/json\" \" -ForegroundColor Gray
-Write-Host "  -d '{\"restaurantId\": \"rest-001\", \"items\": [{\"itemId\": \"item-001\", \"quantity\": 1, \"price\": 12.99}], \"userId\": \"user-123\", \"deliveryAddress\": \"123 Main St\"}'" -ForegroundColor Gray
+Write-Host ""
+Write-Host "PowerShell:" -ForegroundColor Cyan
+Write-Host "curl -X POST http://localhost:5001/api/orders -H 'Content-Type: application/json' -d '{\"restaurantId\": \"rest-001\", \"items\": [{\"itemId\": \"item-001\", \"quantity\": 2, \"price\": 12.99}], \"userId\": \"user-123\", \"deliveryAddress\": {\"street\": \"123 Main St\", \"city\": \"New York\", \"state\": \"NY\", \"zipCode\": \"10001\"}}'" -ForegroundColor Gray
+Write-Host ""
+Write-Host "Bash/Linux:" -ForegroundColor Cyan
+Write-Host "curl -X POST http://localhost:5001/api/orders \\" -ForegroundColor Gray
+Write-Host "  -H \"Content-Type: application/json\" \\" -ForegroundColor Gray
+Write-Host "  -d '{\"restaurantId\": \"rest-001\", \"items\": [{\"itemId\": \"item-001\", \"quantity\": 2, \"price\": 12.99}], \"userId\": \"user-123\", \"deliveryAddress\": {\"street\": \"123 Main St\", \"city\": \"New York\", \"state\": \"NY\", \"zipCode\": \"10001\"}}'" -ForegroundColor Gray
 Write-Host ""
 Write-Host "Press any key to exit..." -ForegroundColor Yellow
 Read-Host

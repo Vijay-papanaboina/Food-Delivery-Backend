@@ -2,10 +2,7 @@ import dotenv from "dotenv";
 dotenv.config({ silent: true });
 
 import createApp from "./app.js";
-import {
-  createProducer,
-  createConsumer,
-} from "./config/kafka.js";
+import { createProducer, createConsumer } from "./config/kafka.js";
 import { initDb } from "./config/db.js";
 import { initializeKafka, shutdownKafka } from "./utils/kafka.utils.js";
 
@@ -30,8 +27,6 @@ const SERVICE_NAME = process.env.SERVICE_NAME || "payment-service";
 const producer = createProducer(SERVICE_NAME);
 const consumer = createConsumer(SERVICE_NAME);
 
-
-
 // Graceful shutdown
 process.on("SIGINT", async () => {
   await shutdownKafka(producer, consumer, SERVICE_NAME);
@@ -41,13 +36,14 @@ process.on("SIGINT", async () => {
 // Initialize DB before accepting traffic
 await initDb();
 
-// Create app
-const app = createApp();
+// Create app with producer
+const app = createApp(producer);
 
 // Start server
 app.listen(PORT, async () => {
   console.log(`🚀 [${SERVICE_NAME}] Server running on port ${PORT}`);
   console.log(`💳 [${SERVICE_NAME}] Available endpoints:`);
+  console.log(`   POST /api/payments - Process payment manually`);
   console.log(`   GET  /api/payments/:orderId - Get payment by order ID`);
   console.log(`   GET  /api/payments - List all payments`);
   console.log(`   GET  /api/payments/stats - Get payment statistics`);

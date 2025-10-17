@@ -66,7 +66,7 @@ The system consists of 5 microservices that communicate through Kafka events:
 **Kafka Integration**:
 
 - **Producer**: Publishes to `payment-processed` topic
-- **Consumer**: Listens to `order-created` topic
+- **Consumer**: None (manual processing only)
 
 **Key Features**:
 
@@ -86,6 +86,7 @@ Manages restaurant information, menus, availability, and kitchen operations. Inv
 **REST APIs**:
 
 - `POST /api/delivery/assign` - Assign delivery manually
+- `POST /api/delivery/pickup` - Pick up delivery manually
 - `POST /api/delivery/complete` - Mark delivery as completed
 - `GET /api/delivery/:orderId` - Get delivery status
 - `GET /api/delivery` - List all deliveries
@@ -94,8 +95,8 @@ Manages restaurant information, menus, availability, and kitchen operations. Inv
 
 **Kafka Integration**:
 
-- **Producer**: Publishes to `delivery-assigned`, `delivery-completed` topics
-- **Consumer**: Listens to `order-confirmed` topic
+- **Producer**: Publishes to `delivery-assigned`, `delivery-picked-up`, `delivery-completed` topics
+- **Consumer**: None (manual operations only)
 
 **Key Features**:
 
@@ -151,7 +152,7 @@ Manages restaurant information, menus, availability, and kitchen operations. Inv
 **Kafka Integration**:
 
 - **Producer**: Publishes to `food-ready` topic
-- **Consumer**: Listens to `order-confirmed` topic
+- **Consumer**: Listens to `order-confirmed` topic (creates kitchen order only)
 
 **Key Features**:
 
@@ -166,7 +167,7 @@ Manages restaurant information, menus, availability, and kitchen operations. Inv
 
 Here's how events flow through the system when a user places an order:
 
-### Complete Order Flow (Simplified Without Inventory)
+### Complete Order Flow (Manual Operations)
 
 ```mermaid
 sequenceDiagram
@@ -179,10 +180,11 @@ sequenceDiagram
     participant Kafka
 
     User->>OrderService: POST /api/orders
+    Note over OrderService: Order created with status "pending_payment"
     OrderService->>Kafka: Publish order-created event
 
-    Kafka->>PaymentService: order-created event
-    Note over PaymentService: Process payment (simulated)
+    User->>PaymentService: POST /api/payments
+    Note over PaymentService: Manual payment processing
     PaymentService->>Kafka: Publish payment-processed (success/failed)
 
     alt Payment Success
@@ -190,15 +192,22 @@ sequenceDiagram
         OrderService->>Kafka: Publish order-confirmed event
 
         Kafka->>RestaurantService: order-confirmed event
-        Note over RestaurantService: Kitchen prepares food (20-30s simulation)
+        Note over RestaurantService: Kitchen order created (status: "received")
+
+        User->>RestaurantService: POST /api/kitchen/orders/:orderId/ready
+        Note over RestaurantService: Manual mark as ready
         RestaurantService->>Kafka: Publish food-ready event
 
-        Kafka->>DeliveryService: food-ready event
-        Note over DeliveryService: Assign driver
+        User->>DeliveryService: POST /api/delivery/assign
+        Note over DeliveryService: Manual driver assignment
         DeliveryService->>Kafka: Publish delivery-assigned event
 
-        Note over DeliveryService: Driver delivers order
+        User->>DeliveryService: POST /api/delivery/pickup
+        Note over DeliveryService: Manual pickup confirmation
+        DeliveryService->>Kafka: Publish delivery-picked-up event
 
+        User->>DeliveryService: POST /api/delivery/complete
+        Note over DeliveryService: Manual completion
         DeliveryService->>Kafka: Publish delivery-completed event
         Kafka->>OrderService: delivery-completed event
     else Payment Failed
@@ -215,13 +224,13 @@ sequenceDiagram
 
 ### Service Simulation Timings
 
-| Service   | Action              | Simulation Time | Purpose                         |
-| --------- | ------------------- | --------------- | ------------------------------- |
-| Payment   | Payment processing  | 1.5-3 seconds   | Realistic payment gateway delay |
-| Kitchen   | Food preparation    | 20-30 seconds   | Realistic cooking time          |
-| Delivery  | Delivery completion | 20-30 seconds   | Travel and delivery time        |
+| Service  | Action              | Simulation Time | Purpose                         |
+| -------- | ------------------- | --------------- | ------------------------------- |
+| Payment  | Payment processing  | 1.5-3 seconds   | Realistic payment gateway delay |
+| Kitchen  | Food preparation    | Manual only     | No automatic simulation         |
+| Delivery | Delivery completion | Manual only     | No automatic simulation         |
 
-**Total Order Time**: ~1-2 minutes (realistic for learning/demo purposes)
+**Total Order Time**: Manual operations only - no automatic timing
 
 ## 🛠️ Setup Instructions
 
@@ -314,8 +323,6 @@ curl http://localhost:5001/api/orders/{orderId}
 curl http://localhost:5003/api/notifications?userId=user-123
 ```
 
- 
-
 ### 5. View Delivery Status
 
 ```bash
@@ -340,7 +347,7 @@ Each service provides statistics endpoints:
 
 - Order statistics: `GET /api/orders/stats`
 - Payment statistics: `GET /api/payments/stats`
- 
+
 - Delivery statistics: `GET /api/delivery/stats`
 - Notification statistics: `GET /api/notifications/stats` (simulated)
 - Restaurant statistics: `GET /api/restaurants/stats`
@@ -356,7 +363,7 @@ Each service provides statistics endpoints:
 
 - `order-created` (3 partitions)
 - `payment-processed` (2 partitions)
- 
+
 - `order-confirmed` (2 partitions)
 - `delivery-assigned` (2 partitions)
 - `delivery-completed` (2 partitions)

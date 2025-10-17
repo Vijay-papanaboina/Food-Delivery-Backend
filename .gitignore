@@ -290,3 +290,4 @@ coverage/
 # Rush
 common/temp/
 .cursorignore
+*/drizzle/*

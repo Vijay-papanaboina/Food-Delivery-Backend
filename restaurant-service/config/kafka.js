@@ -11,6 +11,7 @@ const kafka = new Kafka({ clientId, brokers, retry: { initialRetryTime: 100, ret
 export const TOPICS = {
   ORDER_CONFIRMED: process.env.TOPIC_ORDER_CONFIRMED || "order-confirmed",
   FOOD_READY: process.env.TOPIC_FOOD_READY || "food-ready",
+  DELIVERY_COMPLETED: process.env.TOPIC_DELIVERY_COMPLETED || "delivery-completed",
 };
 
 export const createProducer = (serviceName) => kafka.producer({ groupId: `${serviceName}-producer` });

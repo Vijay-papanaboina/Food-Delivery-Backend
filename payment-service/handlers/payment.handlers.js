@@ -1,27 +1,10 @@
 import { v4 as uuidv4 } from "uuid";
-import { upsertPayment, getPaymentByOrderId } from "../repositories/payments.repo.js";
+import {
+  upsertPayment,
+  getPaymentByOrderId,
+} from "../repositories/payments.repo.js";
 import { publishMessage, TOPICS } from "../config/kafka.js";
 import { PAYMENT_CONFIG } from "../config/payment.js";
-
-/**
- * Handle order created event
- * Automatically processes payment for the new order
- */
-export async function handleOrderCreated(orderData, producer, serviceName) {
-  const { orderId, total, userId } = orderData;
-
-  console.log(
-    `💳 [${serviceName}] Auto-processing payment for order ${orderId}`
-  );
-
-  // Simulate payment method selection (in real app, this would come from user)
-  const paymentMethods = Object.keys(PAYMENT_CONFIG.successRates);
-  const paymentMethod =
-    paymentMethods[Math.floor(Math.random() * paymentMethods.length)];
-
-  // Process payment
-  await processPayment(orderId, total, paymentMethod, userId, producer, serviceName);
-}
 
 /**
  * Simulate payment processing with idempotency
@@ -34,7 +17,14 @@ export async function handleOrderCreated(orderData, producer, serviceName) {
  * @param {string} serviceName - Service name
  * @returns {Object} Payment record
  */
-export async function processPayment(orderId, amount, method, userId, producer, serviceName) {
+export async function processPayment(
+  orderId,
+  amount,
+  method,
+  userId,
+  producer,
+  serviceName
+) {
   // Check for existing payment for this order (idempotency check)
   const existingPayment = await getPaymentByOrderId(orderId);
   if (existingPayment) {
@@ -96,7 +86,7 @@ export async function processPayment(orderId, amount, method, userId, producer, 
       `❌ [${serviceName}] Payment ${paymentId} failed (${method}): ${payment.failureReason}`
     );
   }
-  
+
   // Persist final payment status to database
   await upsertPayment(payment);
 
