@@ -292,3 +292,4 @@ common/temp/
 */drizzle/*
 insert-mock-data.ps1
 start-all-services.ps1
+migrate.ps1

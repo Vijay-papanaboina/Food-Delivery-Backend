@@ -4,10 +4,15 @@ import {
   upsertCart,
   clearCart,
 } from "../repositories/cart.repo.js";
+import { createLogger, sanitizeForLogging } from "../../shared/utils/logger.js";
 
 export const getCart = async (req, res) => {
+  const logger = createLogger("user-service");
+
   try {
     const userId = req.user.userId;
+    logger.info("Getting user cart", { userId });
+
     const cart = await getCartByUserId(userId);
 
     if (!cart) {
@@ -54,6 +59,8 @@ export const updateCart = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log("Cart validation errors:", errors.array());
+      console.log("Request body:", JSON.stringify(req.body, null, 2));
       return res.status(400).json({
         error: "Validation failed",
         details: errors.array(),

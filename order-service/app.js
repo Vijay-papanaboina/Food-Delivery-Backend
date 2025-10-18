@@ -15,10 +15,10 @@ function createApp(producer) {
   // Database will be used for all order storage
 
   // Mount routes
-  app.use('/', buildRoutes({ producer, serviceName: SERVICE_NAME }));
+  app.use("/", buildRoutes({ producer, serviceName: SERVICE_NAME }));
 
   // Health check endpoint
-  app.get("/health", async(req, res) => {
+  app.get("/health", async (req, res) => {
     const count = await getOrdersCount();
     res.json({
       service: SERVICE_NAME,

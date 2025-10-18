@@ -7,6 +7,7 @@ import {
 } from "../repositories/payments.repo.js";
 import { TOPICS, publishMessage } from "../config/kafka.js";
 import { PAYMENT_CONFIG } from "../config/payment.js";
+import { createLogger, sanitizeForLogging } from "../../shared/utils/logger.js";
 
 export const getPaymentForOrder = async (req, res) => {
   try {
@@ -99,9 +100,18 @@ export const listPaymentMethods = (req, res) => {
 };
 
 export const processPayment = async (req, res) => {
+  const logger = createLogger("payment-service");
+
   try {
     const { orderId, amount, method } = req.body;
     const userId = req.user.userId; // Get user ID from JWT token
+
+    logger.info("Payment processing started", {
+      orderId,
+      amount,
+      method,
+      userId,
+    });
 
     // Validate required fields
     if (!orderId || !amount || !method) {
@@ -147,6 +157,13 @@ export const processPayment = async (req, res) => {
       "payment-service"
     );
 
+    logger.info("Payment processed successfully", {
+      paymentId: payment.id,
+      orderId: payment.orderId,
+      status: payment.status,
+      method: payment.method,
+    });
+
     res.status(201).json({
       message: "Payment processed successfully",
       payment: {
@@ -163,6 +180,13 @@ export const processPayment = async (req, res) => {
       },
     });
   } catch (error) {
+    logger.error("Payment processing failed", {
+      error: error.message,
+      stack: error.stack,
+      orderId,
+      amount,
+      method,
+    });
     console.error(
       `❌ [payment-service] Error processing payment:`,
       error.message

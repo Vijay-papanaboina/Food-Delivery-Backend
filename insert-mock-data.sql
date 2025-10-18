@@ -254,8 +254,8 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Insert test users
 INSERT INTO "user_svc"."users" ("id", "email", "password_hash", "name", "phone", "is_active", "created_at", "updated_at") VALUES
-('550e8400-e29b-41d4-a716-446655440010', 'john@example.com', '$2b$10$rQZ8K9vQZ8K9vQZ8K9vQZ8O', 'John Doe', '+1-555-0100', TRUE, NOW(), NOW()),
-('550e8400-e29b-41d4-a716-446655440011', 'jane@example.com', '$2b$10$rQZ8K9vQZ8K9vQZ8K9vQZ8O', 'Jane Smith', '+1-555-0101', TRUE, NOW(), NOW())
+('550e8400-e29b-41d4-a716-446655440010', 'john@example.com', '$2b$12$Wf.sBiug6EB6UZz1UPFJLetiK1xmdz4dZDwMNA8szBAifmkAJ2qcu', 'John Doe', '+1-555-0100', TRUE, NOW(), NOW()),
+('550e8400-e29b-41d4-a716-446655440011', 'jane@example.com', '$2b$12$Wf.sBiug6EB6UZz1UPFJLetiK1xmdz4dZDwMNA8szBAifmkAJ2qcu', 'Jane Smith', '+1-555-0101', TRUE, NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- =============================================

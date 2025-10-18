@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import { initDb } from "./config/db.js";
 import createRoutes from "./routes/index.routes.js";
@@ -24,18 +25,21 @@ app.use(
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 60, // limit each IP to 60 requests per windowMs
   message: "Too many requests from this IP, please try again later.",
 });
 
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 auth requests per windowMs
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 60, // limit each IP to 60 auth requests per windowMs
   message: "Too many authentication attempts, please try again later.",
 });
 
 app.use(limiter);
+
+// Cookie parser middleware
+app.use(cookieParser());
 
 // Body parsing middleware
 app.use(express.json({ limit: "10mb" }));

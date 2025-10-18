@@ -11,11 +11,17 @@ import {
   setDefaultAddress,
   getDefaultAddress,
 } from "../repositories/user.repo.js";
+import { createLogger, sanitizeForLogging } from "../../shared/utils/logger.js";
 // No Kafka events needed for user service
 
 export const getProfile = async (req, res) => {
+  const logger = createLogger("user-service");
+
   try {
-    const user = await getUserById(req.user.userId);
+    const userId = req.user.userId;
+    logger.info("Getting user profile", { userId });
+
+    const user = await getUserById(userId);
     if (!user) {
       return res.status(404).json({
         error: "User not found",
@@ -24,6 +30,10 @@ export const getProfile = async (req, res) => {
 
     // Remove password hash from response
     const { passwordHash: _, ...userResponse } = user;
+
+    // Debug logging
+    console.log("[getProfile] User data from DB:", user);
+    console.log("[getProfile] User response:", userResponse);
 
     res.json({
       message: "Profile retrieved successfully",

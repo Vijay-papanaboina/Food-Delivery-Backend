@@ -5,15 +5,29 @@ import {
   getOrderStatsDrizzle,
 } from "../repositories/orders.stats.repo.js";
 import { TOPICS, publishMessage } from "../config/kafka.js";
+import { createLogger, sanitizeForLogging } from "../../shared/utils/logger.js";
 
 export const buildCreateOrderController =
   (producer, serviceName) => async (req, res) => {
+    const logger = createLogger(serviceName);
+
     try {
       const { restaurantId, items, deliveryAddress } = req.body;
       const userId = req.user.userId; // Get user ID from JWT token
 
+      logger.info("Order creation started", {
+        userId,
+        restaurantId,
+        itemsCount: items?.length || 0,
+      });
+
       // Validate required fields
       if (!restaurantId || !items || !deliveryAddress) {
+        logger.warn("Order creation failed - missing required fields", {
+          hasRestaurantId: !!restaurantId,
+          hasItems: !!items,
+          hasDeliveryAddress: !!deliveryAddress,
+        });
         return res.status(400).json({
           error:
             "Missing required fields: restaurantId, items, deliveryAddress",
@@ -133,6 +147,11 @@ export const buildCreateOrderController =
 
       const createdOrder = await upsertOrder(order);
 
+      logger.info("Order created in database", {
+        orderId: createdOrder.id,
+        total: createdOrder.total,
+      });
+
       // Publish event AFTER database insert with the generated ID
       await publishMessage(
         producer,
@@ -147,6 +166,11 @@ export const buildCreateOrderController =
         },
         createdOrder.id
       );
+
+      logger.info("Order created event published", {
+        orderId: createdOrder.id,
+        topic: TOPICS.ORDER_CREATED,
+      });
 
       console.log(`📤 [${serviceName}] Order created: ${createdOrder.id}`);
       res.status(201).json({
@@ -164,6 +188,12 @@ export const buildCreateOrderController =
         },
       });
     } catch (error) {
+      logger.error("Order creation failed", {
+        error: error.message,
+        stack: error.stack,
+        userId,
+        restaurantId,
+      });
       console.error(`❌ [${serviceName}] Error creating order:`, error.message);
       res
         .status(500)

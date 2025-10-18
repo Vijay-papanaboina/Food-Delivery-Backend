@@ -1,4 +1,5 @@
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import {
   signup,
   login,
@@ -14,11 +15,25 @@ import {
 export default function authRoutes(serviceName) {
   const router = Router();
 
-  // Public auth routes
-  router.post("/api/auth/signup", validateSignup, signup);
-  router.post("/api/auth/login", validateLogin, login);
-  router.post("/api/auth/refresh", validateRefreshToken, refreshToken);
-  router.post("/api/auth/validate", validateToken);
+  // Auth rate limiter - stricter limits for auth endpoints
+  const authLimiter = rateLimit({
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    max: 30, // limit each IP to 10 auth requests per windowMs
+    message: "Too many authentication attempts, please try again later.",
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
+  // Public auth routes with rate limiting
+  router.post("/api/auth/signup", authLimiter, validateSignup, signup);
+  router.post("/api/auth/login", authLimiter, validateLogin, login);
+  router.post(
+    "/api/auth/refresh",
+    authLimiter,
+    validateRefreshToken,
+    refreshToken
+  );
+  router.post("/api/auth/validate", authLimiter, validateToken);
 
   return router;
 }

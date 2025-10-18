@@ -9,10 +9,15 @@ import {
   pickupDelivery,
   completeDelivery,
 } from "../handlers/delivery.handlers.js";
+import { createLogger, sanitizeForLogging } from "../../shared/utils/logger.js";
 
 export const getDeliveryByOrder = async (req, res) => {
+  const logger = createLogger("delivery-service");
+
   try {
     const { orderId } = req.params;
+
+    logger.info("Getting delivery by order ID", { orderId });
 
     // Validate orderId
     if (!orderId || typeof orderId !== "string") {

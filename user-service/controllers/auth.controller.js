@@ -2,13 +2,19 @@ import bcrypt from "bcrypt";
 import { validationResult } from "express-validator";
 import { createUser, getUserByEmail } from "../repositories/user.repo.js";
 import { generateTokens } from "../config/jwt.js";
+import { createLogger, sanitizeForLogging } from "../../shared/utils/logger.js";
 // No Kafka events needed for user service
 
 export const signup = async (req, res) => {
+  const logger = createLogger("user-service");
+
   try {
     // Check validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      logger.warn("Signup validation failed", {
+        errors: errors.array(),
+      });
       return res.status(400).json({
         error: "Validation failed",
         details: errors.array(),
@@ -17,9 +23,18 @@ export const signup = async (req, res) => {
 
     const { name, email, phone, password } = req.body;
 
+    logger.info("User signup attempt", {
+      email,
+      name,
+      hasPhone: !!phone,
+    });
+
     // Check if user already exists
     const existingUser = await getUserByEmail(email);
     if (existingUser) {
+      logger.warn("Signup failed - user already exists", {
+        email,
+      });
       return res.status(409).json({
         error: "User already exists with this email",
       });
@@ -37,8 +52,13 @@ export const signup = async (req, res) => {
       passwordHash,
     });
 
-    // Generate tokens
+    // Generate tokens (minimal payload)
     const { accessToken, refreshToken } = generateTokens({
+      userId: user.id,
+      email: user.email,
+    });
+
+    logger.info("User signup successful", {
       userId: user.id,
       email: user.email,
     });
@@ -49,13 +69,25 @@ export const signup = async (req, res) => {
     // Remove password hash from response
     const { passwordHash: _, ...userResponse } = user;
 
+    // Set refresh token in HTTP-only cookie
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
     res.status(201).json({
       message: "User created successfully",
       user: userResponse,
       accessToken,
-      refreshToken,
     });
   } catch (error) {
+    logger.error("Signup failed", {
+      error: error.message,
+      stack: error.stack,
+      email: req.body?.email,
+    });
     console.error("Signup error:", error);
     res.status(500).json({
       error: "Internal server error",
@@ -64,10 +96,15 @@ export const signup = async (req, res) => {
 };
 
 export const login = async (req, res) => {
+  const logger = createLogger("user-service");
+
   try {
     // Check validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      logger.warn("Login validation failed", {
+        errors: errors.array(),
+      });
       return res.status(400).json({
         error: "Validation failed",
         details: errors.array(),
@@ -76,9 +113,16 @@ export const login = async (req, res) => {
 
     const { email, password } = req.body;
 
+    logger.info("User login attempt", {
+      email,
+    });
+
     // Get user by email
     const user = await getUserByEmail(email);
     if (!user) {
+      logger.warn("Login failed - user not found", {
+        email,
+      });
       return res.status(401).json({
         error: "Invalid email or password",
       });
@@ -86,6 +130,10 @@ export const login = async (req, res) => {
 
     // Check if user is active
     if (!user.isActive) {
+      logger.warn("Login failed - account deactivated", {
+        userId: user.id,
+        email,
+      });
       return res.status(401).json({
         error: "Account is deactivated",
       });
@@ -94,13 +142,22 @@ export const login = async (req, res) => {
     // Verify password
     const isValidPassword = await bcrypt.compare(password, user.passwordHash);
     if (!isValidPassword) {
+      logger.warn("Login failed - invalid password", {
+        userId: user.id,
+        email,
+      });
       return res.status(401).json({
         error: "Invalid email or password",
       });
     }
 
-    // Generate tokens
+    // Generate tokens (minimal payload)
     const { accessToken, refreshToken } = generateTokens({
+      userId: user.id,
+      email: user.email,
+    });
+
+    logger.info("User login successful", {
       userId: user.id,
       email: user.email,
     });
@@ -108,11 +165,18 @@ export const login = async (req, res) => {
     // Remove password hash from response
     const { passwordHash: _, ...userResponse } = user;
 
+    // Set refresh token in HTTP-only cookie
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
     res.json({
       message: "Login successful",
       user: userResponse,
       accessToken,
-      refreshToken,
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -124,9 +188,13 @@ export const login = async (req, res) => {
 
 export const refreshToken = async (req, res) => {
   try {
-    const { refreshToken } = req.body;
+    console.log("Refresh token request - cookies:", req.cookies);
+    console.log("Refresh token request - headers:", req.headers);
+
+    const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken) {
+      console.log("No refresh token found in cookies");
       return res.status(401).json({
         error: "Refresh token required",
       });
@@ -136,17 +204,33 @@ export const refreshToken = async (req, res) => {
     const { verifyToken } = await import("../config/jwt.js");
     const decoded = verifyToken(refreshToken, true);
 
-    // Generate new tokens
+    // Get fresh user data from database
+    const { getUserById } = await import("../repositories/user.repo.js");
+    const user = await getUserById(decoded.userId);
+
+    if (!user) {
+      logger.warn("User not found during token refresh", {
+        userId: decoded.userId,
+      });
+      return res.status(401).json({
+        error: "User not found",
+      });
+    }
+
+    // Generate new access token only (keep same refresh token)
     const { generateTokens } = await import("../config/jwt.js");
-    const { accessToken, refreshToken: newRefreshToken } = generateTokens({
-      userId: decoded.userId,
-      email: decoded.email,
+    const { accessToken } = generateTokens({
+      userId: user.id,
+      email: user.email,
     });
+
+    // Remove password hash from user response
+    const { passwordHash: _, ...userResponse } = user;
 
     res.json({
       message: "Token refreshed successfully",
       accessToken,
-      refreshToken: newRefreshToken,
+      user: userResponse,
     });
   } catch (error) {
     console.error("Refresh token error:", error);
