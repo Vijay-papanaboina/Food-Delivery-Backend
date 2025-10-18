@@ -7,7 +7,7 @@ export async function upsertPayment(p) {
   await db
     .insert(payments)
     .values({
-      paymentId: p.paymentId,
+      paymentId: p.id,
       orderId: p.orderId,
       amount: String(p.amount),
       method: p.method,
@@ -19,7 +19,7 @@ export async function upsertPayment(p) {
       processedAt: p.processedAt ? new Date(p.processedAt) : null,
     })
     .onConflictDoUpdate({
-      target: payments.paymentId,
+      target: payments.id,
       set: {
         status: sql`excluded.status`,
         transactionId: sql`excluded.transaction_id`,
@@ -32,7 +32,7 @@ export async function upsertPayment(p) {
 export async function getPaymentByOrderId(orderId) {
   const rows = await db
     .select({
-      payment_id: payments.paymentId,
+      payment_id: payments.id,
       order_id: payments.orderId,
       amount: payments.amount,
       method: payments.method,
@@ -52,7 +52,7 @@ export async function getPaymentByOrderId(orderId) {
 export async function getPayments(filters = {}) {
   let query = db
     .select({
-      payment_id: payments.paymentId,
+      payment_id: payments.id,
       order_id: payments.orderId,
       amount: payments.amount,
       method: payments.method,
@@ -80,14 +80,40 @@ export async function getPayments(filters = {}) {
 }
 
 export async function getPaymentStats() {
-  const [totalRows, successRows, failedRows, pendingRows, processingRows, sumSuccessRows, avgSuccessRows] = await Promise.all([
+  const [
+    totalRows,
+    successRows,
+    failedRows,
+    pendingRows,
+    processingRows,
+    sumSuccessRows,
+    avgSuccessRows,
+  ] = await Promise.all([
     db.select({ count: sql`COUNT(*)` }).from(payments),
-    db.select({ count: sql`COUNT(*)` }).from(payments).where(eq(payments.status, 'success')),
-    db.select({ count: sql`COUNT(*)` }).from(payments).where(eq(payments.status, 'failed')),
-    db.select({ count: sql`COUNT(*)` }).from(payments).where(eq(payments.status, 'pending')),
-    db.select({ count: sql`COUNT(*)` }).from(payments).where(eq(payments.status, 'processing')),
-    db.select({ sum: sql`SUM(${payments.amount})` }).from(payments).where(eq(payments.status, 'success')),
-    db.select({ avg: sql`AVG(${payments.amount})` }).from(payments).where(eq(payments.status, 'success')),
+    db
+      .select({ count: sql`COUNT(*)` })
+      .from(payments)
+      .where(eq(payments.status, "success")),
+    db
+      .select({ count: sql`COUNT(*)` })
+      .from(payments)
+      .where(eq(payments.status, "failed")),
+    db
+      .select({ count: sql`COUNT(*)` })
+      .from(payments)
+      .where(eq(payments.status, "pending")),
+    db
+      .select({ count: sql`COUNT(*)` })
+      .from(payments)
+      .where(eq(payments.status, "processing")),
+    db
+      .select({ sum: sql`SUM(${payments.amount})` })
+      .from(payments)
+      .where(eq(payments.status, "success")),
+    db
+      .select({ avg: sql`AVG(${payments.amount})` })
+      .from(payments)
+      .where(eq(payments.status, "success")),
   ]);
 
   const total = parseInt(totalRows[0]?.count || 0);
@@ -97,14 +123,22 @@ export async function getPaymentStats() {
   const processing = parseInt(processingRows[0]?.count || 0);
   const totalAmount = parseFloat(sumSuccessRows[0]?.sum || 0);
   const averageAmount = parseFloat(avgSuccessRows[0]?.avg || 0);
-  const successRate = total > 0 ? parseFloat(((successful / total) * 100).toFixed(2)) : 0;
+  const successRate =
+    total > 0 ? parseFloat(((successful / total) * 100).toFixed(2)) : 0;
 
-  return { total, successful, failed, pending, processing, totalAmount, averageAmount, successRate };
+  return {
+    total,
+    successful,
+    failed,
+    pending,
+    processing,
+    totalAmount,
+    averageAmount,
+    successRate,
+  };
 }
 
 export async function getPaymentsCount() {
   const rows = await db.select({ count: sql`COUNT(*)::int` }).from(payments);
   return rows[0]?.count || 0;
 }
-
-

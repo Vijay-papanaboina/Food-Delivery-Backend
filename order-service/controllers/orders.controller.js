@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "uuid";
+// Removed uuid import - using database-generated IDs now
 import { upsertOrder, getOrder } from "../repositories/orders.repo.js";
 import {
   listOrdersDrizzle,
@@ -9,13 +9,14 @@ import { TOPICS, publishMessage } from "../config/kafka.js";
 export const buildCreateOrderController =
   (producer, serviceName) => async (req, res) => {
     try {
-      const { restaurantId, items, userId, deliveryAddress } = req.body;
+      const { restaurantId, items, deliveryAddress } = req.body;
+      const userId = req.user.userId; // Get user ID from JWT token
 
       // Validate required fields
-      if (!restaurantId || !items || !userId || !deliveryAddress) {
+      if (!restaurantId || !items || !deliveryAddress) {
         return res.status(400).json({
           error:
-            "Missing required fields: restaurantId, items, userId, deliveryAddress",
+            "Missing required fields: restaurantId, items, deliveryAddress",
         });
       }
 
@@ -28,9 +29,9 @@ export const buildCreateOrderController =
 
       // Validate each item in the array
       for (const [index, item] of items.entries()) {
-        if (!item.itemId || !item.price || !item.quantity) {
+        if (!item.id || !item.price || !item.quantity) {
           return res.status(400).json({
-            error: `Item at index ${index} missing required fields: itemId, price, quantity`,
+            error: `Item at index ${index} missing required fields: id, price, quantity`,
           });
         }
         if (typeof item.price !== "number" || item.price <= 0) {
@@ -118,7 +119,7 @@ export const buildCreateOrderController =
         0
       );
       const order = {
-        orderId: uuidv4(),
+        // Don't provide orderId - let database generate it
         restaurantId,
         items: validatedItems,
         userId,
@@ -130,34 +131,36 @@ export const buildCreateOrderController =
         updatedAt: new Date().toISOString(),
       };
 
-      await upsertOrder(order);
+      const createdOrder = await upsertOrder(order);
+
+      // Publish event AFTER database insert with the generated ID
       await publishMessage(
         producer,
         TOPICS.ORDER_CREATED,
         {
-          orderId: order.orderId,
-          restaurantId: order.restaurantId,
-          items: order.items,
-          userId: order.userId,
-          total: order.total,
-          createdAt: order.createdAt,
+          orderId: createdOrder.id,
+          restaurantId: createdOrder.restaurantId,
+          items: createdOrder.items,
+          userId: createdOrder.userId,
+          total: createdOrder.total,
+          createdAt: createdOrder.createdAt,
         },
-        order.orderId
+        createdOrder.id
       );
 
-      console.log(`📤 [${serviceName}] Order created: ${order.orderId}`);
+      console.log(`📤 [${serviceName}] Order created: ${createdOrder.id}`);
       res.status(201).json({
         message: "Order created successfully",
         order: {
-          orderId: order.orderId,
-          restaurantId: order.restaurantId,
-          userId: order.userId,
-          items: order.items,
-          deliveryAddress: order.deliveryAddress,
-          status: order.status,
-          paymentStatus: order.paymentStatus,
-          total: order.total,
-          createdAt: order.createdAt,
+          orderId: createdOrder.id,
+          restaurantId: createdOrder.restaurantId,
+          userId: createdOrder.userId,
+          items: createdOrder.items,
+          deliveryAddress: createdOrder.deliveryAddress,
+          status: createdOrder.status,
+          paymentStatus: createdOrder.paymentStatus,
+          total: createdOrder.total,
+          createdAt: createdOrder.createdAt,
         },
       });
     } catch (error) {
@@ -183,10 +186,12 @@ export const getOrderById = async (req, res) => {
 
 export const listOrders = async (req, res) => {
   try {
-    const { status, userId, restaurantId, limit } = req.query;
+    const { status, restaurantId, limit } = req.query;
+    const userId = req.user.userId; // Get user ID from JWT token
+
     const orders = await listOrdersDrizzle({
       status,
-      userId,
+      userId, // Use JWT user ID instead of query param
       restaurantId,
       limit,
     });

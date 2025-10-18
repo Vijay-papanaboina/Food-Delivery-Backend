@@ -1,24 +1,29 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
-import { db } from '../config/db.js';
-import { restaurants } from '../db/schema.js';
+import { and, desc, eq, sql } from "drizzle-orm";
+import { db } from "../config/db.js";
+import { restaurants } from "../db/schema.js";
 
 export async function upsertRestaurant(restaurant) {
   await db
     .insert(restaurants)
     .values({
-      restaurantId: restaurant.restaurantId,
+      restaurantId: restaurant.id,
       name: restaurant.name,
       cuisine: restaurant.cuisine,
       address: restaurant.address,
       phone: restaurant.phone,
       rating: restaurant.rating != null ? String(restaurant.rating) : undefined,
       deliveryTime: restaurant.deliveryTime,
-      deliveryFee: restaurant.deliveryFee != null ? String(restaurant.deliveryFee) : undefined,
+      deliveryFee:
+        restaurant.deliveryFee != null
+          ? String(restaurant.deliveryFee)
+          : undefined,
       isActive: restaurant.isActive,
-      createdAt: restaurant.createdAt ? new Date(restaurant.createdAt) : undefined,
+      createdAt: restaurant.createdAt
+        ? new Date(restaurant.createdAt)
+        : undefined,
     })
     .onConflictDoUpdate({
-      target: restaurants.restaurantId,
+      target: restaurants.id,
       set: {
         name: sql`excluded.name`,
         cuisine: sql`excluded.cuisine`,
@@ -35,7 +40,7 @@ export async function upsertRestaurant(restaurant) {
 export async function getRestaurant(restaurantId) {
   const rows = await db
     .select({
-      restaurant_id: restaurants.restaurantId,
+      restaurant_id: restaurants.id,
       name: restaurants.name,
       cuisine: restaurants.cuisine,
       address: restaurants.address,
@@ -50,7 +55,7 @@ export async function getRestaurant(restaurantId) {
       created_at: restaurants.createdAt,
     })
     .from(restaurants)
-    .where(eq(restaurants.restaurantId, restaurantId))
+    .where(eq(restaurants.id, restaurantId))
     .limit(1);
   return rows[0] || null;
 }
@@ -58,7 +63,7 @@ export async function getRestaurant(restaurantId) {
 export async function getRestaurants(filters = {}) {
   let query = db
     .select({
-      restaurant_id: restaurants.restaurantId,
+      restaurant_id: restaurants.id,
       name: restaurants.name,
       cuisine: restaurants.cuisine,
       address: restaurants.address,
@@ -76,9 +81,14 @@ export async function getRestaurants(filters = {}) {
     .orderBy(desc(restaurants.rating));
 
   const conditions = [];
-  if (filters.cuisine) conditions.push(sql`LOWER(${restaurants.cuisine}) = LOWER(${filters.cuisine})`);
-  if (filters.isActive !== undefined) conditions.push(eq(restaurants.isActive, filters.isActive));
-  if (filters.minRating) conditions.push(sql`${restaurants.rating} >= ${filters.minRating}`);
+  if (filters.cuisine)
+    conditions.push(
+      sql`LOWER(${restaurants.cuisine}) = LOWER(${filters.cuisine})`
+    );
+  if (filters.isActive !== undefined)
+    conditions.push(eq(restaurants.isActive, filters.isActive));
+  if (filters.minRating)
+    conditions.push(sql`${restaurants.rating} >= ${filters.minRating}`);
   if (conditions.length) query = query.where(and(...conditions));
   if (filters.limit) query = query.limit(Number(filters.limit));
   return await query;
@@ -88,7 +98,7 @@ export async function toggleRestaurantStatus(restaurantId, isOpen) {
   await db
     .update(restaurants)
     .set({ isOpen })
-    .where(eq(restaurants.restaurantId, restaurantId));
+    .where(eq(restaurants.id, restaurantId));
 }
 
 export async function getRestaurantStatus(restaurantId) {
@@ -100,7 +110,7 @@ export async function getRestaurantStatus(restaurantId) {
       is_active: restaurants.isActive,
     })
     .from(restaurants)
-    .where(eq(restaurants.restaurantId, restaurantId))
+    .where(eq(restaurants.id, restaurantId))
     .limit(1);
   return rows[0] || null;
 }
@@ -127,8 +137,8 @@ export async function getRestaurantStats() {
     totalRestaurants: parseInt(summary.total_restaurants || 0),
     activeRestaurants: parseInt(summary.active_restaurants || 0),
     averageRating: Number(parseFloat(summary.average_rating || 0).toFixed(2)),
-    byCuisine: Object.fromEntries(cuisineRows.map((r) => [r.cuisine, parseInt(r.count)])),
+    byCuisine: Object.fromEntries(
+      cuisineRows.map((r) => [r.cuisine, parseInt(r.count)])
+    ),
   };
 }
-
-

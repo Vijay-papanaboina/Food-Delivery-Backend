@@ -6,21 +6,28 @@ export async function upsertDriver(driver) {
   await db
     .insert(drivers)
     .values({
-      driverId: driver.driverId,
+      id: driver.driverId,
       name: driver.name,
       phone: driver.phone,
       vehicle: driver.vehicle,
       licensePlate: driver.licensePlate,
       isAvailable: driver.isAvailable,
-      currentLocationLat: driver.currentLocation?.lat != null ? String(driver.currentLocation.lat) : null,
-      currentLocationLng: driver.currentLocation?.lng != null ? String(driver.currentLocation.lng) : null,
+      currentLocationLat:
+        driver.currentLocation?.lat != null
+          ? String(driver.currentLocation.lat)
+          : null,
+      currentLocationLng:
+        driver.currentLocation?.lng != null
+          ? String(driver.currentLocation.lng)
+          : null,
       rating: driver.rating != null ? String(driver.rating) : "0.0",
-      totalDeliveries: driver.totalDeliveries != null ? String(driver.totalDeliveries) : "0",
+      totalDeliveries:
+        driver.totalDeliveries != null ? String(driver.totalDeliveries) : "0",
       createdAt: driver.createdAt ? new Date(driver.createdAt) : undefined,
       updatedAt: driver.updatedAt ? new Date(driver.updatedAt) : new Date(),
     })
     .onConflictDoUpdate({
-      target: drivers.driverId,
+      target: drivers.id,
       set: {
         isAvailable: sql`excluded.is_available`,
         currentLocationLat: sql`excluded.current_location_lat`,
@@ -35,7 +42,7 @@ export async function upsertDriver(driver) {
 export async function getDriver(driverId) {
   const rows = await db
     .select({
-      driver_id: drivers.driverId,
+      driver_id: drivers.id,
       name: drivers.name,
       phone: drivers.phone,
       vehicle: drivers.vehicle,
@@ -49,7 +56,7 @@ export async function getDriver(driverId) {
       updated_at: drivers.updatedAt,
     })
     .from(drivers)
-    .where(eq(drivers.driverId, driverId))
+    .where(eq(drivers.id, driverId))
     .limit(1);
 
   if (rows[0]) {
@@ -57,21 +64,21 @@ export async function getDriver(driverId) {
     if (driver.current_location_lat && driver.current_location_lng) {
       driver.current_location = {
         lat: parseFloat(driver.current_location_lat),
-        lng: parseFloat(driver.current_location_lng)
+        lng: parseFloat(driver.current_location_lng),
       };
     }
     delete driver.current_location_lat;
     delete driver.current_location_lng;
     return driver;
   }
-  
+
   return null;
 }
 
 export async function getDrivers(filters = {}) {
   let query = db
     .select({
-      driver_id: drivers.driverId,
+      driver_id: drivers.id,
       name: drivers.name,
       phone: drivers.phone,
       vehicle: drivers.vehicle,
@@ -99,7 +106,7 @@ export async function getDrivers(filters = {}) {
     if (driver.current_location_lat && driver.current_location_lng) {
       driver.current_location = {
         lat: parseFloat(driver.current_location_lat),
-        lng: parseFloat(driver.current_location_lng)
+        lng: parseFloat(driver.current_location_lng),
       };
     }
     delete driver.current_location_lat;
@@ -107,5 +114,3 @@ export async function getDrivers(filters = {}) {
     return driver;
   });
 }
-
-

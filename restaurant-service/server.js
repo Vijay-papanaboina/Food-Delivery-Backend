@@ -5,7 +5,6 @@ import createApp from "./app.js";
 import { createProducer, createConsumer } from "./config/kafka.js";
 import { initDb } from "./config/db.js";
 import { initializeKafka, shutdownKafka } from "./utils/kafka.utils.js";
-import { initializeSampleData } from "./utils/data.utils.js";
 
 /**
  * Restaurant Service - Manages restaurants, menus, and kitchen operations
@@ -53,9 +52,6 @@ app.listen(PORT, async () => {
     `   POST /api/kitchen/orders/:orderId/ready - Mark order as ready`
   );
   console.log(`   GET  /health - Health check`);
-
-  // Initialize sample data
-  await initializeSampleData();
 
   // Initialize Kafka after server starts
   await initializeKafka(producer, consumer, SERVICE_NAME);

@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "uuid";
+// Removed uuid import - using database-generated IDs now
 import {
   upsertPayment,
   getPaymentByOrderId,
@@ -34,11 +34,9 @@ export async function processPayment(
     return existingPayment;
   }
 
-  const paymentId = uuidv4();
-
-  // Create payment record with status "pending"
+  // Create payment record with status "pending" (let database generate paymentId)
   const payment = {
-    paymentId,
+    // Don't provide paymentId - let database generate it
     orderId,
     amount,
     method,
@@ -50,18 +48,18 @@ export async function processPayment(
     failureReason: null,
   };
 
-  // Persist to database
-  await upsertPayment(payment);
+  // Persist to database and get the created payment with generated ID
+  const createdPayment = await upsertPayment(payment);
 
   console.log(
-    `💳 [${serviceName}] Created payment ${paymentId} for order ${orderId} (${method}, $${amount}) - Status: pending`
+    `💳 [${serviceName}] Created payment ${createdPayment.id} for order ${orderId} (${method}, $${amount}) - Status: pending`
   );
 
   // Update payment record in database
-  payment.status = "processing";
-  await upsertPayment(payment);
+  createdPayment.status = "processing";
+  await upsertPayment(createdPayment);
 
-  console.log(`⏳ [${serviceName}] Processing payment ${paymentId}...`);
+  console.log(`⏳ [${serviceName}] Processing payment ${createdPayment.id}...`);
 
   // Simulate processing delay
   const delay = PAYMENT_CONFIG.processingDelays[method] || 2000;
@@ -72,37 +70,39 @@ export async function processPayment(
   const isSuccess = Math.random() < successRate;
 
   // Update payment status in database
-  payment.status = isSuccess ? "success" : "failed";
-  payment.processedAt = new Date().toISOString();
+  createdPayment.status = isSuccess ? "success" : "failed";
+  createdPayment.processedAt = new Date().toISOString();
 
-  if (payment.status === "success") {
-    payment.transactionId = `txn_${Math.random().toString(36).substr(2, 9)}`;
+  if (createdPayment.status === "success") {
+    createdPayment.transactionId = `txn_${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
     console.log(
-      `✅ [${serviceName}] Payment ${paymentId} successful (${method})`
+      `✅ [${serviceName}] Payment ${createdPayment.id} successful (${method})`
     );
   } else {
-    payment.failureReason = getRandomFailureReason(method);
+    createdPayment.failureReason = getRandomFailureReason(method);
     console.log(
-      `❌ [${serviceName}] Payment ${paymentId} failed (${method}): ${payment.failureReason}`
+      `❌ [${serviceName}] Payment ${createdPayment.id} failed (${method}): ${createdPayment.failureReason}`
     );
   }
 
   // Persist final payment status to database
-  await upsertPayment(payment);
+  await upsertPayment(createdPayment);
 
-  // Publish payment processed event
+  // Publish payment processed event AFTER database update
   await publishMessage(
     producer,
     TOPICS.PAYMENT_PROCESSED,
     {
-      paymentId,
+      paymentId: createdPayment.id,
       orderId,
       amount,
       method,
-      status: payment.status,
-      transactionId: payment.transactionId,
-      failureReason: payment.failureReason,
-      processedAt: payment.processedAt,
+      status: createdPayment.status,
+      transactionId: createdPayment.transactionId,
+      failureReason: createdPayment.failureReason,
+      processedAt: createdPayment.processedAt,
     },
     orderId
   ); // Use orderId as key for partitioning
@@ -111,7 +111,7 @@ export async function processPayment(
     `📤 [${serviceName}] Published payment-processed event for order ${orderId}`
   );
 
-  return payment;
+  return createdPayment;
 }
 
 /**

@@ -1,12 +1,12 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
-import { db } from '../config/db.js';
-import { kitchenOrders } from '../db/schema.js';
+import { and, desc, eq, sql } from "drizzle-orm";
+import { db } from "../config/db.js";
+import { kitchenOrders } from "../db/schema.js";
 
 export async function upsertKitchenOrder(order) {
   await db
     .insert(kitchenOrders)
     .values({
-      orderId: order.orderId,
+      orderId: order.id,
       restaurantId: order.restaurantId,
       userId: order.userId,
       items: order.items,
@@ -15,12 +15,14 @@ export async function upsertKitchenOrder(order) {
       status: order.status,
       receivedAt: new Date(order.receivedAt),
       startedAt: order.startedAt ? new Date(order.startedAt) : null,
-      estimatedReadyTime: order.estimatedReadyTime ? new Date(order.estimatedReadyTime) : null,
+      estimatedReadyTime: order.estimatedReadyTime
+        ? new Date(order.estimatedReadyTime)
+        : null,
       readyAt: order.readyAt ? new Date(order.readyAt) : null,
       preparationTime: order.preparationTime || null,
     })
     .onConflictDoUpdate({
-      target: kitchenOrders.orderId,
+      target: kitchenOrders.id,
       set: {
         status: sql`excluded.status`,
         startedAt: sql`excluded.started_at`,
@@ -34,7 +36,7 @@ export async function upsertKitchenOrder(order) {
 export async function getKitchenOrder(orderId) {
   const rows = await db
     .select({
-      order_id: kitchenOrders.orderId,
+      order_id: kitchenOrders.id,
       restaurant_id: kitchenOrders.restaurantId,
       user_id: kitchenOrders.userId,
       items_json: kitchenOrders.items,
@@ -48,7 +50,7 @@ export async function getKitchenOrder(orderId) {
       preparation_time: kitchenOrders.preparationTime,
     })
     .from(kitchenOrders)
-    .where(eq(kitchenOrders.orderId, orderId))
+    .where(eq(kitchenOrders.id, orderId))
     .limit(1);
   if (!rows[0]) return null;
   const row = rows[0];
@@ -56,8 +58,14 @@ export async function getKitchenOrder(orderId) {
     orderId: row.order_id,
     restaurantId: row.restaurant_id,
     userId: row.user_id,
-    items: typeof row.items_json === 'string' ? JSON.parse(row.items_json) : row.items_json,
-    deliveryAddress: typeof row.delivery_address_json === 'string' ? JSON.parse(row.delivery_address_json) : row.delivery_address_json,
+    items:
+      typeof row.items_json === "string"
+        ? JSON.parse(row.items_json)
+        : row.items_json,
+    deliveryAddress:
+      typeof row.delivery_address_json === "string"
+        ? JSON.parse(row.delivery_address_json)
+        : row.delivery_address_json,
     total: parseFloat(row.total),
     status: row.status,
     receivedAt: row.received_at,
@@ -71,7 +79,7 @@ export async function getKitchenOrder(orderId) {
 export async function getKitchenOrders(filters = {}) {
   let query = db
     .select({
-      order_id: kitchenOrders.orderId,
+      order_id: kitchenOrders.id,
       restaurant_id: kitchenOrders.restaurantId,
       user_id: kitchenOrders.userId,
       items_json: kitchenOrders.items,
@@ -88,7 +96,8 @@ export async function getKitchenOrders(filters = {}) {
 
   const conditions = [];
   if (filters.status) conditions.push(eq(kitchenOrders.status, filters.status));
-  if (filters.restaurantId) conditions.push(eq(kitchenOrders.restaurantId, filters.restaurantId));
+  if (filters.restaurantId)
+    conditions.push(eq(kitchenOrders.restaurantId, filters.restaurantId));
   if (conditions.length) query = query.where(and(...conditions));
   if (filters.limit) query = query.limit(Number(filters.limit));
 
@@ -99,5 +108,3 @@ export async function getKitchenOrders(filters = {}) {
     return row;
   });
 }
-
-

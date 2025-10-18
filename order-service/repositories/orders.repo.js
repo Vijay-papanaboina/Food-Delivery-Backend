@@ -1,12 +1,12 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
-import { db } from '../config/db.js';
-import { orders } from '../db/schema.js';
+import { and, desc, eq, sql } from "drizzle-orm";
+import { db } from "../config/db.js";
+import { orders } from "../db/schema.js";
 
 export async function upsertOrder(o) {
   await db
     .insert(orders)
     .values({
-      orderId: o.orderId,
+      orderId: o.id,
       restaurantId: o.restaurantId,
       userId: o.userId,
       items: o.items,
@@ -19,7 +19,7 @@ export async function upsertOrder(o) {
       deliveredAt: o.deliveredAt ? new Date(o.deliveredAt) : null,
     })
     .onConflictDoUpdate({
-      target: orders.orderId,
+      target: orders.id,
       set: {
         status: sql`excluded.status`,
         paymentStatus: sql`excluded.payment_status`,
@@ -32,7 +32,7 @@ export async function upsertOrder(o) {
 export async function getOrder(orderId) {
   const rows = await db
     .select({
-      order_id: orders.orderId,
+      order_id: orders.id,
       restaurant_id: orders.restaurantId,
       user_id: orders.userId,
       items_json: orders.items,
@@ -45,7 +45,7 @@ export async function getOrder(orderId) {
       delivered_at: orders.deliveredAt,
     })
     .from(orders)
-    .where(eq(orders.orderId, orderId))
+    .where(eq(orders.id, orderId))
     .limit(1);
   if (!rows[0]) return null;
   const row = rows[0];
@@ -53,8 +53,14 @@ export async function getOrder(orderId) {
     orderId: row.order_id,
     restaurantId: row.restaurant_id,
     userId: row.user_id,
-    items: typeof row.items_json === 'string' ? JSON.parse(row.items_json) : row.items_json,
-    deliveryAddress: typeof row.delivery_address_json === 'string' ? JSON.parse(row.delivery_address_json) : row.delivery_address_json,
+    items:
+      typeof row.items_json === "string"
+        ? JSON.parse(row.items_json)
+        : row.items_json,
+    deliveryAddress:
+      typeof row.delivery_address_json === "string"
+        ? JSON.parse(row.delivery_address_json)
+        : row.delivery_address_json,
     status: row.status,
     paymentStatus: row.payment_status,
     total: parseFloat(row.total),
@@ -63,5 +69,3 @@ export async function getOrder(orderId) {
     deliveredAt: row.delivered_at,
   };
 }
-
-

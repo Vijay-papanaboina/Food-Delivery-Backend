@@ -291,3 +291,4 @@ coverage/
 common/temp/
 .cursorignore
 */drizzle/*
+insert-mock-data.ps1

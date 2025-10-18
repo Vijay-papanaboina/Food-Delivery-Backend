@@ -5,7 +5,6 @@ import createApp from "./app.js";
 import { createProducer, createConsumer } from "./config/kafka.js";
 import { initDb } from "./config/db.js";
 import { initializeKafka, shutdownKafka } from "./utils/kafka.utils.js";
-import { initializeSampleData } from "./utils/data.utils.js";
 
 /**
  * Delivery Service - Manages order deliveries and driver assignments
@@ -53,9 +52,6 @@ app.listen(PORT, async () => {
   console.log(`   GET  /api/drivers - List all drivers`);
   console.log(`   GET  /api/delivery/stats - Get delivery statistics`);
   console.log(`   GET  /health - Health check`);
-
-  // Initialize sample data
-  await initializeSampleData();
 
   // Initialize Kafka after server starts
   await initializeKafka(producer, consumer, SERVICE_NAME);

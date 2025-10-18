@@ -5,14 +5,15 @@ import {
   boolean,
   numeric,
   jsonb,
+  uuid,
 } from "drizzle-orm/pg-core";
 
 export const delivery_svc = pgSchema("delivery_svc");
 
 export const deliveries = delivery_svc.table("deliveries", {
-  deliveryId: text("delivery_id").primaryKey().notNull(),
-  orderId: text("order_id").notNull(),
-  driverId: text("driver_id").notNull(),
+  id: uuid("id").primaryKey().defaultRandom().notNull(),
+  orderId: uuid("order_id").notNull(),
+  driverId: uuid("driver_id").notNull(),
   driverName: text("driver_name").notNull(),
   driverPhone: text("driver_phone").notNull(),
   vehicle: text("vehicle").notNull(),
@@ -31,7 +32,7 @@ export const deliveries = delivery_svc.table("deliveries", {
 });
 
 export const drivers = delivery_svc.table("drivers", {
-  driverId: text("driver_id").primaryKey().notNull(),
+  id: uuid("id").primaryKey().defaultRandom().notNull(),
   name: text("name").notNull(),
   phone: text("phone").notNull(),
   vehicle: text("vehicle").notNull(),

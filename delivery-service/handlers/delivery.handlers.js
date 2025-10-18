@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "uuid";
+// Removed uuid import - using database-generated IDs now
 import {
   upsertDriver,
   getDrivers,
@@ -34,16 +34,15 @@ export async function assignDelivery(
       throw new Error(`Driver ${driverId} not found`);
     }
     const assignedAt = new Date().toISOString();
-    const deliveryId = uuidv4();
 
     // Fixed estimated delivery time (10 seconds from now for simulation)
     const estimatedDeliveryTime = new Date(
       Date.now() + 10 * 1000
     ).toISOString();
 
-    // Create delivery record
+    // Create delivery record (let database generate deliveryId)
     const delivery = {
-      deliveryId,
+      // Don't provide deliveryId - let database generate it
       orderId,
       driverId,
       deliveryAddress, // Include delivery address
@@ -54,8 +53,8 @@ export async function assignDelivery(
       createdAt: assignedAt,
     };
 
-    // Save delivery to database
-    await upsertDelivery({
+    // Save delivery to database and get the created delivery with generated ID
+    const createdDelivery = await upsertDelivery({
       ...delivery,
       driverName: driver.name,
       driverPhone: driver.phone,
@@ -77,12 +76,12 @@ export async function assignDelivery(
       updatedAt: assignedAt,
     });
 
-    // Publish delivery assigned event
+    // Publish delivery assigned event AFTER database insert
     await publishMessage(
       producer,
       TOPICS.DELIVERY_ASSIGNED,
       {
-        deliveryId,
+        deliveryId: createdDelivery.id,
         orderId,
         driverId,
         assignedAt,
@@ -92,7 +91,7 @@ export async function assignDelivery(
     );
 
     console.log(
-      `✅ [${serviceName}] Delivery ${deliveryId} assigned to driver ${driverId} for order ${orderId}`
+      `✅ [${serviceName}] Delivery ${createdDelivery.id} assigned to driver ${driverId} for order ${orderId}`
     );
 
     // No automatic completion - must be called manually
@@ -233,90 +232,3 @@ export async function completeDelivery(
 /**
  * Initialize sample driver data if needed
  */
-export async function initializeSampleDrivers() {
-  try {
-    // Check if we already have drivers in the database
-    const existing = await getDrivers({ limit: 1 });
-    if (existing.length > 0) {
-      console.log(`🚗 [delivery-service] Drivers already exist in database`);
-      return;
-    }
-
-    const sampleDrivers = [
-      {
-        driverId: "driver-001",
-        name: "John Smith",
-        phone: "+1-555-1001",
-        vehicle: "Honda Civic",
-        licensePlate: "ABC-123",
-        isAvailable: true,
-        currentLocation: { lat: 40.7128, lng: -74.006 },
-        rating: 4.8,
-        totalDeliveries: 156,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        driverId: "driver-002",
-        name: "Sarah Johnson",
-        phone: "+1-555-1002",
-        vehicle: "Toyota Corolla",
-        licensePlate: "XYZ-789",
-        isAvailable: true,
-        currentLocation: { lat: 40.7589, lng: -73.9851 },
-        rating: 4.9,
-        totalDeliveries: 203,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        driverId: "driver-003",
-        name: "Mike Davis",
-        phone: "+1-555-1003",
-        vehicle: "Ford Focus",
-        licensePlate: "DEF-456",
-        isAvailable: true,
-        currentLocation: { lat: 40.7505, lng: -73.9934 },
-        rating: 4.6,
-        totalDeliveries: 89,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        driverId: "driver-004",
-        name: "Emily Wilson",
-        phone: "+1-555-1004",
-        vehicle: "Nissan Altima",
-        licensePlate: "GHI-789",
-        isAvailable: true,
-        currentLocation: { lat: 40.7282, lng: -73.7949 },
-        rating: 4.7,
-        totalDeliveries: 134,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        driverId: "driver-005",
-        name: "Alex Brown",
-        phone: "+1-555-1005",
-        vehicle: "Hyundai Elantra",
-        licensePlate: "JKL-012",
-        isAvailable: true,
-        currentLocation: { lat: 40.7614, lng: -73.9776 },
-        rating: 4.5,
-        totalDeliveries: 67,
-        createdAt: new Date().toISOString(),
-      },
-    ];
-
-    // Insert sample drivers into database
-    for (const driver of sampleDrivers) {
-      await upsertDriver(driver);
-    }
-
-    console.log(
-      `🚗 [delivery-service] Initialized ${sampleDrivers.length} sample drivers`
-    );
-  } catch (error) {
-    console.error(
-      `❌ [delivery-service] Error initializing sample drivers:`,
-      error.message
-    );
-  }
-}
