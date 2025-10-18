@@ -116,6 +116,46 @@ export const toggleMenuItemAvailability = async (req, res) => {
   }
 };
 
+export const getMenuItem = async (req, res) => {
+  try {
+    const { itemId } = req.params;
+
+    if (!itemId || typeof itemId !== "string") {
+      return res
+        .status(400)
+        .json({ error: "Invalid item ID: must be a non-empty string" });
+    }
+
+    const row = await getMenuItemById(itemId);
+    if (!row) {
+      return res.status(404).json({ error: "Menu item not found" });
+    }
+
+    // Transform to camelCase for API response
+    const item = {
+      itemId: row.item_id,
+      restaurantId: row.restaurant_id,
+      name: row.name,
+      description: row.description,
+      price: parseFloat(row.price),
+      category: row.category,
+      isAvailable: row.is_available,
+      preparationTime: row.preparation_time,
+      createdAt: row.created_at,
+    };
+
+    res.json({
+      message: "Menu item retrieved successfully",
+      item,
+    });
+  } catch (error) {
+    console.error("Error getting menu item:", error.message);
+    res
+      .status(500)
+      .json({ error: "Failed to get menu item", details: error.message });
+  }
+};
+
 export const validateMenuItemsForOrder = async (req, res) => {
   try {
     const { restaurantId } = req.params;

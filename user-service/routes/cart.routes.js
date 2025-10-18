@@ -12,26 +12,11 @@ export default function cartRoutes(serviceName) {
 
   // Cart validation middleware
   const validateCart = [
-    body("restaurantId")
-      .isUUID()
-      .withMessage("Restaurant ID must be a valid UUID"),
     body("items").isArray().withMessage("Items must be an array"),
     body("items.*.itemId").isUUID().withMessage("Item ID must be a valid UUID"),
-    body("items.*.name")
-      .isString()
-      .notEmpty()
-      .withMessage("Item name is required"),
-    body("items.*.price")
-      .isNumeric()
-      .withMessage("Item price must be a number"),
     body("items.*.quantity")
       .isInt({ min: 1 })
       .withMessage("Item quantity must be at least 1"),
-    body("subtotal").isNumeric().withMessage("Subtotal must be a number"),
-    body("deliveryFee")
-      .isNumeric()
-      .withMessage("Delivery fee must be a number"),
-    body("total").isNumeric().withMessage("Total must be a number"),
   ];
 
   // Protected cart routes

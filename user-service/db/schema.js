@@ -6,6 +6,7 @@ import {
   uuid,
   jsonb,
   numeric,
+  integer,
 } from "drizzle-orm/pg-core";
 
 export const user_svc = pgSchema("user_svc");
@@ -42,14 +43,11 @@ export const userAddresses = user_svc.table("user_addresses", {
     .defaultNow(),
 });
 
-export const userCarts = user_svc.table("user_carts", {
+export const cartItems = user_svc.table("cart_items", {
   id: uuid("id").primaryKey().defaultRandom().notNull(),
   userId: uuid("user_id").notNull(),
-  restaurantId: uuid("restaurant_id").notNull(),
-  items: jsonb("items_json").notNull(), // Array of cart items
-  subtotal: numeric("subtotal", { precision: 10, scale: 2 }).notNull(),
-  deliveryFee: numeric("delivery_fee", { precision: 10, scale: 2 }).notNull(),
-  total: numeric("total", { precision: 10, scale: 2 }).notNull(),
+  itemId: uuid("item_id").notNull(),
+  quantity: integer("quantity").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

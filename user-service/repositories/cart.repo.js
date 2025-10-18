@@ -1,57 +1,41 @@
 import { eq, and } from "drizzle-orm";
 import { db } from "../config/db.js";
-import { userCarts } from "../db/schema.js";
+import { cartItems } from "../db/schema.js";
 
-export const getCartByUserId = async (userId) => {
-  const [cart] = await db
-    .select()
-    .from(userCarts)
-    .where(eq(userCarts.userId, userId))
-    .orderBy(userCarts.updatedAt);
-
-  return cart;
+// Get all cart items for a user
+export const getCartItemsByUserId = async (userId) => {
+  return await db.select().from(cartItems).where(eq(cartItems.userId, userId));
 };
 
-export const upsertCart = async (cartData) => {
-  const existingCart = await getCartByUserId(cartData.userId);
+// Add or update a cart item (upsert)
+export const upsertCartItem = async (userId, itemId, quantity) => {
+  const existing = await db
+    .select()
+    .from(cartItems)
+    .where(and(eq(cartItems.userId, userId), eq(cartItems.itemId, itemId)));
 
-  if (existingCart) {
-    // Update existing cart
-    await db
-      .update(userCarts)
-      .set({
-        restaurantId: cartData.restaurantId,
-        items: cartData.items,
-        subtotal: String(cartData.subtotal),
-        deliveryFee: String(cartData.deliveryFee),
-        total: String(cartData.total),
-        updatedAt: new Date(),
-      })
-      .where(eq(userCarts.id, existingCart.id));
-
-    return { ...existingCart, ...cartData };
-  } else {
-    // Create new cart
-    const [newCart] = await db
-      .insert(userCarts)
-      .values({
-        userId: cartData.userId,
-        restaurantId: cartData.restaurantId,
-        items: cartData.items,
-        subtotal: String(cartData.subtotal),
-        deliveryFee: String(cartData.deliveryFee),
-        total: String(cartData.total),
-      })
+  if (existing.length > 0) {
+    return await db
+      .update(cartItems)
+      .set({ quantity, updatedAt: new Date() })
+      .where(eq(cartItems.id, existing[0].id))
       .returning();
-
-    return newCart;
+  } else {
+    return await db
+      .insert(cartItems)
+      .values({ userId, itemId, quantity })
+      .returning();
   }
 };
 
-export const clearCart = async (userId) => {
-  await db.delete(userCarts).where(eq(userCarts.userId, userId));
+// Remove a specific item from cart
+export const removeCartItem = async (userId, itemId) => {
+  await db
+    .delete(cartItems)
+    .where(and(eq(cartItems.userId, userId), eq(cartItems.itemId, itemId)));
 };
 
-export const deleteCart = async (cartId) => {
-  await db.delete(userCarts).where(eq(userCarts.id, cartId));
+// Clear all cart items for a user
+export const clearCartByUserId = async (userId) => {
+  await db.delete(cartItems).where(eq(cartItems.userId, userId));
 };

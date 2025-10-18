@@ -1,8 +1,8 @@
 import { validationResult } from "express-validator";
 import {
-  getCartByUserId,
-  upsertCart,
-  clearCart,
+  getCartItemsByUserId,
+  upsertCartItem,
+  clearCartByUserId,
 } from "../repositories/cart.repo.js";
 import { createLogger, sanitizeForLogging } from "../../shared/utils/logger.js";
 
@@ -13,38 +13,14 @@ export const getCart = async (req, res) => {
     const userId = req.user.userId;
     logger.info("Getting user cart", { userId });
 
-    const cart = await getCartByUserId(userId);
-
-    if (!cart) {
-      return res.json({
-        message: "Cart retrieved successfully",
-        cart: {
-          items: [],
-          restaurantId: null,
-          subtotal: 0,
-          deliveryFee: 0,
-          total: 0,
-        },
-      });
-    }
-
-    // Parse JSON fields
-    const cartData = {
-      id: cart.id,
-      userId: cart.userId,
-      restaurantId: cart.restaurantId,
-      items:
-        typeof cart.items === "string" ? JSON.parse(cart.items) : cart.items,
-      subtotal: parseFloat(cart.subtotal),
-      deliveryFee: parseFloat(cart.deliveryFee),
-      total: parseFloat(cart.total),
-      createdAt: cart.createdAt,
-      updatedAt: cart.updatedAt,
-    };
+    const items = await getCartItemsByUserId(userId);
 
     res.json({
       message: "Cart retrieved successfully",
-      cart: cartData,
+      items: items.map((item) => ({
+        itemId: item.itemId,
+        quantity: item.quantity,
+      })),
     });
   } catch (error) {
     console.error("Error getting cart:", error.message);
@@ -68,34 +44,17 @@ export const updateCart = async (req, res) => {
     }
 
     const userId = req.user.userId;
-    const { restaurantId, items, subtotal, deliveryFee, total } = req.body;
+    const { items } = req.body;
 
-    const cartData = {
-      userId,
-      restaurantId,
-      items,
-      subtotal,
-      deliveryFee,
-      total,
-    };
+    // Clear existing cart
+    await clearCartByUserId(userId);
 
-    const cart = await upsertCart(cartData);
+    // Insert new items
+    for (const item of items) {
+      await upsertCartItem(userId, item.itemId, item.quantity);
+    }
 
-    res.json({
-      message: "Cart updated successfully",
-      cart: {
-        id: cart.id,
-        userId: cart.userId,
-        restaurantId: cart.restaurantId,
-        items:
-          typeof cart.items === "string" ? JSON.parse(cart.items) : cart.items,
-        subtotal: parseFloat(cart.subtotal),
-        deliveryFee: parseFloat(cart.deliveryFee),
-        total: parseFloat(cart.total),
-        createdAt: cart.createdAt,
-        updatedAt: cart.updatedAt,
-      },
-    });
+    res.json({ message: "Cart updated successfully" });
   } catch (error) {
     console.error("Error updating cart:", error.message);
     res.status(500).json({
@@ -108,7 +67,7 @@ export const updateCart = async (req, res) => {
 export const clearUserCart = async (req, res) => {
   try {
     const userId = req.user.userId;
-    await clearCart(userId);
+    await clearCartByUserId(userId);
 
     res.json({
       message: "Cart cleared successfully",

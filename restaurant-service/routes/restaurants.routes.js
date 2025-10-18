@@ -11,6 +11,7 @@ import {
   deleteMenuItem,
   toggleMenuItemAvailability,
   validateMenuItemsForOrder,
+  getMenuItem,
 } from "../controllers/menu.controller.js";
 import {
   toggleRestaurantStatus,
@@ -23,6 +24,7 @@ export default function restaurantsRoutes() {
   router.get("/api/restaurants", listRestaurants);
   router.get("/api/restaurants/:id", getRestaurantById);
   router.get("/api/restaurants/:id/menu", getRestaurantMenu);
+  router.get("/api/menu-items/:itemId", getMenuItem);
   router.post("/api/restaurants/:restaurantId/menu", addMenuItem);
   router.put("/api/restaurants/:restaurantId/menu/:itemId", updateMenuItem);
   router.delete("/api/restaurants/:restaurantId/menu/:itemId", deleteMenuItem);
