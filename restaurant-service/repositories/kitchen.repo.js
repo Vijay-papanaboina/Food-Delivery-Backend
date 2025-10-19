@@ -6,7 +6,7 @@ export async function upsertKitchenOrder(order) {
   await db
     .insert(kitchenOrders)
     .values({
-      orderId: order.id,
+      orderId: order.orderId,
       restaurantId: order.restaurantId,
       userId: order.userId,
       items: order.items,
@@ -22,7 +22,7 @@ export async function upsertKitchenOrder(order) {
       preparationTime: order.preparationTime || null,
     })
     .onConflictDoUpdate({
-      target: kitchenOrders.id,
+      target: kitchenOrders.orderId,
       set: {
         status: sql`excluded.status`,
         startedAt: sql`excluded.started_at`,
@@ -33,10 +33,26 @@ export async function upsertKitchenOrder(order) {
     });
 }
 
+// Simple function to update kitchen order status
+export async function updateKitchenOrderStatus(
+  orderId,
+  status,
+  readyAt = null
+) {
+  const updateData = { status };
+  if (readyAt) updateData.readyAt = new Date(readyAt);
+
+  await db
+    .update(kitchenOrders)
+    .set(updateData)
+    .where(eq(kitchenOrders.orderId, orderId));
+}
+
 export async function getKitchenOrder(orderId) {
   const rows = await db
     .select({
-      order_id: kitchenOrders.id,
+      id: kitchenOrders.id,
+      order_id: kitchenOrders.orderId,
       restaurant_id: kitchenOrders.restaurantId,
       user_id: kitchenOrders.userId,
       items_json: kitchenOrders.items,
@@ -50,7 +66,7 @@ export async function getKitchenOrder(orderId) {
       preparation_time: kitchenOrders.preparationTime,
     })
     .from(kitchenOrders)
-    .where(eq(kitchenOrders.id, orderId))
+    .where(eq(kitchenOrders.orderId, orderId))
     .limit(1);
   if (!rows[0]) return null;
   const row = rows[0];
@@ -103,7 +119,15 @@ export async function getKitchenOrders(filters = {}) {
 
   const rows = await query;
   return rows.map((row) => {
-    row.items = JSON.parse(row.items_json);
+    try {
+      row.items =
+        typeof row.items_json === "string"
+          ? JSON.parse(row.items_json)
+          : row.items_json;
+    } catch (error) {
+      console.error("Failed to parse items_json:", row.items_json, error);
+      row.items = [];
+    }
     delete row.items_json;
     return row;
   });

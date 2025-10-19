@@ -39,6 +39,17 @@ export async function upsertDriver(driver) {
     });
 }
 
+// Simple function to update driver availability
+export async function updateDriverAvailability(driverId, isAvailable) {
+  await db
+    .update(drivers)
+    .set({
+      isAvailable,
+      updatedAt: new Date().toISOString(),
+    })
+    .where(eq(drivers.id, driverId));
+}
+
 export async function getDriver(driverId) {
   const rows = await db
     .select({

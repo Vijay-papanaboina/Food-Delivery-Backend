@@ -1,6 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "../config/db.js";
-import { orders } from "../db/schema.js";
+import { orders, orderItems } from "../db/schema.js";
 import { createLogger } from "../../shared/utils/logger.js";
 
 export async function upsertOrder(o) {
@@ -55,45 +55,8 @@ export async function upsertOrder(o) {
 }
 
 export async function getOrder(orderId) {
-  const rows = await db
-    .select({
-      order_id: orders.id,
-      restaurant_id: orders.restaurantId,
-      user_id: orders.userId,
-      items_json: orders.items,
-      delivery_address_json: orders.deliveryAddress,
-      status: orders.status,
-      payment_status: orders.paymentStatus,
-      total: orders.total,
-      created_at: orders.createdAt,
-      confirmed_at: orders.confirmedAt,
-      delivered_at: orders.deliveredAt,
-    })
-    .from(orders)
-    .where(eq(orders.id, orderId))
-    .limit(1);
-  if (!rows[0]) return null;
-  const row = rows[0];
-  return {
-    orderId: row.order_id, // This is critical - must be set!
-    id: row.order_id, // Also set id for backward compatibility
-    restaurantId: row.restaurant_id,
-    userId: row.user_id,
-    items:
-      typeof row.items_json === "string"
-        ? JSON.parse(row.items_json)
-        : row.items_json,
-    deliveryAddress:
-      typeof row.delivery_address_json === "string"
-        ? JSON.parse(row.delivery_address_json)
-        : row.delivery_address_json,
-    status: row.status,
-    paymentStatus: row.payment_status,
-    total: parseFloat(row.total),
-    createdAt: row.created_at,
-    confirmedAt: row.confirmed_at,
-    deliveredAt: row.delivered_at,
-  };
+  // Use the new getOrderWithItems function since we need items
+  return await getOrderWithItems(orderId);
 }
 
 // Simple update function for order status changes
@@ -127,6 +90,117 @@ export async function updateOrderStatus(
     return result;
   } catch (error) {
     logger.error("Failed to update order status", {
+      orderId,
+      error: error.message,
+    });
+    throw error;
+  }
+}
+
+// Get order with items - joins orders + order_items tables
+export async function getOrderWithItems(orderId) {
+  const logger = createLogger("order-service");
+
+  try {
+    // Get order details
+    const orderRows = await db
+      .select({
+        order_id: orders.id,
+        restaurant_id: orders.restaurantId,
+        user_id: orders.userId,
+        delivery_address_json: orders.deliveryAddress,
+        status: orders.status,
+        payment_status: orders.paymentStatus,
+        total: orders.total,
+        created_at: orders.createdAt,
+        confirmed_at: orders.confirmedAt,
+        delivered_at: orders.deliveredAt,
+      })
+      .from(orders)
+      .where(eq(orders.id, orderId))
+      .limit(1);
+
+    if (!orderRows[0]) return null;
+    const orderRow = orderRows[0];
+
+    // Get order items
+    const itemRows = await db
+      .select({
+        item_id: orderItems.itemId,
+        quantity: orderItems.quantity,
+        price: orderItems.price,
+      })
+      .from(orderItems)
+      .where(eq(orderItems.orderId, orderId));
+
+    // Transform to match frontend expectations
+    const order = {
+      orderId: orderRow.order_id,
+      id: orderRow.order_id,
+      restaurantId: orderRow.restaurant_id,
+      userId: orderRow.user_id,
+      items: itemRows.map((item) => ({
+        itemId: item.item_id,
+        quantity: item.quantity,
+        price: parseFloat(item.price),
+      })),
+      deliveryAddress:
+        typeof orderRow.delivery_address_json === "string"
+          ? JSON.parse(orderRow.delivery_address_json)
+          : orderRow.delivery_address_json,
+      status: orderRow.status,
+      paymentStatus: orderRow.payment_status,
+      total: parseFloat(orderRow.total),
+      createdAt: orderRow.created_at,
+      confirmedAt: orderRow.confirmed_at,
+      deliveredAt: orderRow.delivered_at,
+    };
+
+    logger.info("Order with items retrieved successfully", {
+      orderId,
+      itemsCount: order.items.length,
+    });
+
+    return order;
+  } catch (error) {
+    logger.error("Failed to get order with items", {
+      orderId,
+      error: error.message,
+    });
+    throw error;
+  }
+}
+
+// Insert order items into order_items table
+export async function insertOrderItems(orderId, items) {
+  const logger = createLogger("order-service");
+
+  try {
+    if (!items || items.length === 0) {
+      logger.warn("No items to insert for order", { orderId });
+      return [];
+    }
+
+    const orderItemsData = items.map((item) => ({
+      orderId: orderId,
+      itemId: item.id || item.itemId, // Support both formats
+      quantity: item.quantity,
+      price: String(item.price), // Convert to string for numeric field
+    }));
+
+    const insertedItems = await db
+      .insert(orderItems)
+      .values(orderItemsData)
+      .returning();
+
+    logger.info("Order items inserted successfully", {
+      orderId,
+      itemsCount: insertedItems.length,
+    });
+
+    return insertedItems;
+  } catch (error) {
+    logger.error("Failed to insert order items", {
       orderId,
       error: error.message,
     });

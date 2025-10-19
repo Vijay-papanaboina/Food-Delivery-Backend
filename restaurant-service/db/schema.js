@@ -50,6 +50,7 @@ export const menuItems = restaurant_svc.table("menu_items", {
 
 export const kitchenOrders = restaurant_svc.table("kitchen_orders", {
   id: uuid("id").primaryKey().defaultRandom().notNull(),
+  orderId: uuid("order_id").notNull().unique(), // Reference to order service order ID - must be unique
   restaurantId: uuid("restaurant_id").notNull(),
   userId: uuid("user_id").notNull(),
   items: jsonb("items_json").notNull(),

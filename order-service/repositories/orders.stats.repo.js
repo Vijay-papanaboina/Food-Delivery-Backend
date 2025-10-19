@@ -1,14 +1,14 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "../config/db.js";
-import { orders } from "../db/schema.js";
+import { orders, orderItems } from "../db/schema.js";
 
 export async function listOrdersDrizzle(filters = {}) {
+  // Get orders without items first
   let query = db
     .select({
       order_id: orders.id,
       restaurant_id: orders.restaurantId,
       user_id: orders.userId,
-      items_json: orders.items,
       delivery_address_json: orders.deliveryAddress,
       status: orders.status,
       payment_status: orders.paymentStatus,
@@ -28,26 +28,44 @@ export async function listOrdersDrizzle(filters = {}) {
   if (conditions.length) query = query.where(and(...conditions));
   if (filters.limit) query = query.limit(Number(filters.limit));
 
-  const rows = await query;
-  return rows.map((row) => ({
-    orderId: row.order_id,
-    restaurantId: row.restaurant_id,
-    userId: row.user_id,
-    items:
-      typeof row.items_json === "string"
-        ? JSON.parse(row.items_json)
-        : row.items_json,
-    deliveryAddress:
-      typeof row.delivery_address_json === "string"
-        ? JSON.parse(row.delivery_address_json)
-        : row.delivery_address_json,
-    status: row.status,
-    paymentStatus: row.payment_status,
-    total: parseFloat(row.total),
-    createdAt: row.created_at,
-    confirmedAt: row.confirmed_at,
-    deliveredAt: row.delivered_at,
-  }));
+  const orderRows = await query;
+
+  // Get items for each order
+  const ordersWithItems = await Promise.all(
+    orderRows.map(async (row) => {
+      const itemRows = await db
+        .select({
+          item_id: orderItems.itemId,
+          quantity: orderItems.quantity,
+          price: orderItems.price,
+        })
+        .from(orderItems)
+        .where(eq(orderItems.orderId, row.order_id));
+
+      return {
+        orderId: row.order_id,
+        restaurantId: row.restaurant_id,
+        userId: row.user_id,
+        items: itemRows.map((item) => ({
+          itemId: item.item_id,
+          quantity: item.quantity,
+          price: parseFloat(item.price),
+        })),
+        deliveryAddress:
+          typeof row.delivery_address_json === "string"
+            ? JSON.parse(row.delivery_address_json)
+            : row.delivery_address_json,
+        status: row.status,
+        paymentStatus: row.payment_status,
+        total: parseFloat(row.total),
+        createdAt: row.created_at,
+        confirmedAt: row.confirmed_at,
+        deliveredAt: row.delivered_at,
+      };
+    })
+  );
+
+  return ordersWithItems;
 }
 
 export async function getOrderStatsDrizzle() {

@@ -100,3 +100,51 @@ export async function handleDeliveryCompleted(
   );
   console.log(`✅ [${serviceName}] Order ${orderId} marked as delivered`);
 }
+
+/**
+ * Handle food ready event
+ * Updates order status to 'ready'
+ */
+export async function handleFoodReady(foodData, producer, serviceName) {
+  const { orderId } = foodData;
+
+  const order = await getOrder(orderId);
+  if (!order) {
+    console.log(
+      `⚠️ [${serviceName}] Order ${orderId} not found for food ready update`
+    );
+    return;
+  }
+
+  // Use simple UPDATE instead of upsert
+  await updateOrderStatus(orderId, "ready");
+  console.log(
+    `✅ [${serviceName}] Order ${orderId} marked as ready for pickup`
+  );
+}
+
+/**
+ * Handle delivery picked up event
+ * Updates order status to 'out_for_delivery'
+ */
+export async function handleDeliveryPickedUp(
+  deliveryData,
+  producer,
+  serviceName
+) {
+  const { orderId } = deliveryData;
+
+  const order = await getOrder(orderId);
+  if (!order) {
+    console.log(
+      `⚠️ [${serviceName}] Order ${orderId} not found for delivery pickup update`
+    );
+    return;
+  }
+
+  // Use simple UPDATE instead of upsert
+  await updateOrderStatus(orderId, "out_for_delivery");
+  console.log(
+    `✅ [${serviceName}] Order ${orderId} marked as out for delivery`
+  );
+}

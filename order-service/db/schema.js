@@ -5,6 +5,7 @@ import {
   timestamp,
   numeric,
   uuid,
+  integer,
 } from "drizzle-orm/pg-core";
 
 export const order_svc = pgSchema("order_svc");
@@ -13,7 +14,6 @@ export const orders = order_svc.table("orders", {
   id: uuid("id").primaryKey().defaultRandom().notNull(),
   restaurantId: text("restaurant_id").notNull(),
   userId: uuid("user_id").notNull(),
-  items: jsonb("items_json").notNull(),
   deliveryAddress: jsonb("delivery_address_json").notNull(),
   status: text("status").notNull(),
   paymentStatus: text("payment_status").notNull(),
@@ -23,4 +23,17 @@ export const orders = order_svc.table("orders", {
     .defaultNow(),
   confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
   deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+});
+
+export const orderItems = order_svc.table("order_items", {
+  id: uuid("id").primaryKey().defaultRandom().notNull(),
+  orderId: uuid("order_id")
+    .notNull()
+    .references(() => orders.id, { onDelete: "cascade" }),
+  itemId: uuid("item_id").notNull(), // References restaurant service menu_items
+  quantity: integer("quantity").notNull(),
+  price: numeric("price", { precision: 12, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });

@@ -3,6 +3,7 @@ import {
   upsertOrder,
   getOrder,
   updateOrderStatus,
+  insertOrderItems,
 } from "../repositories/orders.repo.js";
 import {
   listOrdersDrizzle,
@@ -138,7 +139,6 @@ export const buildCreateOrderController =
       const order = {
         // Don't provide orderId - let database generate it
         restaurantId,
-        items: validatedItems,
         userId,
         deliveryAddress,
         status: "pending_payment",
@@ -149,6 +149,12 @@ export const buildCreateOrderController =
       };
 
       const createdOrder = await upsertOrder(order);
+
+      // Insert order items separately
+      await insertOrderItems(createdOrder.id, validatedItems);
+
+      // Get the complete order with items for response
+      const completeOrder = await getOrder(createdOrder.id);
 
       logger.info("Order created in database", {
         orderId: createdOrder.id,
@@ -162,7 +168,7 @@ export const buildCreateOrderController =
         {
           orderId: createdOrder.id,
           restaurantId: createdOrder.restaurantId,
-          items: createdOrder.items,
+          items: validatedItems, // Use validated items for Kafka event
           userId: createdOrder.userId,
           total: createdOrder.total,
           createdAt: createdOrder.createdAt,
@@ -178,15 +184,15 @@ export const buildCreateOrderController =
       res.status(201).json({
         message: "Order created successfully",
         order: {
-          orderId: createdOrder.id,
-          restaurantId: createdOrder.restaurantId,
-          userId: createdOrder.userId,
-          items: createdOrder.items,
-          deliveryAddress: createdOrder.deliveryAddress,
-          status: createdOrder.status,
-          paymentStatus: createdOrder.paymentStatus,
-          total: createdOrder.total,
-          createdAt: createdOrder.createdAt,
+          orderId: completeOrder.orderId,
+          restaurantId: completeOrder.restaurantId,
+          userId: completeOrder.userId,
+          items: completeOrder.items,
+          deliveryAddress: completeOrder.deliveryAddress,
+          status: completeOrder.status,
+          paymentStatus: completeOrder.paymentStatus,
+          total: completeOrder.total,
+          createdAt: completeOrder.createdAt,
         },
       });
     } catch (error) {

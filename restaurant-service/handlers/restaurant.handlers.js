@@ -3,6 +3,7 @@ import { upsertMenuItem } from "../repositories/menu.repo.js";
 import {
   upsertKitchenOrder,
   getKitchenOrder,
+  updateKitchenOrderStatus,
 } from "../repositories/kitchen.repo.js";
 import { publishMessage, TOPICS } from "../config/kafka.js";
 
@@ -70,8 +71,7 @@ export async function handleDeliveryCompleted(
     return;
   }
 
-  order.status = "delivered";
-  await upsertKitchenOrder(order);
+  await updateKitchenOrderStatus(orderId, "delivered");
   console.log(`🍽️ [${serviceName}] Order ${orderId} marked as delivered`);
 }
 
@@ -90,12 +90,8 @@ export async function markOrderReady(orderId, producer, serviceName) {
     return;
   }
 
-  // Update status to ready
-  order.status = "ready";
-  order.readyAt = new Date().toISOString();
-
-  // Update in database
-  await upsertKitchenOrder(order);
+  // Update status to ready in database
+  await updateKitchenOrderStatus(orderId, "ready", new Date().toISOString());
 
   console.log(`✅ [${serviceName}] Order ${orderId} is ready for delivery!`);
 
@@ -104,7 +100,7 @@ export async function markOrderReady(orderId, producer, serviceName) {
     producer,
     TOPICS.FOOD_READY,
     {
-      orderId: order.id,
+      orderId: order.orderId,
       restaurantId: order.restaurantId,
       userId: order.userId,
       items: order.items,
