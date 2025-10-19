@@ -3,6 +3,7 @@ import { validationResult } from "express-validator";
 import { createUser, getUserByEmail } from "../repositories/user.repo.js";
 import { generateTokens } from "../config/jwt.js";
 import { createLogger, sanitizeForLogging } from "../../shared/utils/logger.js";
+
 // No Kafka events needed for user service
 
 export const signup = async (req, res) => {
@@ -223,6 +224,7 @@ export const refreshToken = async (req, res) => {
       userId: user.id,
       email: user.email,
     });
+    console.log("Token refreshed successfully", accessToken);
 
     // Remove password hash from user response
     const { passwordHash: _, ...userResponse } = user;

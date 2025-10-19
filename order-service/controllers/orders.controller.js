@@ -1,5 +1,9 @@
 // Removed uuid import - using database-generated IDs now
-import { upsertOrder, getOrder } from "../repositories/orders.repo.js";
+import {
+  upsertOrder,
+  getOrder,
+  updateOrderStatus,
+} from "../repositories/orders.repo.js";
 import {
   listOrdersDrizzle,
   getOrderStatsDrizzle,
@@ -171,7 +175,6 @@ export const buildCreateOrderController =
         topic: TOPICS.ORDER_CREATED,
       });
 
-      console.log(`📤 [${serviceName}] Order created: ${createdOrder.id}`);
       res.status(201).json({
         message: "Order created successfully",
         order: {
@@ -246,5 +249,56 @@ export const getOrderStats = async (req, res) => {
       error: "Failed to retrieve order statistics",
       details: error.message,
     });
+  }
+};
+
+export const updateOrderStatusController = async (req, res) => {
+  const logger = createLogger("order-service");
+  const { orderId } = req.params;
+  const { status, paymentStatus } = req.body;
+
+  try {
+    // Check if order exists first
+    const existingOrder = await getOrder(orderId);
+    if (!existingOrder) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    // Use simple UPDATE instead of upsert
+    const confirmedAt =
+      status === "confirmed" ? new Date().toISOString() : null;
+    const deliveredAt =
+      status === "delivered" ? new Date().toISOString() : null;
+
+    await updateOrderStatus(
+      orderId,
+      status,
+      paymentStatus,
+      confirmedAt,
+      deliveredAt
+    );
+
+    logger.info("Order status updated successfully", {
+      orderId,
+      oldStatus: existingOrder.status,
+      newStatus: status,
+    });
+
+    res.json({
+      message: "Order status updated successfully",
+      order: {
+        orderId,
+        status,
+        paymentStatus,
+      },
+    });
+  } catch (error) {
+    logger.error("Failed to update order status", {
+      orderId,
+      error: error.message,
+    });
+    res
+      .status(500)
+      .json({ error: "Failed to update order status", details: error.message });
   }
 };

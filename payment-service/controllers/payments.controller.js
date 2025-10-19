@@ -163,6 +163,9 @@ export const processPayment = async (req, res) => {
       method: payment.method,
     });
 
+    // Order status will be updated via Kafka event (PAYMENT_PROCESSED)
+    // No need for direct API call - Kafka consumer handles order status updates
+
     res.status(201).json({
       message: "Payment processed successfully",
       payment: {

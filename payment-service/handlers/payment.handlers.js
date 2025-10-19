@@ -2,6 +2,7 @@
 import {
   upsertPayment,
   getPaymentByOrderId,
+  updatePaymentFields,
 } from "../repositories/payments.repo.js";
 import { publishMessage, TOPICS } from "../config/kafka.js";
 import { PAYMENT_CONFIG } from "../config/payment.js";
@@ -55,10 +56,6 @@ export async function processPayment(
     `💳 [${serviceName}] Created payment ${createdPayment.id} for order ${orderId} (${method}, $${amount}) - Status: pending`
   );
 
-  // Update payment record in database
-  createdPayment.status = "processing";
-  await upsertPayment(createdPayment);
-
   console.log(`⏳ [${serviceName}] Processing payment ${createdPayment.id}...`);
 
   // Simulate processing delay
@@ -69,26 +66,27 @@ export async function processPayment(
   const successRate = PAYMENT_CONFIG.successRates[method] || 0.9;
   const isSuccess = Math.random() < successRate;
 
-  // Update payment status in database
-  createdPayment.status = isSuccess ? "success" : "failed";
-  createdPayment.processedAt = new Date().toISOString();
+  // Update payment status in database using updatePaymentFields
+  await updatePaymentFields(createdPayment.id, {
+    status: isSuccess ? "success" : "failed",
+    processedAt: new Date().toISOString(),
+    transactionId: isSuccess
+      ? `txn_${Math.random().toString(36).substr(2, 9)}`
+      : null,
+    failureReason: isSuccess ? null : getRandomFailureReason(method),
+  });
 
-  if (createdPayment.status === "success") {
-    createdPayment.transactionId = `txn_${Math.random()
-      .toString(36)
-      .substr(2, 9)}`;
+  if (isSuccess) {
     console.log(
       `✅ [${serviceName}] Payment ${createdPayment.id} successful (${method})`
     );
   } else {
-    createdPayment.failureReason = getRandomFailureReason(method);
     console.log(
-      `❌ [${serviceName}] Payment ${createdPayment.id} failed (${method}): ${createdPayment.failureReason}`
+      `❌ [${serviceName}] Payment ${
+        createdPayment.id
+      } failed (${method}): ${getRandomFailureReason(method)}`
     );
   }
-
-  // Persist final payment status to database
-  await upsertPayment(createdPayment);
 
   // Publish payment processed event AFTER database update
   await publishMessage(
@@ -99,10 +97,12 @@ export async function processPayment(
       orderId,
       amount,
       method,
-      status: createdPayment.status,
-      transactionId: createdPayment.transactionId,
-      failureReason: createdPayment.failureReason,
-      processedAt: createdPayment.processedAt,
+      status: isSuccess ? "success" : "failed",
+      transactionId: isSuccess
+        ? `txn_${Math.random().toString(36).substr(2, 9)}`
+        : null,
+      failureReason: isSuccess ? null : getRandomFailureReason(method),
+      processedAt: new Date().toISOString(),
     },
     orderId
   ); // Use orderId as key for partitioning
@@ -111,7 +111,16 @@ export async function processPayment(
     `📤 [${serviceName}] Published payment-processed event for order ${orderId}`
   );
 
-  return createdPayment;
+  // Return the updated payment object
+  return {
+    ...createdPayment,
+    status: isSuccess ? "success" : "failed",
+    processedAt: new Date().toISOString(),
+    transactionId: isSuccess
+      ? `txn_${Math.random().toString(36).substr(2, 9)}`
+      : null,
+    failureReason: isSuccess ? null : getRandomFailureReason(method),
+  };
 }
 
 /**

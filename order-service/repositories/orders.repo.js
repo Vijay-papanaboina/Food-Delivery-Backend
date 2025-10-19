@@ -17,7 +17,7 @@ export async function upsertOrder(o) {
     const [result] = await db
       .insert(orders)
       .values({
-        orderId: o.id,
+        id: o.orderId || o.id, // Use orderId if available, fallback to id
         restaurantId: o.restaurantId,
         userId: o.userId,
         items: o.items,
@@ -30,7 +30,7 @@ export async function upsertOrder(o) {
         deliveredAt: o.deliveredAt ? new Date(o.deliveredAt) : null,
       })
       .onConflictDoUpdate({
-        target: orders.id,
+        target: orders.id, // This will now work because id is properly set
         set: {
           status: sql`excluded.status`,
           paymentStatus: sql`excluded.payment_status`,
@@ -75,7 +75,8 @@ export async function getOrder(orderId) {
   if (!rows[0]) return null;
   const row = rows[0];
   return {
-    orderId: row.order_id,
+    orderId: row.order_id, // This is critical - must be set!
+    id: row.order_id, // Also set id for backward compatibility
     restaurantId: row.restaurant_id,
     userId: row.user_id,
     items:
@@ -93,4 +94,42 @@ export async function getOrder(orderId) {
     confirmedAt: row.confirmed_at,
     deliveredAt: row.delivered_at,
   };
+}
+
+// Simple update function for order status changes
+export async function updateOrderStatus(
+  orderId,
+  status,
+  paymentStatus = null,
+  confirmedAt = null,
+  deliveredAt = null
+) {
+  const logger = createLogger("order-service");
+
+  try {
+    const updateData = { status };
+    if (paymentStatus !== null) updateData.paymentStatus = paymentStatus;
+    if (confirmedAt !== null) updateData.confirmedAt = new Date(confirmedAt);
+    if (deliveredAt !== null) updateData.deliveredAt = new Date(deliveredAt);
+
+    const [result] = await db
+      .update(orders)
+      .set(updateData)
+      .where(eq(orders.id, orderId))
+      .returning();
+
+    logger.info("Order status updated successfully", {
+      orderId,
+      status,
+      paymentStatus,
+    });
+
+    return result;
+  } catch (error) {
+    logger.error("Failed to update order status", {
+      orderId,
+      error: error.message,
+    });
+    throw error;
+  }
 }

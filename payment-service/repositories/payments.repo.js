@@ -32,6 +32,20 @@ export async function upsertPayment(p) {
   return result;
 }
 
+// Update only selected fields on an existing payment row
+export async function updatePaymentFields(paymentId, fields) {
+  const updateSet = {};
+  if (fields.status !== undefined) updateSet.status = fields.status;
+  if (fields.processedAt !== undefined) updateSet.processedAt = fields.processedAt ? new Date(fields.processedAt) : null;
+  if (fields.transactionId !== undefined) updateSet.transactionId = fields.transactionId;
+  if (fields.failureReason !== undefined) updateSet.failureReason = fields.failureReason;
+
+  await db
+    .update(payments)
+    .set(updateSet)
+    .where(eq(payments.id, paymentId));
+}
+
 export async function getPaymentByOrderId(orderId) {
   const rows = await db
     .select({

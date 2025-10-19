@@ -1,4 +1,4 @@
-import { upsertOrder, getOrder } from "../repositories/orders.repo.js";
+import { getOrder, updateOrderStatus } from "../repositories/orders.repo.js";
 import { publishMessage, TOPICS } from "../config/kafka.js";
 
 /**
@@ -21,12 +21,13 @@ export async function handlePaymentProcessed(
   }
 
   if (status === "success") {
-    order.status = "confirmed";
-    order.paymentStatus = "paid";
-    order.confirmedAt = new Date().toISOString();
-
-    // Persist confirmation
-    await upsertOrder(order);
+    // Use simple UPDATE instead of upsert
+    await updateOrderStatus(
+      orderId,
+      "confirmed",
+      "paid",
+      new Date().toISOString()
+    );
 
     // Publish order confirmed event
     // Ensure items array is properly serialized
@@ -64,12 +65,10 @@ export async function handlePaymentProcessed(
       `✅ [${serviceName}] Order ${orderId} confirmed after successful payment`
     );
   } else {
-    order.status = "payment_failed";
-    order.paymentStatus = "failed";
+    // Use simple UPDATE for payment failure too
+    await updateOrderStatus(orderId, "payment_failed", "failed");
     console.log(`❌ [${serviceName}] Order ${orderId} payment failed`);
   }
-
-  // Order updated in database via upsertOrder call above
 }
 
 /**
@@ -91,8 +90,13 @@ export async function handleDeliveryCompleted(
     return;
   }
 
-  order.status = "delivered";
-  order.deliveredAt = new Date().toISOString();
-  await upsertOrder(order);
+  // Use simple UPDATE instead of upsert
+  await updateOrderStatus(
+    orderId,
+    "delivered",
+    null,
+    null,
+    new Date().toISOString()
+  );
   console.log(`✅ [${serviceName}] Order ${orderId} marked as delivered`);
 }
