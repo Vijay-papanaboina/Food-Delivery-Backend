@@ -10,6 +10,10 @@ function createApp(producer) {
 
   // Middleware
   app.use(cors());
+
+  // Webhook route needs raw body parsing BEFORE json middleware
+  app.use("/api/webhooks/stripe", express.raw({ type: "application/json" }));
+
   app.use(express.json());
 
   // Make producer available in requests

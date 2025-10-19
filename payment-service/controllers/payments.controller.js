@@ -8,6 +8,7 @@ import {
 import { TOPICS, publishMessage } from "../config/kafka.js";
 import { PAYMENT_CONFIG } from "../config/payment.js";
 import { createLogger, sanitizeForLogging } from "../../shared/utils/logger.js";
+import { stripe, STRIPE_CONFIG } from "../config/stripe.js";
 
 export const getPaymentForOrder = async (req, res) => {
   try {
@@ -101,100 +102,194 @@ export const listPaymentMethods = (req, res) => {
 
 export const processPayment = async (req, res) => {
   const logger = createLogger("payment-service");
-  const { orderId, amount, method } = req.body;
+  const { orderId } = req.body; // Remove amount - we'll fetch it from order service
   const userId = req.user?.userId; // Get user ID from JWT token
 
   try {
-    logger.info("Payment processing started", {
+    logger.info("Creating Stripe Checkout session", {
       orderId,
-      amount,
-      method,
       userId,
     });
 
     // Validate required fields
-    if (!orderId || !amount || !method) {
+    if (!orderId) {
       return res.status(400).json({
-        error: "Missing required fields: orderId, amount, method",
+        error: "Missing required field: orderId",
       });
     }
 
     // Validate data types
-    if (typeof orderId !== "string" || typeof method !== "string") {
+    if (typeof orderId !== "string") {
       return res.status(400).json({
-        error: "orderId and method must be strings",
+        error: "orderId must be a string",
       });
     }
 
-    if (typeof amount !== "number" || amount <= 0) {
-      return res.status(400).json({
-        error: "amount must be a positive number",
-      });
-    }
-
-    // Validate payment method
-    if (!PAYMENT_CONFIG.successRates[method]) {
-      return res.status(400).json({
-        error: `Invalid payment method: ${method}. Available methods: ${Object.keys(
-          PAYMENT_CONFIG.successRates
-        ).join(", ")}`,
-      });
-    }
-
-    // Import processPayment handler
-    const { processPayment: processPaymentHandler } = await import(
-      "../handlers/payment.handlers.js"
+    // Fetch actual order details from order service to get real prices and items
+    const orderServiceUrl =
+      process.env.ORDER_SERVICE_URL || "http://localhost:5001";
+    const orderResponse = await fetch(
+      `${orderServiceUrl}/api/orders/${orderId}`,
+      {
+        headers: {
+          Authorization: req.headers.authorization, // Pass through JWT token
+        },
+      }
     );
 
-    // Process payment
-    const payment = await processPaymentHandler(
+    if (!orderResponse.ok) {
+      return res.status(404).json({
+        error: "Order not found or access denied",
+      });
+    }
+
+    const orderData = await orderResponse.json();
+    const order = orderData.order;
+
+    // Verify the order belongs to the authenticated user
+    if (order.userId !== userId) {
+      return res.status(403).json({
+        error: "Access denied: Order does not belong to user",
+      });
+    }
+
+    // Check if order is in pending_payment status
+    if (order.status !== "pending_payment") {
+      return res.status(400).json({
+        error: `Order is not in pending payment status. Current status: ${order.status}`,
+      });
+    }
+
+    // Fetch item names from restaurant service for better Stripe display
+    const restaurantServiceUrl =
+      process.env.RESTAURANT_SERVICE_URL || "http://localhost:5006";
+    let itemNames = {};
+
+    try {
+      // Get restaurant menu items to map item IDs to names
+      const menuResponse = await fetch(
+        `${restaurantServiceUrl}/api/restaurants/${order.restaurantId}/menu`,
+        {
+          headers: {
+            Authorization: req.headers.authorization,
+          },
+        }
+      );
+
+      if (menuResponse.ok) {
+        const menuData = await menuResponse.json();
+        logger.info("Fetched menu data from restaurant service", {
+          restaurantId: order.restaurantId,
+          menuItemsCount: menuData.menu?.length || 0,
+        });
+        itemNames = menuData.menu.reduce((acc, item) => {
+          acc[item.itemId] = item.name;
+          return acc;
+        }, {});
+        logger.info("Item names mapping created", { itemNames });
+      } else {
+        logger.warn("Failed to fetch menu from restaurant service", {
+          status: menuResponse.status,
+          statusText: menuResponse.statusText,
+        });
+      }
+    } catch (error) {
+      logger.warn("Failed to fetch item names from restaurant service", {
+        error: error.message,
+      });
+    }
+
+    // Create a clean, simple order summary for Stripe
+    const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+    const itemNamesList = order.items
+      .map((item) => {
+        const itemName = itemNames[item.itemId] || `Item ${item.itemId}`;
+        return item.quantity > 1 ? `${itemName} (x${item.quantity})` : itemName;
+      })
+      .join(", ");
+
+    // Create a single line item with clean description
+    const lineItems = [
+      {
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: `Food Delivery Order`,
+            description: `${itemCount} item${
+              itemCount > 1 ? "s" : ""
+            }: ${itemNamesList}`,
+          },
+          unit_amount: Math.round(order.total * 100), // Convert to cents
+        },
+        quantity: 1,
+      },
+    ];
+
+    logger.info("Creating Stripe session with formatted order summary", {
       orderId,
-      amount,
-      method,
-      userId,
-      req.producer,
-      "payment-service"
-    );
-
-    logger.info("Payment processed successfully", {
-      paymentId: payment.id,
-      orderId: payment.orderId,
-      status: payment.status,
-      method: payment.method,
+      itemCount: order.items.length,
+      total: order.total,
+      itemNamesList,
     });
 
-    // Order status will be updated via Kafka event (PAYMENT_PROCESSED)
-    // No need for direct API call - Kafka consumer handles order status updates
+    // Add delivery fee if applicable (you might want to fetch this from restaurant service)
+    // For now, we'll assume it's included in the total
+
+    logger.info("Creating Stripe session with order details", {
+      orderId,
+      itemCount: order.items.length,
+      total: order.total,
+      lineItemsCount: lineItems.length,
+    });
+
+    // Create Stripe Checkout session with actual order items
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: lineItems,
+      mode: "payment",
+      success_url: STRIPE_CONFIG.successUrl,
+      cancel_url: STRIPE_CONFIG.cancelUrl,
+      metadata: { orderId, userId },
+    });
+
+    // Save pending payment with actual amount from database
+    await upsertPayment({
+      orderId,
+      amount: order.total, // Use actual total from database, not frontend
+      method: "stripe",
+      userId,
+      status: "pending",
+      transactionId: session.id,
+      createdAt: new Date().toISOString(),
+      processedAt: null,
+      failureReason: null,
+    });
+
+    logger.info("Stripe Checkout session created", {
+      sessionId: session.id,
+      orderId,
+      actualAmount: order.total,
+      itemCount: order.items.length,
+    });
 
     res.status(201).json({
-      message: "Payment processed successfully",
-      payment: {
-        paymentId: payment.id,
-        orderId: payment.orderId,
-        amount: payment.amount,
-        method: payment.method,
-        userId: payment.userId,
-        status: payment.status,
-        transactionId: payment.transactionId,
-        failureReason: payment.failureReason,
-        createdAt: payment.createdAt,
-        processedAt: payment.processedAt,
-      },
+      message: "Stripe Checkout session created successfully",
+      sessionId: session.id,
+      url: session.url,
     });
   } catch (error) {
-    logger.error("Payment processing failed", {
+    logger.error("Failed to create Stripe Checkout session", {
       error: error.message,
       stack: error.stack,
       orderId,
-      amount,
-      method,
     });
     console.error(
-      `❌ [payment-service] Error processing payment:`,
+      `❌ [payment-service] Error creating Stripe session:`,
       error.message
     );
-    res
-      .status(500)
-      .json({ error: "Failed to process payment", details: error.message });
+    res.status(500).json({
+      error: "Failed to create payment session",
+      details: error.message,
+    });
   }
 };
