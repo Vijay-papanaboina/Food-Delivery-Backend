@@ -258,6 +258,16 @@ INSERT INTO "user_svc"."users" ("id", "email", "password_hash", "name", "phone",
 ('550e8400-e29b-41d4-a716-446655440011', 'jane@example.com', '$2b$12$Wf.sBiug6EB6UZz1UPFJLetiK1xmdz4dZDwMNA8szBAifmkAJ2qcu', 'Jane Smith', '+1-555-0101', TRUE, NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
+-- Insert user addresses
+INSERT INTO "user_svc"."user_addresses" ("id", "user_id", "label", "street", "city", "state", "zip_code", "is_default", "created_at", "updated_at") VALUES
+-- John Doe's addresses
+('550e8400-e29b-41d4-a716-446655440301', '550e8400-e29b-41d4-a716-446655440010', 'Home', '123 Oak Street', 'New York', 'NY', '10001', TRUE, NOW(), NOW()),
+('550e8400-e29b-41d4-a716-446655440302', '550e8400-e29b-41d4-a716-446655440010', 'Work', '456 Business Ave', 'New York', 'NY', '10002', FALSE, NOW(), NOW()),
+-- Jane Smith's addresses
+('550e8400-e29b-41d4-a716-446655440303', '550e8400-e29b-41d4-a716-446655440011', 'Home', '789 Pine Street', 'Brooklyn', 'NY', '11201', TRUE, NOW(), NOW()),
+('550e8400-e29b-41d4-a716-446655440304', '550e8400-e29b-41d4-a716-446655440011', 'Apartment', '321 Maple Drive', 'Queens', 'NY', '11375', FALSE, NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
+
 -- =============================================
 -- COMPLETION MESSAGE
 -- =============================================
@@ -266,5 +276,5 @@ ON CONFLICT (id) DO NOTHING;
 DO $$
 BEGIN
     RAISE NOTICE 'Mock data insertion completed successfully!';
-    RAISE NOTICE 'Inserted: 3 restaurants, 9 menu items, 5 drivers, 2 users';
+    RAISE NOTICE 'Inserted: 3 restaurants, 9 menu items, 5 drivers, 2 users, 4 addresses';
 END $$;

@@ -97,7 +97,7 @@ export const buildCreateOrderController =
       // Validate restaurant status and menu items via restaurant-service
       const statusResp = await fetch(
         `http://localhost:${
-          process.env.RESTAURANT_SERVICE_PORT || 3002
+          process.env.RESTAURANT_SERVICE_PORT || 5006
         }/api/restaurants/${restaurantId}/status`
       );
       if (!statusResp.ok) {
@@ -113,7 +113,7 @@ export const buildCreateOrderController =
 
       const validateResp = await fetch(
         `http://localhost:${
-          process.env.RESTAURANT_SERVICE_PORT || 3002
+          process.env.RESTAURANT_SERVICE_PORT || 5006
         }/api/restaurants/${restaurantId}/menu/validate`,
         {
           method: "POST",
@@ -132,10 +132,27 @@ export const buildCreateOrderController =
       }
 
       const validatedItems = validateJson.items;
-      const total = validatedItems.reduce(
+      const subtotal = validatedItems.reduce(
         (sum, item) => sum + item.price * item.quantity,
         0
       );
+
+      // Fetch restaurant details to get delivery fee
+      const restaurantResp = await fetch(
+        `http://localhost:${
+          process.env.RESTAURANT_SERVICE_PORT || 5006
+        }/api/restaurants/${restaurantId}`
+      );
+      if (!restaurantResp.ok) {
+        return res.status(400).json({
+          error: "Failed to fetch restaurant details",
+        });
+      }
+      const restaurantData = await restaurantResp.json();
+      const deliveryFee =
+        parseFloat(restaurantData.restaurant.delivery_fee) || 0;
+
+      const total = subtotal + deliveryFee;
       const order = {
         // Don't provide orderId - let database generate it
         restaurantId,

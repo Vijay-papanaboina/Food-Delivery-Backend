@@ -199,45 +199,52 @@ export const processPayment = async (req, res) => {
       });
     }
 
-    // Create a clean, simple order summary for Stripe
-    const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
-    const itemNamesList = order.items
-      .map((item) => {
-        const itemName = itemNames[item.itemId] || `Item ${item.itemId}`;
-        return item.quantity > 1 ? `${itemName} (x${item.quantity})` : itemName;
-      })
-      .join(", ");
+    // Calculate subtotal and delivery fee
+    const subtotal = order.items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+    const deliveryFee = order.total - subtotal;
 
-    // Create a single line item with clean description
-    const lineItems = [
-      {
+    // Create line items for Stripe
+    const lineItems = [];
+
+    // Add individual food items
+    order.items.forEach((item) => {
+      const itemName = itemNames[item.itemId] || `Item ${item.itemId}`;
+      lineItems.push({
         price_data: {
           currency: "usd",
           product_data: {
-            name: `Food Delivery Order`,
-            description: `${itemCount} item${
-              itemCount > 1 ? "s" : ""
-            }: ${itemNamesList}`,
+            name: itemName,
+            description: `Quantity: ${item.quantity}`,
           },
-          unit_amount: Math.round(order.total * 100), // Convert to cents
+          unit_amount: Math.round(item.price * 100), // Convert to cents
         },
-        quantity: 1,
-      },
-    ];
-
-    logger.info("Creating Stripe session with formatted order summary", {
-      orderId,
-      itemCount: order.items.length,
-      total: order.total,
-      itemNamesList,
+        quantity: item.quantity,
+      });
     });
 
-    // Add delivery fee if applicable (you might want to fetch this from restaurant service)
-    // For now, we'll assume it's included in the total
+    // Add delivery fee as separate line item
+    if (deliveryFee > 0) {
+      lineItems.push({
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: "Delivery Fee",
+            description: "Delivery service charge",
+          },
+          unit_amount: Math.round(deliveryFee * 100), // Convert to cents
+        },
+        quantity: 1,
+      });
+    }
 
-    logger.info("Creating Stripe session with order details", {
+    logger.info("Creating Stripe session with detailed line items", {
       orderId,
       itemCount: order.items.length,
+      subtotal,
+      deliveryFee,
       total: order.total,
       lineItemsCount: lineItems.length,
     });
