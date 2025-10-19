@@ -139,7 +139,7 @@ export const assignDeliveryToDriver = async (req, res) => {
     }
 
     // Assign delivery
-    await assignDelivery(
+    const deliveryId = await assignDelivery(
       orderId,
       driverId,
       deliveryAddress,
@@ -149,6 +149,7 @@ export const assignDeliveryToDriver = async (req, res) => {
 
     res.status(201).json({
       message: "Delivery assigned successfully",
+      deliveryId,
       orderId,
       driverId,
       assignedAt: new Date().toISOString(),

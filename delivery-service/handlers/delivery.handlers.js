@@ -94,7 +94,7 @@ export async function assignDelivery(
       `✅ [${serviceName}] Delivery ${createdDelivery.id} assigned to driver ${driverId} for order ${orderId}`
     );
 
-    // No automatic completion - must be called manually
+    return createdDelivery.id; // Return the deliveryId for use in pickup
   } catch (error) {
     console.error(
       `❌ [${serviceName}] Error assigning delivery:`,

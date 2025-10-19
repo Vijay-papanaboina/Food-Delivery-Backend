@@ -10,11 +10,10 @@ import { createLogger, sanitizeForLogging } from "../../shared/utils/logger.js";
 export const buildCreateOrderController =
   (producer, serviceName) => async (req, res) => {
     const logger = createLogger(serviceName);
+    const userId = req.user?.userId; // Get user ID from JWT token
+    const { restaurantId, items, deliveryAddress } = req.body;
 
     try {
-      const { restaurantId, items, deliveryAddress } = req.body;
-      const userId = req.user.userId; // Get user ID from JWT token
-
       logger.info("Order creation started", {
         userId,
         restaurantId,

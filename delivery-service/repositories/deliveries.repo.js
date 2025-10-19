@@ -3,7 +3,7 @@ import { db } from "../config/db.js";
 import { deliveries, drivers } from "../db/schema.js";
 
 export async function upsertDelivery(d) {
-  await db
+  const [result] = await db
     .insert(deliveries)
     .values({
       deliveryId: d.id,
@@ -32,7 +32,10 @@ export async function upsertDelivery(d) {
         estimatedDeliveryTime: sql`excluded.estimated_delivery_time`,
         actualDeliveryTime: sql`excluded.actual_delivery_time`,
       },
-    });
+    })
+    .returning();
+
+  return result;
 }
 
 // Update only selected fields on an existing delivery row

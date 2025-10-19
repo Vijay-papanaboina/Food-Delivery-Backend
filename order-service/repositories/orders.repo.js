@@ -14,7 +14,7 @@ export async function upsertOrder(o) {
       status: o.status,
     });
 
-    await db
+    const [result] = await db
       .insert(orders)
       .values({
         orderId: o.id,
@@ -37,11 +37,14 @@ export async function upsertOrder(o) {
           confirmedAt: sql`excluded.confirmed_at`,
           deliveredAt: sql`excluded.delivered_at`,
         },
-      });
+      })
+      .returning();
 
     logger.info("Order upserted successfully", {
       orderId: o.id,
     });
+
+    return result;
   } catch (error) {
     logger.error("Failed to upsert order", {
       orderId: o.id,

@@ -101,11 +101,10 @@ export const listPaymentMethods = (req, res) => {
 
 export const processPayment = async (req, res) => {
   const logger = createLogger("payment-service");
+  const { orderId, amount, method } = req.body;
+  const userId = req.user?.userId; // Get user ID from JWT token
 
   try {
-    const { orderId, amount, method } = req.body;
-    const userId = req.user.userId; // Get user ID from JWT token
-
     logger.info("Payment processing started", {
       orderId,
       amount,

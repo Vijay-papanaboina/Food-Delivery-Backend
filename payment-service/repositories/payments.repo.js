@@ -4,7 +4,7 @@ import { db } from "../config/db.js";
 import { payments } from "../db/schema.js";
 
 export async function upsertPayment(p) {
-  await db
+  const [result] = await db
     .insert(payments)
     .values({
       paymentId: p.id,
@@ -26,7 +26,10 @@ export async function upsertPayment(p) {
         failureReason: sql`excluded.failure_reason`,
         processedAt: sql`excluded.processed_at`,
       },
-    });
+    })
+    .returning();
+
+  return result;
 }
 
 export async function getPaymentByOrderId(orderId) {
@@ -45,6 +48,7 @@ export async function getPaymentByOrderId(orderId) {
     })
     .from(payments)
     .where(eq(payments.orderId, orderId))
+    .orderBy(desc(payments.createdAt))  // ← Get most recent payment
     .limit(1);
   return rows[0] || null;
 }
