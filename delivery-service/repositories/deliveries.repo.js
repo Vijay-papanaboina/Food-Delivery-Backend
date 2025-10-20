@@ -2,6 +2,42 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "../config/db.js";
 import { deliveries, drivers } from "../db/schema.js";
 
+export async function createDelivery(deliveryData) {
+  const [result] = await db
+    .insert(deliveries)
+    .values({
+      deliveryId: deliveryData.orderId, // Use orderId as deliveryId for now
+      orderId: deliveryData.orderId,
+      driverId: deliveryData.driverId,
+      driverName: deliveryData.driverName || null,
+      driverPhone: deliveryData.driverPhone || null,
+      vehicle: deliveryData.vehicle || null,
+      licensePlate: deliveryData.licensePlate || null,
+      deliveryAddress: deliveryData.deliveryAddress,
+      status: deliveryData.status || "assigned",
+      assignedAt: deliveryData.assignedAt
+        ? new Date(deliveryData.assignedAt)
+        : new Date(),
+      estimatedDeliveryTime: deliveryData.estimatedDeliveryTime
+        ? new Date(deliveryData.estimatedDeliveryTime)
+        : null,
+      actualDeliveryTime: deliveryData.actualDeliveryTime
+        ? new Date(deliveryData.actualDeliveryTime)
+        : null,
+      createdAt: new Date(),
+    })
+    .returning();
+
+  return {
+    deliveryId: result.id,
+    orderId: result.orderId,
+    driverId: result.driverId,
+    status: result.status,
+    assignedAt: result.assignedAt,
+    createdAt: result.createdAt,
+  };
+}
+
 export async function upsertDelivery(d) {
   const [result] = await db
     .insert(deliveries)

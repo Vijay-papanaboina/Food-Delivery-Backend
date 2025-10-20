@@ -9,6 +9,7 @@ import {
   logConsumerMessage,
   TOPICS,
 } from "../config/kafka.js";
+import { handleFoodReady } from "../handlers/delivery.handlers.js";
 
 /**
  * Initialize Kafka connections and start consuming messages
@@ -19,11 +20,64 @@ export async function initializeKafka(producer, consumer, serviceName) {
     await connectProducer(producer, serviceName);
     await connectConsumer(consumer, serviceName);
 
-    // Delivery service no longer consumes any topics - only produces events
-    // All delivery operations are now manual via API endpoints
+    // Subscribe to food-ready events for auto-assignment
+    await subscribeToTopics(consumer, [TOPICS.FOOD_READY]);
+
+    // Start consuming messages
+    await consumer.run({
+      eachMessage: async ({ topic, partition, message }) => {
+        try {
+          let messageData;
+
+          if (message.value === null || message.value === undefined) {
+            console.log(
+              `⚠️ [${serviceName}] Received null/undefined message value`
+            );
+            return;
+          }
+
+          // KafkaJS always provides Buffer, convert to string and parse
+          try {
+            const stringValue = message.value.toString("utf8");
+            messageData = JSON.parse(stringValue);
+          } catch (parseError) {
+            console.error(
+              `❌ [${serviceName}] Failed to parse message:`,
+              parseError.message
+            );
+            console.error(
+              `❌ [${serviceName}] Raw value type:`,
+              typeof message.value
+            );
+            console.error(
+              `❌ [${serviceName}] Raw value (first 200 chars):`,
+              message.value.toString("utf8").substring(0, 200)
+            );
+            return;
+          }
+
+          logConsumerMessage(
+            serviceName,
+            topic,
+            partition,
+            message,
+            messageData
+          );
+
+          if (topic === TOPICS.FOOD_READY) {
+            await handleFoodReady(messageData, producer, serviceName);
+          }
+        } catch (error) {
+          console.error(
+            `❌ [${serviceName}] Error processing message:`,
+            error.message
+          );
+        }
+      },
+    });
 
     console.log(
-      `🚀 [${serviceName}] Kafka producer initialized (no consumer needed)`
+      `🚀 [${serviceName}] Kafka initialized and consuming food-ready events`
     );
   } catch (error) {
     console.error(

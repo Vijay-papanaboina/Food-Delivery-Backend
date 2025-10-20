@@ -4,7 +4,6 @@ import {
   listDeliveries,
   listDrivers,
   deliveryStats,
-  assignDeliveryToDriver,
   pickupDeliveryByDriver,
   completeDeliveryByDriver,
 } from "../controllers/delivery.controller.js";
@@ -21,12 +20,7 @@ export default function deliveryRoutes() {
   router.get("/api/delivery/stats", deliveryStats);
 
   // Protected driver-only routes (require driver role)
-  router.post(
-    "/api/delivery/assign",
-    authenticateToken,
-    requireRole("driver"),
-    assignDeliveryToDriver
-  );
+  // Note: Manual assignment removed - now using auto-assignment via Kafka
   router.post(
     "/api/delivery/pickup",
     authenticateToken,

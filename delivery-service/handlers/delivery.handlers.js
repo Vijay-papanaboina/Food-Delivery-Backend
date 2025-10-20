@@ -1,4 +1,7 @@
 // Removed uuid import - using database-generated IDs now
+import { eq, and, sql } from "drizzle-orm";
+import { db } from "../config/db.js";
+import { drivers } from "../db/schema.js";
 import {
   upsertDriver,
   getDrivers,
@@ -8,6 +11,7 @@ import {
   upsertDelivery,
   updateDeliveryFields,
   getDelivery,
+  createDelivery,
 } from "../repositories/deliveries.repo.js";
 import { publishMessage, TOPICS } from "../config/kafka.js";
 
@@ -226,6 +230,254 @@ export async function completeDelivery(
     );
     throw error;
   } finally {
+  }
+}
+
+/**
+ * Auto-assigns a driver to an order based on availability and proximity
+ * @param {Object} orderData - Order information from Kafka
+ * @param {Object} producer - Kafka producer
+ * @param {string} serviceName - Service name for logging
+ * @returns {Object|null} - Assigned driver info or null if no driver available
+ */
+export async function autoAssignDriver(orderData, producer, serviceName) {
+  const { orderId, restaurantId, deliveryAddress } = orderData;
+
+  console.log(
+    `🚗 [${serviceName}] Starting auto-assignment for order ${orderId}`
+  );
+
+  try {
+    // Get all available drivers (not currently on delivery)
+    const availableDrivers = await db
+      .select({
+        driverId: drivers.id,
+        name: drivers.name,
+        phone: drivers.phone,
+        vehicle: drivers.vehicle,
+        licensePlate: drivers.licensePlate,
+        isAvailable: drivers.isAvailable,
+        currentLocation: drivers.currentLocation,
+        rating: drivers.rating,
+        totalDeliveries: drivers.totalDeliveries,
+      })
+      .from(drivers)
+      .where(and(eq(drivers.isAvailable, true), eq(drivers.isActive, true)));
+
+    if (availableDrivers.length === 0) {
+      console.log(
+        `⚠️ [${serviceName}] No available drivers found for order ${orderId}`
+      );
+      return null;
+    }
+
+    console.log(
+      `🚗 [${serviceName}] Found ${availableDrivers.length} available drivers for order ${orderId}`
+    );
+
+    // Simple assignment algorithm:
+    // 1. Prioritize drivers with higher ratings
+    // 2. Among same ratings, prioritize drivers with fewer total deliveries (load balancing)
+    const selectedDriver = selectBestDriver(availableDrivers);
+
+    if (!selectedDriver) {
+      console.log(
+        `⚠️ [${serviceName}] No suitable driver found after selection for order ${orderId}`
+      );
+      return null;
+    }
+
+    console.log(`🚗 [${serviceName}] Driver selected for auto-assignment`, {
+      orderId,
+      driverId: selectedDriver.driverId,
+      driverName: selectedDriver.name,
+      rating: selectedDriver.rating,
+      totalDeliveries: selectedDriver.totalDeliveries,
+    });
+
+    // Create delivery record
+    const delivery = await createDelivery({
+      orderId,
+      driverId: selectedDriver.driverId,
+      restaurantId,
+      userId: orderData.userId,
+      deliveryAddress,
+      status: "assigned",
+      assignedAt: new Date().toISOString(),
+      driverName: selectedDriver.name,
+      driverPhone: selectedDriver.phone,
+      vehicle: selectedDriver.vehicle,
+      licensePlate: selectedDriver.licensePlate,
+    });
+
+    // Update driver availability to false
+    await updateDriverAvailability(selectedDriver.driverId, false);
+
+    // Increment driver's delivery count
+    await incrementDriverDeliveries(selectedDriver.driverId);
+
+    // Publish delivery assigned event
+    await publishMessage(
+      producer,
+      TOPICS.DELIVERY_ASSIGNED,
+      {
+        deliveryId: delivery.deliveryId,
+        orderId,
+        driverId: selectedDriver.driverId,
+        assignedAt: delivery.assignedAt,
+        estimatedDeliveryTime: new Date(Date.now() + 10 * 1000).toISOString(),
+      },
+      orderId
+    );
+
+    console.log(`✅ [${serviceName}] Driver auto-assigned successfully`, {
+      orderId,
+      deliveryId: delivery.deliveryId,
+      driverId: selectedDriver.driverId,
+      driverName: selectedDriver.name,
+    });
+
+    return {
+      deliveryId: delivery.deliveryId,
+      driverId: selectedDriver.driverId,
+      driverName: selectedDriver.name,
+      driverPhone: selectedDriver.phone,
+      vehicle: selectedDriver.vehicle,
+      licensePlate: selectedDriver.licensePlate,
+      rating: selectedDriver.rating,
+      totalDeliveries: selectedDriver.totalDeliveries,
+    };
+  } catch (error) {
+    console.error(
+      `❌ [${serviceName}] Error in auto-assignment:`,
+      error.message
+    );
+    throw error;
+  }
+}
+
+/**
+ * Selects the best driver from available drivers
+ * @param {Array} availableDrivers - Array of available drivers
+ * @returns {Object|null} - Selected driver or null
+ */
+function selectBestDriver(availableDrivers) {
+  if (availableDrivers.length === 0) return null;
+
+  // Sort drivers by rating (descending) and then by total deliveries (ascending)
+  const sortedDrivers = availableDrivers.sort((a, b) => {
+    // First, sort by rating (higher is better)
+    const ratingDiff = parseFloat(b.rating) - parseFloat(a.rating);
+    if (ratingDiff !== 0) return ratingDiff;
+
+    // If ratings are equal, sort by total deliveries (lower is better for load balancing)
+    return a.totalDeliveries - b.totalDeliveries;
+  });
+
+  // Return the best driver
+  return sortedDrivers[0];
+}
+
+/**
+ * Updates driver availability after assignment
+ * @param {string} driverId - Driver ID
+ * @param {boolean} isAvailable - New availability status
+ */
+async function updateDriverAvailability(driverId, isAvailable) {
+  try {
+    await db
+      .update(drivers)
+      .set({
+        isAvailable,
+        updatedAt: new Date(),
+      })
+      .where(eq(drivers.id, driverId));
+
+    console.log(`🚗 [delivery-service] Driver availability updated`, {
+      driverId,
+      isAvailable,
+    });
+  } catch (error) {
+    console.error(
+      `❌ [delivery-service] Error updating driver availability:`,
+      error.message
+    );
+    throw error;
+  }
+}
+
+/**
+ * Increments driver's total deliveries count
+ * @param {string} driverId - Driver ID
+ */
+async function incrementDriverDeliveries(driverId) {
+  try {
+    await db
+      .update(drivers)
+      .set({
+        totalDeliveries: sql`${drivers.totalDeliveries} + 1`,
+        updatedAt: new Date(),
+      })
+      .where(eq(drivers.id, driverId));
+
+    console.log(`🚗 [delivery-service] Driver deliveries count incremented`, {
+      driverId,
+    });
+  } catch (error) {
+    console.error(
+      `❌ [delivery-service] Error incrementing driver deliveries:`,
+      error.message
+    );
+    throw error;
+  }
+}
+
+/**
+ * Handle food-ready events by auto-assigning a driver
+ * @param {Object} orderData - Order data from Kafka
+ * @param {Object} producer - Kafka producer
+ * @param {string} serviceName - Service name for logging
+ */
+export async function handleFoodReady(orderData, producer, serviceName) {
+  const { orderId, restaurantId, userId, items, total, deliveryAddress } =
+    orderData;
+
+  console.log(
+    `📥 [${serviceName}] Processing food-ready event for order ${orderId}`
+  );
+
+  try {
+    // Auto-assign a driver
+    const assignedDriver = await autoAssignDriver(
+      {
+        orderId,
+        restaurantId,
+        userId,
+        deliveryAddress,
+      },
+      producer,
+      serviceName
+    );
+
+    if (!assignedDriver) {
+      console.log(
+        `⚠️ [${serviceName}] No driver available for auto-assignment for order ${orderId}`
+      );
+      // TODO: Implement fallback mechanism (notify restaurant, queue for later, etc.)
+      return;
+    }
+
+    console.log(`✅ [${serviceName}] Food-ready event processed successfully`, {
+      orderId,
+      deliveryId: assignedDriver.deliveryId,
+      driverId: assignedDriver.driverId,
+      driverName: assignedDriver.driverName,
+    });
+  } catch (error) {
+    console.error(
+      `❌ [${serviceName}] Error handling food-ready event:`,
+      error.message
+    );
   }
 }
 

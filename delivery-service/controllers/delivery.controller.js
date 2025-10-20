@@ -5,7 +5,6 @@ import {
 } from "../repositories/deliveries.repo.js";
 import { getDrivers } from "../repositories/drivers.repo.js";
 import {
-  assignDelivery,
   pickupDelivery,
   completeDelivery,
 } from "../handlers/delivery.handlers.js";
@@ -114,56 +113,7 @@ export const deliveryStats = async (req, res) => {
   }
 };
 
-export const assignDeliveryToDriver = async (req, res) => {
-  try {
-    const { orderId, driverId, deliveryAddress } = req.body;
-
-    // Validate required fields
-    if (!orderId || !driverId || !deliveryAddress) {
-      return res.status(400).json({
-        error: "Missing required fields: orderId, driverId, deliveryAddress",
-      });
-    }
-
-    // Validate data types
-    if (typeof orderId !== "string" || typeof driverId !== "string") {
-      return res.status(400).json({
-        error: "orderId and driverId must be strings",
-      });
-    }
-
-    if (typeof deliveryAddress !== "object" || deliveryAddress === null) {
-      return res.status(400).json({
-        error: "deliveryAddress must be an object",
-      });
-    }
-
-    // Assign delivery
-    const deliveryId = await assignDelivery(
-      orderId,
-      driverId,
-      deliveryAddress,
-      req.producer,
-      "delivery-service"
-    );
-
-    res.status(201).json({
-      message: "Delivery assigned successfully",
-      deliveryId,
-      orderId,
-      driverId,
-      assignedAt: new Date().toISOString(),
-    });
-  } catch (error) {
-    console.error(
-      `❌ [delivery-service] Error assigning delivery:`,
-      error.message
-    );
-    res
-      .status(500)
-      .json({ error: "Failed to assign delivery", details: error.message });
-  }
-};
+// Manual assignment removed - now using auto-assignment via Kafka
 
 export const pickupDeliveryByDriver = async (req, res) => {
   try {
