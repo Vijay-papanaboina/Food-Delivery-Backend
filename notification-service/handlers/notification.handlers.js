@@ -10,9 +10,9 @@ export const NOTIFICATION_TEMPLATES = {
     message: (data) =>
       `Your order #${data.orderId.slice(
         -8
-      )} has been placed and is being prepared. Total: $${data.total.toFixed(
-        2
-      )}`,
+      )} has been placed and is being prepared. Total: $${parseFloat(
+        data.total
+      ).toFixed(2)}`,
     priority: "high",
   },
   [TOPICS.PAYMENT_PROCESSED]: {
@@ -53,6 +53,15 @@ export const NOTIFICATION_TEMPLATES = {
       `Your order #${data.orderId.slice(
         -8
       )} has been assigned to a driver and is on its way.`,
+    priority: "high",
+  },
+  [TOPICS.DELIVERY_PICKED_UP]: {
+    type: "delivery_picked_up",
+    title: "Order Picked Up!",
+    message: (data) =>
+      `Your order #${data.orderId.slice(
+        -8
+      )} has been picked up from the restaurant and is on its way to you.`,
     priority: "high",
   },
   [TOPICS.DELIVERY_COMPLETED]: {
@@ -112,13 +121,14 @@ export async function handleEvent(topic, data, serviceName) {
     eventData: data,
     createdAt: new Date().toISOString(),
     read: false,
-    shouldShowToast: template.shouldShowToast ? template.shouldShowToast(data) : true,
+    shouldShowToast: template.shouldShowToast
+      ? template.shouldShowToast(data)
+      : true,
   };
 
   // Simulate sending notification (log-only, no DB persistence)
   await sendNotification(notification, serviceName);
 }
-
 
 export async function sendNotification(notification, serviceName) {
   try {
@@ -126,14 +136,16 @@ export async function sendNotification(notification, serviceName) {
     if (!notification.notificationId) {
       notification.notificationId = uuidv4();
     }
-    
+
     // Set default values if not provided
     notification.createdAt = notification.createdAt || new Date().toISOString();
     notification.read = notification.read || false;
     notification.shouldShowToast = notification.shouldShowToast !== false;
 
     // Simulate delivery delay
-    await new Promise((resolve) => setTimeout(resolve, 50 + Math.random() * 100));
+    await new Promise((resolve) =>
+      setTimeout(resolve, 50 + Math.random() * 100)
+    );
 
     console.log(
       `📱 [${serviceName}] ${notification.title} → ${notification.userId}`

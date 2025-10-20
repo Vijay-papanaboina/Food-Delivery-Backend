@@ -14,6 +14,7 @@ export const TOPICS = {
   ORDER_CONFIRMED: process.env.TOPIC_ORDER_CONFIRMED || "order-confirmed",
   FOOD_READY: process.env.TOPIC_FOOD_READY || "food-ready",
   DELIVERY_ASSIGNED: process.env.TOPIC_DELIVERY_ASSIGNED || "delivery-assigned",
+  DELIVERY_PICKED_UP: process.env.TOPIC_DELIVERY_PICKED_UP || "delivery-picked-up",
   DELIVERY_COMPLETED: process.env.TOPIC_DELIVERY_COMPLETED || "delivery-completed",
 };
 
