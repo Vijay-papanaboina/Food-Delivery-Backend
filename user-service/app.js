@@ -15,17 +15,20 @@ const app = express();
 const PORT = process.env.PORT || 5005;
 const SERVICE_NAME = process.env.SERVICE_NAME || "user-service";
 
-// Security middleware
-app.use(helmet());
+// CORS middleware (must come before helmet)
 app.use(
   cors({
     origin: process.env.FRONTEND_URL?.split(",") || [
-      "http://localhost:5173",
-      "http://localhost:5174",
+      "http://localhost:5173", // Customers
+      "http://localhost:5174", // Restaurants
+      "http://localhost:5175", // Delivery
     ],
     credentials: true,
   })
 );
+
+// Security middleware
+app.use(helmet());
 
 app.use(morgan("dev"));
 

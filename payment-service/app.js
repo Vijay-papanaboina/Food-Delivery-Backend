@@ -10,7 +10,15 @@ function createApp(producer) {
   const app = express();
 
   // Middleware
-  app.use(cors());
+  app.use(
+    cors({
+      origin: process.env.FRONTEND_URL?.split(",") || [
+        "http://localhost:5173", // Customers
+        "http://localhost:5174", // Restaurants
+        "http://localhost:5175", // Delivery
+      ],
+    })
+  );
   app.use(morgan("dev"));
   // Webhook route needs raw body parsing BEFORE json middleware
   app.use("/api/webhooks/stripe", express.raw({ type: "application/json" }));

@@ -298,3 +298,53 @@ export async function getDeliveryStats() {
     averageDeliveryTimeMinutes: Number(averageDeliveryTimeMinutes.toFixed(2)),
   };
 }
+
+export async function getDriverStats(driverId) {
+  try {
+    // Get total deliveries for this driver
+    const totalDeliveries = await db
+      .select({ id: deliveries.id })
+      .from(deliveries)
+      .where(eq(deliveries.driverId, driverId));
+
+    // Get completed deliveries for this driver today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const completedToday = await db
+      .select({ id: deliveries.id })
+      .from(deliveries)
+      .where(
+        and(
+          eq(deliveries.driverId, driverId),
+          eq(deliveries.status, "completed"),
+          sql`${deliveries.actualDeliveryTime} >= ${today}`,
+          sql`${deliveries.actualDeliveryTime} < ${tomorrow}`
+        )
+      );
+
+    // Calculate earnings (assuming $5 per delivery for now)
+    const earningsPerDelivery = 5.0;
+    const todayEarnings = (completedToday.length * earningsPerDelivery).toFixed(
+      2
+    );
+
+    return {
+      totalDeliveries: totalDeliveries.length,
+      completedToday: completedToday.length,
+      averageRating: "4.5", // Default rating for now
+      earnings: todayEarnings,
+    };
+  } catch (error) {
+    console.error("Error getting driver stats:", error);
+    // Return default stats if there's an error
+    return {
+      totalDeliveries: 0,
+      completedToday: 0,
+      averageRating: "0.0",
+      earnings: "0.00",
+    };
+  }
+}

@@ -2,8 +2,19 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { drizzle } from "drizzle-orm/node-postgres";
-import { getDelivery, getDeliveryByOrderId, getDeliveries, upsertDelivery, getDeliveryStats } from "../repositories/deliveries.repo.js";
-import { getDriver, getDrivers, upsertDriver } from "../repositories/drivers.repo.js";
+import {
+  getDelivery,
+  getDeliveryByOrderId,
+  getDeliveries,
+  upsertDelivery,
+  getDeliveryStats,
+  getDriverStats,
+} from "../repositories/deliveries.repo.js";
+import {
+  getDriver,
+  getDrivers,
+  upsertDriver,
+} from "../repositories/drivers.repo.js";
 
 export const db = drizzle(process.env.DATABASE_URL);
 
@@ -29,3 +40,5 @@ export { getDriver };
 export { getDrivers };
 
 export { getDeliveryStats };
+
+export { getDriverStats };

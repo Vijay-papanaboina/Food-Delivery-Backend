@@ -2,6 +2,7 @@ import {
   getDeliveryByOrderId,
   getDeliveries,
   getDeliveryStats,
+  getDriverStats,
 } from "../repositories/deliveries.repo.js";
 import { getDrivers } from "../repositories/drivers.repo.js";
 import {
@@ -64,11 +65,16 @@ export const getDeliveryByOrder = async (req, res) => {
 
 export const listDeliveries = async (req, res) => {
   try {
-    const { status, driverId, limit } = req.query;
+    const { status, limit } = req.query;
     const filters = {};
     if (status) filters.status = status;
-    if (driverId) filters.driverId = driverId;
     if (limit) filters.limit = parseInt(limit);
+
+    // If user is authenticated, filter by their driver ID
+    if (req.user && req.user.userId) {
+      filters.driverId = req.user.userId;
+    }
+
     const deliveries = await getDeliveries(filters);
     res.json({
       message: "Deliveries retrieved successfully",
@@ -103,8 +109,21 @@ export const listDrivers = async (req, res) => {
 
 export const deliveryStats = async (req, res) => {
   try {
-    const stats = await getDeliveryStats();
-    res.json({ message: "Delivery statistics retrieved successfully", stats });
+    // If user is authenticated, return driver-specific stats
+    if (req.user && req.user.userId) {
+      const driverStats = await getDriverStats(req.user.userId);
+      res.json({
+        message: "Driver statistics retrieved successfully",
+        stats: driverStats,
+      });
+    } else {
+      // Return general delivery stats for unauthenticated requests
+      const stats = await getDeliveryStats();
+      res.json({
+        message: "Delivery statistics retrieved successfully",
+        stats,
+      });
+    }
   } catch (error) {
     res.status(500).json({
       error: "Failed to retrieve delivery statistics",

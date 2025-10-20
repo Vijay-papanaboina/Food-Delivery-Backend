@@ -1,11 +1,11 @@
 // Removed uuid import - using database-generated IDs now
-import { eq, and, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "../config/db.js";
 import { drivers } from "../db/schema.js";
 import {
   upsertDriver,
-  getDrivers,
   getDriver,
+  getDriverByUserId,
 } from "../repositories/drivers.repo.js";
 import {
   upsertDelivery,
@@ -187,15 +187,26 @@ export async function completeDelivery(
     });
 
     // Mark driver as available and increment delivery count
-    const existingDriver = await getDriver(driverId);
+    // driverId here is the user ID from JWT token
+    const existingDriver = await getDriverByUserId(driverId);
+    if (!existingDriver) {
+      console.log(
+        `⚠️ [${serviceName}] Driver with user ID ${driverId} not found for completion update`
+      );
+      return;
+    }
+
     const incrementedTotal = (existingDriver?.total_deliveries || 0) + 1;
     await upsertDriver({
-      driverId,
+      driverId: existingDriver.driver_id, // Use the database driver ID
+      userId: existingDriver.user_id, // Use the user ID
       name: existingDriver?.name,
       phone: existingDriver?.phone,
       vehicle: existingDriver?.vehicle,
       licensePlate: existingDriver?.license_plate,
       isAvailable: true,
+      currentLocation: existingDriver?.current_location, // Preserve existing location
+      rating: existingDriver?.rating || "0.0",
       totalDeliveries: incrementedTotal,
       updatedAt: new Date().toISOString(),
     });
@@ -248,21 +259,36 @@ export async function autoAssignDriver(orderData, producer, serviceName) {
   );
 
   try {
+    // Validate input data
+    if (!orderData || !orderId || !restaurantId || !deliveryAddress) {
+      console.error(
+        `❌ [${serviceName}] Invalid order data for auto-assignment:`,
+        orderData
+      );
+      return null;
+    }
+
     // Get all available drivers (not currently on delivery)
     const availableDrivers = await db
       .select({
-        driverId: drivers.id,
+        driverId: drivers.userId, // Use userId instead of id to match JWT tokens
+        driverTableId: drivers.id, // Keep the table ID for updates
         name: drivers.name,
         phone: drivers.phone,
         vehicle: drivers.vehicle,
         licensePlate: drivers.licensePlate,
         isAvailable: drivers.isAvailable,
-        currentLocation: drivers.currentLocation,
+        currentLocationLat: drivers.currentLocationLat,
+        currentLocationLng: drivers.currentLocationLng,
         rating: drivers.rating,
         totalDeliveries: drivers.totalDeliveries,
       })
       .from(drivers)
-      .where(and(eq(drivers.isAvailable, true), eq(drivers.isActive, true)));
+      .where(eq(drivers.isAvailable, true));
+
+    console.log(
+      `📊 [${serviceName}] Found ${availableDrivers.length} available drivers`
+    );
 
     if (availableDrivers.length === 0) {
       console.log(
@@ -310,11 +336,11 @@ export async function autoAssignDriver(orderData, producer, serviceName) {
       licensePlate: selectedDriver.licensePlate,
     });
 
-    // Update driver availability to false
-    await updateDriverAvailability(selectedDriver.driverId, false);
+    // Update driver availability to false (use driverTableId for database operations)
+    await updateDriverAvailability(selectedDriver.driverTableId, false);
 
-    // Increment driver's delivery count
-    await incrementDriverDeliveries(selectedDriver.driverId);
+    // Increment driver's delivery count (use driverTableId for database operations)
+    await incrementDriverDeliveries(selectedDriver.driverTableId);
 
     // Publish delivery assigned event
     await publishMessage(
@@ -439,14 +465,36 @@ async function incrementDriverDeliveries(driverId) {
  * @param {string} serviceName - Service name for logging
  */
 export async function handleFoodReady(orderData, producer, serviceName) {
-  const { orderId, restaurantId, userId, items, total, deliveryAddress } =
-    orderData;
-
   console.log(
-    `📥 [${serviceName}] Processing food-ready event for order ${orderId}`
+    `📥 [${serviceName}] Processing food-ready event:`,
+    orderData ? `order ${orderData.orderId}` : "no order data"
   );
 
   try {
+    // Validate input data
+    if (!orderData || typeof orderData !== "object") {
+      console.error(
+        `❌ [${serviceName}] Invalid order data received:`,
+        orderData
+      );
+      return;
+    }
+
+    const { orderId, restaurantId, userId, items, total, deliveryAddress } =
+      orderData;
+
+    if (!orderId || !restaurantId || !deliveryAddress) {
+      console.error(
+        `❌ [${serviceName}] Missing required fields in order data:`,
+        {
+          orderId: !!orderId,
+          restaurantId: !!restaurantId,
+          deliveryAddress: !!deliveryAddress,
+        }
+      );
+      return;
+    }
+
     // Auto-assign a driver
     const assignedDriver = await autoAssignDriver(
       {

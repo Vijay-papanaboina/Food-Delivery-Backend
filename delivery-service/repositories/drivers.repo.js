@@ -7,6 +7,7 @@ export async function upsertDriver(driver) {
     .insert(drivers)
     .values({
       id: driver.driverId,
+      userId: driver.userId, // Add user_id field
       name: driver.name,
       phone: driver.phone,
       vehicle: driver.vehicle,
@@ -54,6 +55,7 @@ export async function getDriver(driverId) {
   const rows = await db
     .select({
       driver_id: drivers.id,
+      user_id: drivers.userId,
       name: drivers.name,
       phone: drivers.phone,
       vehicle: drivers.vehicle,
@@ -68,6 +70,44 @@ export async function getDriver(driverId) {
     })
     .from(drivers)
     .where(eq(drivers.id, driverId))
+    .limit(1);
+
+  if (rows[0]) {
+    const driver = rows[0];
+    if (driver.current_location_lat && driver.current_location_lng) {
+      driver.current_location = {
+        lat: parseFloat(driver.current_location_lat),
+        lng: parseFloat(driver.current_location_lng),
+      };
+    }
+    delete driver.current_location_lat;
+    delete driver.current_location_lng;
+    return driver;
+  }
+
+  return null;
+}
+
+// Get driver by user ID (for JWT token-based lookups)
+export async function getDriverByUserId(userId) {
+  const rows = await db
+    .select({
+      driver_id: drivers.id,
+      user_id: drivers.userId,
+      name: drivers.name,
+      phone: drivers.phone,
+      vehicle: drivers.vehicle,
+      license_plate: drivers.licensePlate,
+      is_available: drivers.isAvailable,
+      current_location_lat: drivers.currentLocationLat,
+      current_location_lng: drivers.currentLocationLng,
+      rating: drivers.rating,
+      total_deliveries: drivers.totalDeliveries,
+      created_at: drivers.createdAt,
+      updated_at: drivers.updatedAt,
+    })
+    .from(drivers)
+    .where(eq(drivers.userId, userId))
     .limit(1);
 
   if (rows[0]) {

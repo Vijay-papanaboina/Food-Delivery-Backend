@@ -82,11 +82,23 @@ export async function handleDeliveryCompleted(
 ) {
   const { orderId } = deliveryData;
 
+  if (!orderId) {
+    console.log(
+      `❌ [${serviceName}] No orderId in delivery completed event:`,
+      deliveryData
+    );
+    return;
+  }
+
   const order = await getOrder(orderId);
   if (!order) {
     console.log(
       `⚠️ [${serviceName}] Order ${orderId} not found for delivery update`
     );
+    return;
+  }
+
+  if (order.status === "delivered") {
     return;
   }
 

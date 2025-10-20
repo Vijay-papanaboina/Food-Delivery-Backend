@@ -14,13 +14,22 @@ export default function deliveryRoutes() {
   const router = Router();
 
   // Public read-only routes (no authentication required)
-  router.get("/api/delivery/:orderId", getDeliveryByOrder);
-  router.get("/api/delivery", listDeliveries);
   router.get("/api/drivers", listDrivers);
-  router.get("/api/delivery/stats", deliveryStats);
 
   // Protected driver-only routes (require driver role)
-  // Note: Manual assignment removed - now using auto-assignment via Kafka
+  router.get(
+    "/api/delivery/stats",
+    authenticateToken,
+    requireRole("driver"),
+    deliveryStats
+  );
+  router.get(
+    "/api/delivery",
+    authenticateToken,
+    requireRole("driver"),
+    listDeliveries
+  );
+  router.get("/api/delivery/:orderId", getDeliveryByOrder);
   router.post(
     "/api/delivery/pickup",
     authenticateToken,
