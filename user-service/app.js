@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
@@ -18,10 +19,15 @@ const SERVICE_NAME = process.env.SERVICE_NAME || "user-service";
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: process.env.FRONTEND_URL?.split(",") || [
+      "http://localhost:5173",
+      "http://localhost:5174",
+    ],
     credentials: true,
   })
 );
+
+app.use(morgan("dev"));
 
 // Rate limiting
 const limiter = rateLimit({

@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import morgan from "morgan";
 import buildRoutes from "./routes/index.routes.js";
 import { getPaymentsCount } from "./repositories/payments.repo.js";
 
@@ -10,7 +11,7 @@ function createApp(producer) {
 
   // Middleware
   app.use(cors());
-
+  app.use(morgan("dev"));
   // Webhook route needs raw body parsing BEFORE json middleware
   app.use("/api/webhooks/stripe", express.raw({ type: "application/json" }));
 

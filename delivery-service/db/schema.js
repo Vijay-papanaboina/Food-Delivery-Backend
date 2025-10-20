@@ -33,6 +33,7 @@ export const deliveries = delivery_svc.table("deliveries", {
 
 export const drivers = delivery_svc.table("drivers", {
   id: uuid("id").primaryKey().defaultRandom().notNull(),
+  userId: uuid("user_id").notNull(), // Foreign key to user_svc.users
   name: text("name").notNull(),
   phone: text("phone").notNull(),
   vehicle: text("vehicle").notNull(),

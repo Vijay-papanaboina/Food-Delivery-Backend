@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import morgan from "morgan";
 import buildRoutes from "./routes/index.routes.js";
 import { getRestaurantStats } from "./repositories/restaurants.repo.js";
 
@@ -9,9 +10,19 @@ function createApp(producer) {
   const app = express();
 
   // Middleware
-  app.use(cors());
+  app.use(
+    cors({
+      origin: process.env.FRONTEND_URL?.split(",") || [
+        "http://localhost:5173",
+        "http://localhost:5174",
+      ],
+      credentials: true,
+    })
+  );
   app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
 
+  app.use(morgan("dev"));
   // Make producer available in requests
   app.use((req, res, next) => {
     req.producer = producer;
@@ -21,7 +32,7 @@ function createApp(producer) {
   // Database will be used for all restaurant storage
 
   // Mount routes
-  app.use("/", buildRoutes());
+  app.use("/", buildRoutes(producer));
 
   // Health check endpoint
   app.get("/health", async (req, res) => {

@@ -5,6 +5,7 @@ import {
   clearUserCart,
 } from "../controllers/cart.controller.js";
 import { authenticateToken } from "../middleware/auth.js";
+import { requireRole } from "../middleware/role.js";
 import { body } from "express-validator";
 
 export default function cartRoutes(serviceName) {
@@ -19,10 +20,21 @@ export default function cartRoutes(serviceName) {
       .withMessage("Item quantity must be at least 1"),
   ];
 
-  // Protected cart routes
-  router.get("/api/cart", authenticateToken, getCart);
-  router.put("/api/cart", authenticateToken, validateCart, updateCart);
-  router.delete("/api/cart", authenticateToken, clearUserCart);
+  // Protected cart routes (customer role only)
+  router.get("/api/cart", authenticateToken, requireRole("customer"), getCart);
+  router.put(
+    "/api/cart",
+    authenticateToken,
+    requireRole("customer"),
+    validateCart,
+    updateCart
+  );
+  router.delete(
+    "/api/cart",
+    authenticateToken,
+    requireRole("customer"),
+    clearUserCart
+  );
 
   return router;
 }

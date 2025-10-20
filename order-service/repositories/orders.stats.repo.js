@@ -103,3 +103,47 @@ export async function getOrdersCount() {
   const rows = await db.select({ count: sql`COUNT(*)::int` }).from(orders);
   return rows[0]?.count || 0;
 }
+
+export async function getRestaurantOrderStats(restaurantId) {
+  // Today's date range
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  // Today's orders count
+  const todayOrdersRows = await db
+    .select({ count: sql`COUNT(*)` })
+    .from(orders)
+    .where(
+      and(
+        eq(orders.restaurantId, restaurantId),
+        sql`${orders.createdAt} >= ${today.toISOString()}`,
+        sql`${orders.createdAt} < ${tomorrow.toISOString()}`
+      )
+    );
+
+  // Today's revenue
+  const todayRevenueRows = await db
+    .select({ revenue: sql`SUM(${orders.total})` })
+    .from(orders)
+    .where(
+      and(
+        eq(orders.restaurantId, restaurantId),
+        sql`${orders.createdAt} >= ${today.toISOString()}`,
+        sql`${orders.createdAt} < ${tomorrow.toISOString()}`
+      )
+    );
+
+  // Average preparation time (mock data for now - would need actual prep time tracking)
+  const avgPrepTime = 15; // Default 15 minutes
+
+  const todayOrders = parseInt(todayOrdersRows[0]?.count || 0);
+  const todayRevenue = parseFloat(todayRevenueRows[0]?.revenue || 0);
+
+  return {
+    todayOrders,
+    todayRevenue: todayRevenue.toFixed(2),
+    averagePreparationTime: avgPrepTime,
+  };
+}

@@ -8,6 +8,7 @@ import {
 import {
   listOrdersDrizzle,
   getOrderStatsDrizzle,
+  getRestaurantOrderStats,
 } from "../repositories/orders.stats.repo.js";
 import { TOPICS, publishMessage } from "../config/kafka.js";
 import { createLogger, sanitizeForLogging } from "../../shared/utils/logger.js";
@@ -270,6 +271,22 @@ export const getOrderStats = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       error: "Failed to retrieve order statistics",
+      details: error.message,
+    });
+  }
+};
+
+export const getRestaurantOrderStatsController = async (req, res) => {
+  try {
+    const { restaurantId } = req.params;
+    const stats = await getRestaurantOrderStats(restaurantId);
+    res.json({
+      message: "Restaurant order statistics retrieved successfully",
+      stats,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: "Failed to retrieve restaurant order statistics",
       details: error.message,
     });
   }

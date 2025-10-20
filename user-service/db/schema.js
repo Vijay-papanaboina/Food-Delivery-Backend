@@ -17,6 +17,7 @@ export const users = user_svc.table("users", {
   passwordHash: text("password_hash").notNull(),
   name: text("name").notNull(),
   phone: text("phone"),
+  role: text("role").notNull().default("customer"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

@@ -4,6 +4,7 @@ import {
   getOrderById,
   listOrders,
   getOrderStats,
+  getRestaurantOrderStatsController,
   updateOrderStatusController,
 } from "../controllers/orders.controller.js";
 import { authenticateToken } from "../middleware/auth.js";
@@ -20,6 +21,11 @@ export default function orders(producer, serviceName) {
   router.get("/api/orders/:id", authenticateToken, getOrderById);
   router.get("/api/orders", authenticateToken, listOrders);
   router.get("/api/orders/stats", authenticateToken, getOrderStats);
+  router.get(
+    "/api/orders/restaurant/:restaurantId/stats",
+    authenticateToken,
+    getRestaurantOrderStatsController
+  );
   router.put("/api/orders/:orderId/status", updateOrderStatusController);
 
   return router;

@@ -1,6 +1,7 @@
 import {
   getRestaurants,
   getRestaurant,
+  getRestaurantByOwner,
   getRestaurantStats,
 } from "../repositories/restaurants.repo.js";
 import { getMenuItems } from "../repositories/menu.repo.js";
@@ -59,6 +60,44 @@ export const getRestaurantById = async (req, res) => {
     res
       .status(500)
       .json({ error: "Failed to retrieve restaurant", details: error.message });
+  }
+};
+
+export const getMyRestaurant = async (req, res) => {
+  const logger = createLogger("restaurant-service");
+
+  try {
+    const userId = req.user.userId;
+
+    logger.info("Getting restaurant for user", { userId });
+
+    const restaurant = await getRestaurantByOwner(userId);
+    if (!restaurant) {
+      logger.warn("No restaurant found for user", { userId });
+      return res
+        .status(404)
+        .json({ error: "No restaurant found for this user" });
+    }
+
+    logger.info("Restaurant retrieved successfully", {
+      userId,
+      restaurantId: restaurant.restaurant_id,
+    });
+
+    res.json({
+      message: "Restaurant retrieved successfully",
+      restaurant,
+    });
+  } catch (error) {
+    logger.error("Failed to retrieve restaurant for user", {
+      error: error.message,
+      stack: error.stack,
+      userId: req.user?.userId,
+    });
+    res.status(500).json({
+      error: "Failed to retrieve restaurant",
+      details: error.message,
+    });
   }
 };
 
@@ -127,13 +166,39 @@ export const getRestaurantMenu = async (req, res) => {
 };
 
 export const listKitchenOrders = async (req, res) => {
+  const logger = createLogger("restaurant-service");
+
   try {
-    const { status, restaurantId } = req.query;
-    const filters = {};
+    const { status } = req.query;
+    const userId = req.user.userId;
+
+    // Get restaurant for the authenticated user
+    const restaurant = await getRestaurantByOwner(userId);
+    if (!restaurant) {
+      logger.warn("No restaurant found for user", { userId });
+      return res
+        .status(404)
+        .json({ error: "No restaurant found for this user" });
+    }
+
+    const filters = { restaurantId: restaurant.restaurant_id };
     if (status) filters.status = status;
-    if (restaurantId) filters.restaurantId = restaurantId;
+
+    logger.info("Getting kitchen orders", {
+      userId,
+      restaurantId: restaurant.restaurant_id,
+      filters,
+    });
+
     const orders = await getKitchenOrders(filters);
     const stats = await getRestaurantStats();
+
+    logger.info("Kitchen orders retrieved successfully", {
+      userId,
+      restaurantId: restaurant.restaurant_id,
+      orderCount: orders.length,
+    });
+
     res.json({
       message: "Kitchen orders retrieved successfully",
       orders,
@@ -141,6 +206,11 @@ export const listKitchenOrders = async (req, res) => {
       stats: stats.kitchenOrders,
     });
   } catch (error) {
+    logger.error("Failed to retrieve kitchen orders", {
+      error: error.message,
+      stack: error.stack,
+      userId: req.user?.userId,
+    });
     res.status(500).json({
       error: "Failed to retrieve kitchen orders",
       details: error.message,

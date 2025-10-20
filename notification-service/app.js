@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
+import morgan from "morgan";
 import buildRoutes from "./routes/index.routes.js";
-import { NOTIFICATION_TEMPLATES } from "./handlers/notification.handlers.js";
 
 const SERVICE_NAME = process.env.SERVICE_NAME || "notification-service";
 
@@ -11,11 +11,11 @@ function createApp() {
   // Middleware
   app.use(cors());
   app.use(express.json());
-
+  app.use(morgan("dev"));
   // Database will be used for storage, no in-memory storage needed
 
   // Mount routes
-  app.use('/', buildRoutes());
+  app.use("/", buildRoutes());
 
   // Health check endpoint
   app.get("/health", async (req, res) => {

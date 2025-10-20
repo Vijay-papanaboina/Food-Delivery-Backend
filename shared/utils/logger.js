@@ -9,20 +9,22 @@ export function createLogger(serviceName) {
   return winston.createLogger({
     level: "info",
     format: winston.format.combine(
-      winston.format.printf(({ message, ...meta }) => {
+      winston.format.timestamp(),
+      winston.format.errors({ stack: true }),
+      winston.format.printf(({ timestamp, level, message, ...meta }) => {
         const metaStr =
           Object.keys(meta).length > 0 ? ` ${JSON.stringify(meta)}` : "";
-        return `[${serviceName}] ${message}${metaStr}`;
+        return `[${serviceName}] ${level}: ${message}${metaStr}`;
       })
     ),
     transports: [
       new winston.transports.Console({
         format: winston.format.combine(
-          winston.format.colorize(),
-          winston.format.printf(({ message, ...meta }) => {
+          winston.format.colorize({ all: true, message: true }),
+          winston.format.printf(({ timestamp, level, message, ...meta }) => {
             const metaStr =
               Object.keys(meta).length > 0 ? ` ${JSON.stringify(meta)}` : "";
-            return `[${serviceName}] ${message}${metaStr}`;
+            return `[${serviceName}] ${level}: ${message}${metaStr}`;
           })
         ),
       }),

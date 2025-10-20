@@ -5,12 +5,14 @@ import {
   login,
   refreshToken,
   validateToken,
+  logout,
 } from "../controllers/auth.controller.js";
 import {
   validateSignup,
   validateLogin,
   validateRefreshToken,
 } from "../middleware/validation.js";
+import { authenticateToken } from "../middleware/auth.js";
 
 export default function authRoutes(serviceName) {
   const router = Router();
@@ -26,14 +28,20 @@ export default function authRoutes(serviceName) {
 
   // Public auth routes with rate limiting
   router.post("/api/auth/signup", authLimiter, validateSignup, signup);
-  router.post("/api/auth/login", authLimiter, validateLogin, login);
+  router.post("/api/auth/login/:role", authLimiter, validateLogin, login);
   router.post(
     "/api/auth/refresh",
     authLimiter,
     validateRefreshToken,
     refreshToken
   );
-  router.post("/api/auth/validate", authLimiter, validateToken);
+  router.post(
+    "/api/auth/validate",
+    authLimiter,
+    authenticateToken,
+    validateToken
+  );
+  router.post("/api/auth/logout", authLimiter, authenticateToken, logout);
 
   return router;
 }

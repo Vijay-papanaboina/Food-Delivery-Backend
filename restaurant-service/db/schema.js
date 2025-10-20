@@ -14,6 +14,7 @@ export const restaurant_svc = pgSchema("restaurant_svc");
 
 export const restaurants = restaurant_svc.table("restaurants", {
   id: uuid("id").primaryKey().defaultRandom().notNull(),
+  ownerId: uuid("owner_id").notNull(),
   name: text("name").notNull(),
   cuisine: text("cuisine").notNull(),
   address: text("address").notNull(),

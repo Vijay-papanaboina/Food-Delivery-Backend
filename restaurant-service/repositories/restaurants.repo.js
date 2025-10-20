@@ -41,6 +41,7 @@ export async function getRestaurant(restaurantId) {
   const rows = await db
     .select({
       restaurant_id: restaurants.id,
+      owner_id: restaurants.ownerId,
       name: restaurants.name,
       cuisine: restaurants.cuisine,
       address: restaurants.address,
@@ -56,6 +57,30 @@ export async function getRestaurant(restaurantId) {
     })
     .from(restaurants)
     .where(eq(restaurants.id, restaurantId))
+    .limit(1);
+  return rows[0] || null;
+}
+
+export async function getRestaurantByOwner(ownerId) {
+  const rows = await db
+    .select({
+      restaurant_id: restaurants.id,
+      owner_id: restaurants.ownerId,
+      name: restaurants.name,
+      cuisine: restaurants.cuisine,
+      address: restaurants.address,
+      phone: restaurants.phone,
+      rating: restaurants.rating,
+      delivery_time: restaurants.deliveryTime,
+      delivery_fee: restaurants.deliveryFee,
+      is_open: restaurants.isOpen,
+      opening_time: restaurants.openingTime,
+      closing_time: restaurants.closingTime,
+      is_active: restaurants.isActive,
+      created_at: restaurants.createdAt,
+    })
+    .from(restaurants)
+    .where(eq(restaurants.ownerId, ownerId))
     .limit(1);
   return rows[0] || null;
 }

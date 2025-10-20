@@ -95,7 +95,7 @@ export async function getKitchenOrder(orderId) {
 export async function getKitchenOrders(filters = {}) {
   let query = db
     .select({
-      order_id: kitchenOrders.id,
+      order_id: kitchenOrders.orderId,
       restaurant_id: kitchenOrders.restaurantId,
       user_id: kitchenOrders.userId,
       items_json: kitchenOrders.items,

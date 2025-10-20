@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import { validationResult } from "express-validator";
 import { createUser, getUserByEmail } from "../repositories/user.repo.js";
 import { generateTokens } from "../config/jwt.js";
-import { createLogger, sanitizeForLogging } from "../../shared/utils/logger.js";
+import { createLogger } from "../../shared/utils/logger.js";
 
 // No Kafka events needed for user service
 
@@ -57,6 +57,7 @@ export const signup = async (req, res) => {
     const { accessToken, refreshToken } = generateTokens({
       userId: user.id,
       email: user.email,
+      role: user.role,
     });
 
     logger.info("User signup successful", {
@@ -113,9 +114,11 @@ export const login = async (req, res) => {
     }
 
     const { email, password } = req.body;
+    const { role: requiredRole } = req.params; // Get role from URL parameter
 
     logger.info("User login attempt", {
       email,
+      requiredRole: requiredRole || "any",
     });
 
     // Get user by email
@@ -152,15 +155,31 @@ export const login = async (req, res) => {
       });
     }
 
+    // Check role if required
+    if (requiredRole && user.role !== requiredRole) {
+      logger.warn("Login failed - role mismatch", {
+        userId: user.id,
+        email,
+        userRole: user.role,
+        requiredRole,
+      });
+      return res.status(403).json({
+        error: `Access denied. This login is restricted to ${requiredRole} users only.`,
+      });
+    }
+
     // Generate tokens (minimal payload)
     const { accessToken, refreshToken } = generateTokens({
       userId: user.id,
       email: user.email,
+      role: user.role,
     });
 
     logger.info("User login successful", {
       userId: user.id,
       email: user.email,
+      role: user.role,
+      requiredRole: requiredRole || "any",
     });
 
     // Remove password hash from response
@@ -189,9 +208,6 @@ export const login = async (req, res) => {
 
 export const refreshToken = async (req, res) => {
   try {
-    console.log("Refresh token request - cookies:", req.cookies);
-    console.log("Refresh token request - headers:", req.headers);
-
     const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken) {
@@ -223,8 +239,12 @@ export const refreshToken = async (req, res) => {
     const { accessToken } = generateTokens({
       userId: user.id,
       email: user.email,
+      role: user.role,
     });
-    console.log("Token refreshed successfully", accessToken);
+    console.log(`========================================================
+Token refreshed successfully: ${accessToken}
+=========================================================
+      `);
 
     // Remove password hash from user response
     const { passwordHash: _, ...userResponse } = user;
@@ -244,13 +264,57 @@ export const refreshToken = async (req, res) => {
 
 export const validateToken = async (req, res) => {
   try {
-    // If we reach here, the token is valid (middleware already verified)
+    // Get fresh user data from database (req.user only has JWT payload)
+    const { getUserById } = await import("../repositories/user.repo.js");
+    const user = await getUserById(req.user.userId);
+
+    if (!user) {
+      return res.status(401).json({
+        error: "User not found",
+      });
+    }
+
+    // Remove password hash from user response
+    const { passwordHash: _, ...userResponse } = user;
+
     res.json({
       message: "Token is valid",
-      user: req.user,
+      user: userResponse,
     });
   } catch (error) {
     console.error("Token validation error:", error);
+    res.status(500).json({
+      error: "Internal server error",
+    });
+  }
+};
+
+export const logout = async (req, res) => {
+  const logger = createLogger("user-service");
+
+  try {
+    logger.info("User logout request", {
+      userId: req.user?.userId,
+      email: req.user?.email,
+    });
+
+    // Clear the refresh token cookie
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    logger.info("User logout successful", {
+      userId: req.user?.userId,
+      email: req.user?.email,
+    });
+
+    res.json({
+      message: "Logout successful",
+    });
+  } catch (error) {
+    logger.error("Logout error", { error });
     res.status(500).json({
       error: "Internal server error",
     });
