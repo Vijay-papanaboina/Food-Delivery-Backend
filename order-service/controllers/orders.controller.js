@@ -11,7 +11,9 @@ import {
   getRestaurantOrderStats,
 } from "../repositories/orders.stats.repo.js";
 import { TOPICS, publishMessage } from "../config/kafka.js";
-import { createLogger, sanitizeForLogging } from "../../shared/utils/logger.js";
+import { createLogger } from "../../shared/utils/logger.js";
+import { db } from "../config/db.js";
+import { orders, orderItems } from "../db/schema.js";
 
 export const buildCreateOrderController =
   (producer, serviceName) => async (req, res) => {
@@ -154,22 +156,37 @@ export const buildCreateOrderController =
         parseFloat(restaurantData.restaurant.delivery_fee) || 0;
 
       const total = subtotal + deliveryFee;
-      const order = {
-        // Don't provide orderId - let database generate it
-        restaurantId,
-        userId,
-        deliveryAddress,
-        status: "pending_payment",
-        paymentStatus: "pending",
-        total,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
 
-      const createdOrder = await upsertOrder(order);
+      // Use transaction to ensure order and order items are created together
+      const createdOrder = await db.transaction(async (tx) => {
+        // Insert order
+        const [order] = await tx
+          .insert(orders)
+          .values({
+            restaurantId,
+            userId,
+            deliveryAddress,
+            status: "pending_payment",
+            paymentStatus: "pending",
+            total: String(total),
+            createdAt: new Date(),
+            confirmedAt: null,
+            deliveredAt: null,
+          })
+          .returning();
 
-      // Insert order items separately
-      await insertOrderItems(createdOrder.id, validatedItems);
+        // Insert order items in same transaction
+        const orderItemsData = validatedItems.map((item) => ({
+          orderId: order.id,
+          itemId: item.id,
+          quantity: item.quantity,
+          price: String(item.price),
+        }));
+
+        await tx.insert(orderItems).values(orderItemsData);
+
+        return order;
+      });
 
       // Get the complete order with items for response
       const completeOrder = await getOrder(createdOrder.id);
