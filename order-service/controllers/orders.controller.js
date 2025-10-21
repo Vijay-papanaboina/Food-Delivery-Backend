@@ -178,7 +178,7 @@ export const buildCreateOrderController =
         // Insert order items in same transaction
         const orderItemsData = validatedItems.map((item) => ({
           orderId: order.id,
-          itemId: item.id,
+          itemId: item.itemId,
           quantity: item.quantity,
           price: String(item.price),
         }));
