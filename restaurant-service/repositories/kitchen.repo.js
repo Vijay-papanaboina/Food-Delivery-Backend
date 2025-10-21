@@ -37,10 +37,17 @@ export async function upsertKitchenOrder(order) {
 export async function updateKitchenOrderStatus(
   orderId,
   status,
-  readyAt = null
+  readyAt = null,
+  startedAt = null,
+  estimatedReadyTime = null,
+  preparationTime = null
 ) {
   const updateData = { status };
   if (readyAt) updateData.readyAt = new Date(readyAt);
+  if (startedAt) updateData.startedAt = new Date(startedAt);
+  if (estimatedReadyTime)
+    updateData.estimatedReadyTime = new Date(estimatedReadyTime);
+  if (preparationTime !== null) updateData.preparationTime = preparationTime;
 
   await db
     .update(kitchenOrders)

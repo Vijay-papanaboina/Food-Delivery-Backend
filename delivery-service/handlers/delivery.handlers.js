@@ -321,6 +321,15 @@ export async function autoAssignDriver(orderData, producer, serviceName) {
       totalDeliveries: selectedDriver.totalDeliveries,
     });
 
+    // Generate random ETA between 15-30 minutes
+    const minMinutes = 15;
+    const maxMinutes = 30;
+    const randomMinutes =
+      Math.floor(Math.random() * (maxMinutes - minMinutes + 1)) + minMinutes;
+    const estimatedDeliveryTime = new Date(
+      Date.now() + randomMinutes * 60 * 1000
+    ).toISOString();
+
     // Create delivery record
     const delivery = await createDelivery({
       orderId,
@@ -330,6 +339,7 @@ export async function autoAssignDriver(orderData, producer, serviceName) {
       deliveryAddress,
       status: "assigned",
       assignedAt: new Date().toISOString(),
+      estimatedDeliveryTime: estimatedDeliveryTime,
       driverName: selectedDriver.name,
       driverPhone: selectedDriver.phone,
       vehicle: selectedDriver.vehicle,
@@ -351,7 +361,7 @@ export async function autoAssignDriver(orderData, producer, serviceName) {
         orderId,
         driverId: selectedDriver.driverId,
         assignedAt: delivery.assignedAt,
-        estimatedDeliveryTime: new Date(Date.now() + 10 * 1000).toISOString(),
+        estimatedDeliveryTime: estimatedDeliveryTime,
       },
       orderId
     );

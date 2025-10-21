@@ -82,6 +82,10 @@ export async function updateDeliveryFields(deliveryId, fields) {
     updateSet.assignedAt = fields.assignedAt
       ? new Date(fields.assignedAt)
       : null;
+  if (fields.pickedUpAt !== undefined)
+    updateSet.pickedUpAt = fields.pickedUpAt
+      ? new Date(fields.pickedUpAt)
+      : null;
   if (fields.estimatedDeliveryTime !== undefined)
     updateSet.estimatedDeliveryTime = fields.estimatedDeliveryTime
       ? new Date(fields.estimatedDeliveryTime)

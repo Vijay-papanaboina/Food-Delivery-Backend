@@ -90,8 +90,32 @@ export async function markOrderReady(orderId, producer, serviceName) {
     return;
   }
 
-  // Update status to ready in database
-  await updateKitchenOrderStatus(orderId, "ready", new Date().toISOString());
+  // Calculate timestamps and preparation time
+  const now = new Date();
+  const startedAt = order.startedAt || order.receivedAt; // Use existing or received time
+  const readyAt = now.toISOString();
+
+  // Generate random preparation time between 10-25 minutes
+  const minMinutes = 10;
+  const maxMinutes = 25;
+  const randomMinutes =
+    Math.floor(Math.random() * (maxMinutes - minMinutes + 1)) + minMinutes;
+  const estimatedReadyTime = new Date(
+    new Date(startedAt).getTime() + randomMinutes * 60 * 1000
+  ).toISOString();
+
+  // Calculate actual preparation time in minutes
+  const preparationTime = Math.round((now - new Date(startedAt)) / 60000);
+
+  // Update status to ready in database with all timestamps
+  await updateKitchenOrderStatus(
+    orderId,
+    "ready",
+    readyAt,
+    startedAt,
+    estimatedReadyTime,
+    preparationTime
+  );
 
   console.log(`✅ [${serviceName}] Order ${orderId} is ready for delivery!`);
 
@@ -105,8 +129,8 @@ export async function markOrderReady(orderId, producer, serviceName) {
       userId: order.userId,
       items: order.items,
       total: order.total,
-      readyAt: order.readyAt,
-      preparationTime: order.preparationTime,
+      readyAt: readyAt,
+      preparationTime: preparationTime,
       deliveryAddress: order.deliveryAddress, // Add delivery address
     },
     orderId
