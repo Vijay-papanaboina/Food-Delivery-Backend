@@ -15,6 +15,8 @@ export const orders = order_svc.table("orders", {
   restaurantId: text("restaurant_id").notNull(),
   userId: uuid("user_id").notNull(),
   deliveryAddress: jsonb("delivery_address_json").notNull(),
+  customerName: text("customer_name"),
+  customerPhone: text("customer_phone"),
   status: text("status").notNull(),
   paymentStatus: text("payment_status").notNull(),
   total: numeric("total", { precision: 12, scale: 2 }).notNull(),

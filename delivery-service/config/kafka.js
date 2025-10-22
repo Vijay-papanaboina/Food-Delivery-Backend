@@ -19,6 +19,12 @@ export const TOPICS = {
     process.env.TOPIC_DELIVERY_PICKED_UP || "delivery-picked-up",
   DELIVERY_COMPLETED:
     process.env.TOPIC_DELIVERY_COMPLETED || "delivery-completed",
+  DELIVERY_ACCEPTED: process.env.TOPIC_DELIVERY_ACCEPTED || "delivery-accepted",
+  DELIVERY_DECLINED: process.env.TOPIC_DELIVERY_DECLINED || "delivery-declined",
+  DELIVERY_REASSIGNED:
+    process.env.TOPIC_DELIVERY_REASSIGNED || "delivery-reassigned",
+  DELIVERY_UNASSIGNED:
+    process.env.TOPIC_DELIVERY_UNASSIGNED || "delivery-unassigned",
 };
 
 export const createProducer = (serviceName) =>

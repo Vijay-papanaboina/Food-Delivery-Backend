@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   getProfile,
+  getUserByIdController,
   updateProfile,
   deleteProfile,
   getAddresses,
@@ -19,8 +20,16 @@ import {
 export default function userRoutes(serviceName) {
   const router = Router();
 
+  // Get user by ID (for inter-service communication - authenticated but no role check)
+  router.get("/api/users/:id", authenticateToken, getUserByIdController);
+
   // Protected user profile routes (customer role only)
-  router.get("/api/users/profile", authenticateToken, requireRole("customer"), getProfile);
+  router.get(
+    "/api/users/profile",
+    authenticateToken,
+    requireRole("customer"),
+    getProfile
+  );
   router.put(
     "/api/users/profile",
     authenticateToken,
@@ -28,10 +37,20 @@ export default function userRoutes(serviceName) {
     validateUpdateProfile,
     updateProfile
   );
-  router.delete("/api/users/profile", authenticateToken, requireRole("customer"), deleteProfile);
+  router.delete(
+    "/api/users/profile",
+    authenticateToken,
+    requireRole("customer"),
+    deleteProfile
+  );
 
   // Protected address routes (customer role only)
-  router.get("/api/users/addresses", authenticateToken, requireRole("customer"), getAddresses);
+  router.get(
+    "/api/users/addresses",
+    authenticateToken,
+    requireRole("customer"),
+    getAddresses
+  );
   router.post(
     "/api/users/addresses",
     authenticateToken,

@@ -3,13 +3,23 @@ import {
   getDeliveries,
   getDeliveryStats,
   getDriverStats,
+  acceptDelivery as acceptDeliveryRepo,
+  declineDelivery as declineDeliveryRepo,
+  getDeliveryWithFullDetails,
+  getDelivery,
 } from "../repositories/deliveries.repo.js";
-import { getDrivers } from "../repositories/drivers.repo.js";
+import {
+  getDrivers,
+  updateDriverAvailability,
+  getDriverByUserId,
+} from "../repositories/drivers.repo.js";
 import {
   pickupDelivery,
   completeDelivery,
+  reassignDelivery,
 } from "../handlers/delivery.handlers.js";
 import { createLogger, sanitizeForLogging } from "../../shared/utils/logger.js";
+import { publishMessage, TOPICS } from "../config/kafka.js";
 
 export const getDeliveryByOrder = async (req, res) => {
   const logger = createLogger("delivery-service");
@@ -70,9 +80,17 @@ export const listDeliveries = async (req, res) => {
     if (status) filters.status = status;
     if (limit) filters.limit = parseInt(limit);
 
-    // If user is authenticated, filter by their driver ID
+    // If user is authenticated, get their driver record and filter by user ID
     if (req.user && req.user.userId) {
-      filters.driverId = req.user.userId;
+      const driver = await getDriverByUserId(req.user.userId);
+      if (!driver) {
+        return res.status(404).json({
+          error: "Driver profile not found for this user",
+          message: "Please contact support to set up your driver account",
+        });
+      }
+      // Deliveries store userId (not driver table ID) in the driverId field
+      filters.driverId = driver.user_id;
     }
 
     const deliveries = await getDeliveries(filters);
@@ -82,6 +100,7 @@ export const listDeliveries = async (req, res) => {
       total: deliveries.length,
     });
   } catch (error) {
+    console.error("Error in listDeliveries:", error);
     res
       .status(500)
       .json({ error: "Failed to retrieve deliveries", details: error.message });
@@ -229,5 +248,259 @@ export const completeDeliveryByDriver = async (req, res) => {
     res
       .status(500)
       .json({ error: "Failed to complete delivery", details: error.message });
+  }
+};
+
+// Toggle driver's own availability (online/offline)
+export const toggleMyAvailability = async (req, res) => {
+  const logger = createLogger("delivery-service");
+
+  try {
+    const userId = req.user?.userId; // From JWT token
+    const { isAvailable } = req.body;
+
+    if (typeof isAvailable !== "boolean") {
+      return res.status(400).json({
+        error: "isAvailable must be a boolean",
+      });
+    }
+
+    // Get driver record by userId
+    const driver = await getDriverByUserId(userId);
+    if (!driver) {
+      return res.status(404).json({ error: "Driver not found" });
+    }
+
+    // Check if driver has an active delivery
+    if (!isAvailable) {
+      const activeDeliveries = await getDeliveries({
+        driverId: driver.driver_id,
+        status: "picked_up",
+        limit: 1,
+      });
+
+      if (activeDeliveries.length > 0) {
+        return res.status(400).json({
+          error: "Cannot go offline while on an active delivery",
+        });
+      }
+    }
+
+    // Update availability
+    await updateDriverAvailability(driver.driver_id, isAvailable);
+
+    logger.info("Driver availability updated", {
+      driverId: driver.driver_id,
+      isAvailable,
+    });
+
+    res.json({
+      message: `Driver is now ${isAvailable ? "online" : "offline"}`,
+      isAvailable,
+    });
+  } catch (error) {
+    logger.error("Error toggling driver availability", {
+      error: error.message,
+    });
+    res.status(500).json({
+      error: "Failed to update availability",
+      details: error.message,
+    });
+  }
+};
+
+// Accept delivery
+export const acceptDelivery = async (req, res) => {
+  const logger = createLogger("delivery-service");
+
+  try {
+    const { deliveryId } = req.params;
+    const userId = req.user?.userId; // From JWT token
+
+    // Get driver record
+    const driver = await getDriverByUserId(userId);
+    if (!driver) {
+      return res.status(404).json({ error: "Driver not found" });
+    }
+
+    // Get delivery
+    const delivery = await getDelivery(deliveryId);
+    if (!delivery) {
+      return res.status(404).json({ error: "Delivery not found" });
+    }
+
+    // Verify delivery is assigned to this driver
+    // delivery.driverId stores the user_id, not the driver table ID
+    if (delivery.driverId !== driver.user_id) {
+      return res.status(403).json({
+        error: "This delivery is not assigned to you",
+      });
+    }
+
+    // Verify delivery is in pending status
+    if (delivery.acceptanceStatus !== "pending") {
+      return res.status(400).json({
+        error: `Delivery is already ${delivery.acceptanceStatus}`,
+      });
+    }
+
+    // Accept the delivery (pass user_id since deliveries.driver_id stores user_id)
+    await acceptDeliveryRepo(deliveryId, driver.user_id);
+
+    // Set driver to unavailable (use driver table ID for driver updates)
+    await updateDriverAvailability(driver.driver_id, false);
+
+    logger.info("Delivery accepted", {
+      deliveryId,
+      driverId: driver.driver_id,
+    });
+
+    // Publish event
+    await publishMessage(
+      req.producer,
+      TOPICS.DELIVERY_ACCEPTED,
+      {
+        deliveryId,
+        orderId: delivery.orderId,
+        driverId: driver.user_id, // Use user_id for consistency
+        driverName: driver.name,
+        timestamp: new Date().toISOString(),
+      },
+      delivery.orderId
+    );
+
+    res.json({
+      message: "Delivery accepted successfully",
+      deliveryId,
+    });
+  } catch (error) {
+    logger.error("Error accepting delivery", {
+      error: error.message,
+    });
+    res.status(500).json({
+      error: "Failed to accept delivery",
+      details: error.message,
+    });
+  }
+};
+
+// Decline delivery
+export const declineDelivery = async (req, res) => {
+  const logger = createLogger("delivery-service");
+
+  try {
+    const { deliveryId } = req.params;
+    const { reason } = req.body;
+    const userId = req.user?.userId; // From JWT token
+
+    // Get driver record
+    const driver = await getDriverByUserId(userId);
+    if (!driver) {
+      return res.status(404).json({ error: "Driver not found" });
+    }
+
+    // Get delivery
+    const delivery = await getDelivery(deliveryId);
+    if (!delivery) {
+      return res.status(404).json({ error: "Delivery not found" });
+    }
+
+    // Verify delivery is assigned to this driver
+    // delivery.driverId stores the user_id, not the driver table ID
+    if (delivery.driverId !== driver.user_id) {
+      return res.status(403).json({
+        error: "This delivery is not assigned to you",
+      });
+    }
+
+    // Verify delivery is in pending status
+    if (delivery.acceptanceStatus !== "pending") {
+      return res.status(400).json({
+        error: `Cannot decline: delivery is already ${delivery.acceptanceStatus}`,
+      });
+    }
+
+    // Decline the delivery (pass user_id since deliveries.driver_id stores user_id)
+    await declineDeliveryRepo(deliveryId, driver.user_id);
+
+    // Set driver back to available (use driver table ID for driver updates)
+    await updateDriverAvailability(driver.driver_id, true);
+
+    logger.info("Delivery declined", {
+      deliveryId,
+      driverId: driver.driver_id,
+      reason,
+    });
+
+    // Publish event
+    await publishMessage(
+      req.producer,
+      TOPICS.DELIVERY_DECLINED,
+      {
+        deliveryId,
+        orderId: delivery.orderId,
+        driverId: driver.user_id, // Use user_id for consistency
+        driverName: driver.name,
+        reason,
+        timestamp: new Date().toISOString(),
+      },
+      delivery.orderId
+    );
+
+    // Trigger reassignment
+    const declinedByDrivers = delivery.declinedByDrivers || [];
+    declinedByDrivers.push(driver.user_id); // Use user_id for consistency
+
+    await reassignDelivery(
+      delivery.orderId,
+      deliveryId,
+      declinedByDrivers,
+      req.producer,
+      "delivery-service"
+    );
+
+    res.json({
+      message: "Delivery declined successfully. Reassigning to another driver.",
+      deliveryId,
+    });
+  } catch (error) {
+    logger.error("Error declining delivery", {
+      error: error.message,
+    });
+    res.status(500).json({
+      error: "Failed to decline delivery",
+      details: error.message,
+    });
+  }
+};
+
+// Get full delivery details
+export const getDeliveryDetails = async (req, res) => {
+  const logger = createLogger("delivery-service");
+
+  try {
+    const { deliveryId } = req.params;
+
+    const delivery = await getDeliveryWithFullDetails(deliveryId);
+    if (!delivery) {
+      return res.status(404).json({ error: "Delivery not found" });
+    }
+
+    logger.info("Delivery details retrieved", {
+      deliveryId,
+    });
+
+    res.json({
+      message: "Delivery details retrieved successfully",
+      delivery,
+    });
+  } catch (error) {
+    logger.error("Error getting delivery details", {
+      error: error.message,
+    });
+    res.status(500).json({
+      error: "Failed to get delivery details",
+      details: error.message,
+    });
   }
 };

@@ -11,6 +11,8 @@ export async function upsertKitchenOrder(order) {
       userId: order.userId,
       items: order.items,
       deliveryAddress: order.deliveryAddress,
+      customerName: order.customerName || null,
+      customerPhone: order.customerPhone || null,
       total: String(order.total),
       status: order.status,
       receivedAt: new Date(order.receivedAt),
@@ -64,6 +66,8 @@ export async function getKitchenOrder(orderId) {
       user_id: kitchenOrders.userId,
       items_json: kitchenOrders.items,
       delivery_address_json: kitchenOrders.deliveryAddress,
+      customer_name: kitchenOrders.customerName,
+      customer_phone: kitchenOrders.customerPhone,
       total: kitchenOrders.total,
       status: kitchenOrders.status,
       received_at: kitchenOrders.receivedAt,
@@ -89,6 +93,8 @@ export async function getKitchenOrder(orderId) {
       typeof row.delivery_address_json === "string"
         ? JSON.parse(row.delivery_address_json)
         : row.delivery_address_json,
+    customerName: row.customer_name,
+    customerPhone: row.customer_phone,
     total: parseFloat(row.total),
     status: row.status,
     receivedAt: row.received_at,

@@ -1,6 +1,4 @@
 import {
-  createProducer,
-  createConsumer,
   connectProducer,
   connectConsumer,
   disconnectProducer,

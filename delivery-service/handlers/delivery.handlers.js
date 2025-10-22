@@ -6,12 +6,15 @@ import {
   upsertDriver,
   getDriver,
   getDriverByUserId,
+  updateDriverAvailability,
 } from "../repositories/drivers.repo.js";
 import {
   upsertDelivery,
   updateDeliveryFields,
   getDelivery,
   createDelivery,
+  declineDelivery,
+  findAvailableDriverForReassignment,
 } from "../repositories/deliveries.repo.js";
 import { publishMessage, TOPICS } from "../config/kafka.js";
 
@@ -414,33 +417,7 @@ function selectBestDriver(availableDrivers) {
   return sortedDrivers[0];
 }
 
-/**
- * Updates driver availability after assignment
- * @param {string} driverId - Driver ID
- * @param {boolean} isAvailable - New availability status
- */
-async function updateDriverAvailability(driverId, isAvailable) {
-  try {
-    await db
-      .update(drivers)
-      .set({
-        isAvailable,
-        updatedAt: new Date(),
-      })
-      .where(eq(drivers.id, driverId));
-
-    console.log(`🚗 [delivery-service] Driver availability updated`, {
-      driverId,
-      isAvailable,
-    });
-  } catch (error) {
-    console.error(
-      `❌ [delivery-service] Error updating driver availability:`,
-      error.message
-    );
-    throw error;
-  }
-}
+// updateDriverAvailability is now imported from repositories/drivers.repo.js
 
 /**
  * Increments driver's total deliveries count
@@ -490,8 +467,16 @@ export async function handleFoodReady(orderData, producer, serviceName) {
       return;
     }
 
-    const { orderId, restaurantId, userId, items, total, deliveryAddress } =
-      orderData;
+    const {
+      orderId,
+      restaurantId,
+      userId,
+      items,
+      total,
+      deliveryAddress,
+      restaurant,
+      customer,
+    } = orderData;
 
     if (!orderId || !restaurantId || !deliveryAddress) {
       console.error(
@@ -525,6 +510,21 @@ export async function handleFoodReady(orderData, producer, serviceName) {
       return;
     }
 
+    // Enrich delivery with order details
+    const { enrichDeliveryWithOrderDetails } = await import(
+      "../repositories/deliveries.repo.js"
+    );
+    await enrichDeliveryWithOrderDetails(assignedDriver.deliveryId, {
+      restaurantId,
+      restaurantName: restaurant?.name || null,
+      restaurantAddress: restaurant?.address || null,
+      restaurantPhone: restaurant?.phone || null,
+      customerName: customer?.name || null,
+      customerPhone: customer?.phone || null,
+      orderItems: items || [],
+      orderTotal: total || null,
+    });
+
     console.log(`✅ [${serviceName}] Food-ready event processed successfully`, {
       orderId,
       deliveryId: assignedDriver.deliveryId,
@@ -536,6 +536,98 @@ export async function handleFoodReady(orderData, producer, serviceName) {
       `❌ [${serviceName}] Error handling food-ready event:`,
       error.message
     );
+  }
+}
+
+/**
+ * Reassign delivery when declined by driver
+ * @param {string} orderId - Order ID
+ * @param {string} deliveryId - Delivery ID
+ * @param {Array} excludeDriverIds - Driver IDs who have declined
+ * @param {Object} producer - Kafka producer
+ * @param {string} serviceName - Service name
+ */
+export async function reassignDelivery(
+  orderId,
+  deliveryId,
+  excludeDriverIds,
+  producer,
+  serviceName
+) {
+  try {
+    console.log(
+      `🔄 [${serviceName}] Reassigning delivery ${deliveryId} for order ${orderId}`
+    );
+    console.log(`   Excluding drivers: ${excludeDriverIds.join(", ")}`);
+
+    // Find an available driver (excluding those who declined)
+    const availableDriver = await findAvailableDriverForReassignment(
+      excludeDriverIds
+    );
+
+    if (!availableDriver) {
+      console.warn(
+        `⚠️ [${serviceName}] No available drivers found for reassignment of delivery ${deliveryId}`
+      );
+
+      // Mark delivery as unassigned
+      await updateDeliveryFields(deliveryId, {
+        status: "unassigned",
+      });
+
+      // Publish event for admin notification
+      await publishMessage(
+        producer,
+        TOPICS.DELIVERY_UNASSIGNED,
+        {
+          deliveryId,
+          orderId,
+          reason: "No available drivers",
+          declinedByDrivers: excludeDriverIds,
+          timestamp: new Date().toISOString(),
+        },
+        orderId
+      );
+
+      return null;
+    }
+
+    // Assign to the new driver
+    await updateDeliveryFields(deliveryId, {
+      driverId: availableDriver.driver_id,
+      status: "assigned",
+      assignedAt: new Date().toISOString(),
+    });
+
+    // Set new driver as unavailable
+    await updateDriverAvailability(availableDriver.driver_id, false);
+
+    console.log(
+      `✅ [${serviceName}] Delivery ${deliveryId} reassigned to driver ${availableDriver.name}`
+    );
+
+    // Publish reassignment event
+    await publishMessage(
+      producer,
+      TOPICS.DELIVERY_REASSIGNED,
+      {
+        deliveryId,
+        orderId,
+        newDriverId: availableDriver.driver_id,
+        newDriverName: availableDriver.name,
+        previousDeclines: excludeDriverIds.length,
+        timestamp: new Date().toISOString(),
+      },
+      orderId
+    );
+
+    return availableDriver;
+  } catch (error) {
+    console.error(
+      `❌ [${serviceName}] Error reassigning delivery ${deliveryId}:`,
+      error.message
+    );
+    throw error;
   }
 }
 

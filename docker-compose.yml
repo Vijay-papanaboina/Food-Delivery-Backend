@@ -8,7 +8,7 @@ services:
       # KRaft mode configuration (Kafka without Zookeeper)
       KAFKA_NODE_ID: 1
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://ocean.agrifacts.space:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_CONFLUENT_SCHEMA_REGISTRY_ENABLED: "false"
@@ -21,7 +21,7 @@ services:
       CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
 
       # Topic creation and configuration
-      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_NUM_PARTITIONS: 2
       KAFKA_DEFAULT_REPLICATION_FACTOR: 1
 
       # Message retention settings
@@ -52,8 +52,8 @@ services:
         condition: service_healthy
     command: >
       bash -c "
-        echo 'Waiting for Kafka to be ready...'
-        sleep 30
+        echo 'Waiting for Kafka to be fully ready...'
+        sleep 10
         
         echo 'Creating topics for food ordering microservices...'
         
@@ -79,6 +79,19 @@ services:
         
         # Create delivery-completed topic (2 partitions)
         kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic delivery-completed --partitions 2 --replication-factor 1
+        
+        # Gig-worker model delivery topics
+        # Create delivery-accepted topic (2 partitions)
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic delivery-accepted --partitions 2 --replication-factor 1
+        
+        # Create delivery-declined topic (2 partitions)
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic delivery-declined --partitions 2 --replication-factor 1
+        
+        # Create delivery-reassigned topic (2 partitions)
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic delivery-reassigned --partitions 2 --replication-factor 1
+        
+        # Create delivery-unassigned topic (1 partition for admin alerts)
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic delivery-unassigned --partitions 1 --replication-factor 1
         
         # Create notifications topic (1 partition for ordered processing)
         kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic notifications --partitions 1 --replication-factor 1

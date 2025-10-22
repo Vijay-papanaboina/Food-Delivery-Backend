@@ -47,6 +47,36 @@ export const getProfile = async (req, res) => {
   }
 };
 
+// Get user by ID (for inter-service communication)
+export const getUserByIdController = async (req, res) => {
+  const logger = createLogger("user-service");
+
+  try {
+    const { id } = req.params;
+    logger.info("Getting user by ID", { userId: id });
+
+    const user = await getUserById(id);
+    if (!user) {
+      return res.status(404).json({
+        error: "User not found",
+      });
+    }
+
+    // Remove password hash from response
+    const { passwordHash: _, ...userResponse } = user;
+
+    res.json({
+      message: "User retrieved successfully",
+      user: userResponse,
+    });
+  } catch (error) {
+    logger.error("Get user by ID error", { error: error.message });
+    res.status(500).json({
+      error: "Internal server error",
+    });
+  }
+};
+
 export const updateProfile = async (req, res) => {
   try {
     // Check validation errors

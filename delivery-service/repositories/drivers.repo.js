@@ -46,9 +46,23 @@ export async function updateDriverAvailability(driverId, isAvailable) {
     .update(drivers)
     .set({
       isAvailable,
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date(),
     })
     .where(eq(drivers.id, driverId));
+}
+
+// Get driver's current availability status
+export async function getDriverAvailability(driverId) {
+  const rows = await db
+    .select({
+      driver_id: drivers.id,
+      is_available: drivers.isAvailable,
+    })
+    .from(drivers)
+    .where(eq(drivers.id, driverId))
+    .limit(1);
+
+  return rows[0] || null;
 }
 
 export async function getDriver(driverId) {

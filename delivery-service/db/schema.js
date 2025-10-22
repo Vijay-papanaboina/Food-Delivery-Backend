@@ -29,6 +29,23 @@ export const deliveries = delivery_svc.table("deliveries", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
+  // Gig-worker model fields
+  deliveryFee: numeric("delivery_fee", { precision: 10, scale: 2 }).default(
+    "3.50"
+  ),
+  acceptanceStatus: text("acceptance_status").default("pending"),
+  declinedByDrivers: text("declined_by_drivers").array().default([]),
+  // Restaurant information
+  restaurantId: uuid("restaurant_id"),
+  restaurantName: text("restaurant_name"),
+  restaurantAddress: jsonb("restaurant_address"),
+  restaurantPhone: text("restaurant_phone"),
+  // Customer information
+  customerName: text("customer_name"),
+  customerPhone: text("customer_phone"),
+  // Order information
+  orderItems: jsonb("order_items"),
+  orderTotal: numeric("order_total", { precision: 10, scale: 2 }),
 });
 
 export const drivers = delivery_svc.table("drivers", {

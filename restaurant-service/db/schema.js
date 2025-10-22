@@ -56,6 +56,8 @@ export const kitchenOrders = restaurant_svc.table("kitchen_orders", {
   userId: uuid("user_id").notNull(),
   items: jsonb("items_json").notNull(),
   deliveryAddress: jsonb("delivery_address_json").notNull(),
+  customerName: text("customer_name"),
+  customerPhone: text("customer_phone"),
   total: numeric("total", { precision: 12, scale: 2 }).notNull(),
   status: text("status").notNull().default("received"),
   receivedAt: timestamp("received_at", { withTimezone: true }).notNull(),

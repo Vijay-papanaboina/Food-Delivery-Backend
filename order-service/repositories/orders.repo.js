@@ -22,6 +22,8 @@ export async function upsertOrder(o) {
         userId: o.userId,
         items: o.items,
         deliveryAddress: o.deliveryAddress,
+        customerName: o.customerName || null,
+        customerPhone: o.customerPhone || null,
         status: o.status,
         paymentStatus: o.paymentStatus,
         total: String(o.total),
@@ -109,6 +111,8 @@ export async function getOrderWithItems(orderId) {
         restaurant_id: orders.restaurantId,
         user_id: orders.userId,
         delivery_address_json: orders.deliveryAddress,
+        customer_name: orders.customerName,
+        customer_phone: orders.customerPhone,
         status: orders.status,
         payment_status: orders.paymentStatus,
         total: orders.total,
@@ -148,6 +152,8 @@ export async function getOrderWithItems(orderId) {
         typeof orderRow.delivery_address_json === "string"
           ? JSON.parse(orderRow.delivery_address_json)
           : orderRow.delivery_address_json,
+      customerName: orderRow.customer_name,
+      customerPhone: orderRow.customer_phone,
       status: orderRow.status,
       paymentStatus: orderRow.payment_status,
       total: parseFloat(orderRow.total),

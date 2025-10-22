@@ -19,7 +19,13 @@ export const buildCreateOrderController =
   (producer, serviceName) => async (req, res) => {
     const logger = createLogger(serviceName);
     const userId = req.user?.userId; // Get user ID from JWT token
-    const { restaurantId, items, deliveryAddress } = req.body;
+    const {
+      restaurantId,
+      items,
+      deliveryAddress,
+      customerName,
+      customerPhone,
+    } = req.body;
 
     try {
       logger.info("Order creation started", {
@@ -157,6 +163,40 @@ export const buildCreateOrderController =
 
       const total = subtotal + deliveryFee;
 
+      // Fetch user profile to get customer name and phone if not provided
+      let finalCustomerName = customerName;
+      let finalCustomerPhone = customerPhone;
+
+      if (!finalCustomerName || !finalCustomerPhone) {
+        try {
+          const userResp = await fetch(
+            `http://localhost:${
+              process.env.USER_SERVICE_PORT || 5005
+            }/api/users/${userId}`,
+            {
+              headers: {
+                Authorization: req.headers.authorization, // Pass through JWT token
+              },
+            }
+          );
+
+          if (userResp.ok) {
+            const userData = await userResp.json();
+            finalCustomerName = finalCustomerName || userData.user.name;
+            finalCustomerPhone = finalCustomerPhone || userData.user.phone;
+            logger.info("Fetched customer info from user profile", {
+              userId,
+              name: finalCustomerName,
+              phone: finalCustomerPhone,
+            });
+          }
+        } catch (error) {
+          logger.warn("Failed to fetch user profile, continuing without", {
+            error: error.message,
+          });
+        }
+      }
+
       // Use transaction to ensure order and order items are created together
       const createdOrder = await db.transaction(async (tx) => {
         // Insert order
@@ -166,6 +206,8 @@ export const buildCreateOrderController =
             restaurantId,
             userId,
             deliveryAddress,
+            customerName: finalCustomerName || null,
+            customerPhone: finalCustomerPhone || null,
             status: "pending_payment",
             paymentStatus: "pending",
             total: String(total),

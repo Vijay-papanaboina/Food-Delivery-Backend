@@ -33,6 +33,8 @@ export async function handleOrderConfirmed(orderData, producer, serviceName) {
     items,
     total,
     deliveryAddress, // Store delivery address
+    customerName: orderData.customerName,
+    customerPhone: orderData.customerPhone,
     status: "received",
     receivedAt: new Date().toISOString(),
     startedAt: null,
@@ -119,7 +121,11 @@ export async function markOrderReady(orderId, producer, serviceName) {
 
   console.log(`✅ [${serviceName}] Order ${orderId} is ready for delivery!`);
 
-  // Publish food-ready event
+  // Fetch restaurant details
+  const { getRestaurant } = await import("../repositories/restaurants.repo.js");
+  const restaurant = await getRestaurant(order.restaurantId);
+
+  // Publish food-ready event with restaurant and order details
   await publishMessage(
     producer,
     TOPICS.FOOD_READY,
@@ -131,7 +137,20 @@ export async function markOrderReady(orderId, producer, serviceName) {
       total: order.total,
       readyAt: readyAt,
       preparationTime: preparationTime,
-      deliveryAddress: order.deliveryAddress, // Add delivery address
+      deliveryAddress: order.deliveryAddress,
+      // Restaurant information
+      restaurant: restaurant
+        ? {
+            name: restaurant.name,
+            address: restaurant.address,
+            phone: restaurant.phone,
+          }
+        : null,
+      // Customer information
+      customer: {
+        name: order.customerName,
+        phone: order.customerPhone,
+      },
     },
     orderId
   );

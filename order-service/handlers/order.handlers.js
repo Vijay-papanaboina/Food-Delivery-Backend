@@ -53,6 +53,8 @@ export async function handlePaymentProcessed(
       total: order.total,
       confirmedAt: order.confirmedAt,
       deliveryAddress: sanitizedDeliveryAddress,
+      customerName: order.customerName,
+      customerPhone: order.customerPhone,
     };
 
     console.log(
@@ -115,7 +117,7 @@ export async function handleDeliveryCompleted(
 
 /**
  * Handle food ready event
- * Updates order status to 'ready'
+ * Updates order status to 'ready' and enriches with customer info
  */
 export async function handleFoodReady(foodData, producer, serviceName) {
   const { orderId } = foodData;
