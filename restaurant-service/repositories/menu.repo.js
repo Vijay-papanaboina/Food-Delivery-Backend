@@ -3,19 +3,25 @@ import { db } from "../config/db.js";
 import { menuItems } from "../db/schema.js";
 
 export async function upsertMenuItem(menuItem) {
+  const values = {
+    restaurantId: menuItem.restaurantId,
+    name: menuItem.name,
+    description: menuItem.description,
+    price: String(menuItem.price),
+    category: menuItem.category,
+    isAvailable: menuItem.isAvailable,
+    preparationTime: menuItem.preparationTime,
+    createdAt: menuItem.createdAt ? new Date(menuItem.createdAt) : undefined,
+  };
+
+  // Only include id if updating an existing item
+  if (menuItem.itemId) {
+    values.id = menuItem.itemId;
+  }
+
   await db
     .insert(menuItems)
-    .values({
-      itemId: menuItem.id,
-      restaurantId: menuItem.restaurantId,
-      name: menuItem.name,
-      description: menuItem.description,
-      price: String(menuItem.price),
-      category: menuItem.category,
-      isAvailable: menuItem.isAvailable,
-      preparationTime: menuItem.preparationTime,
-      createdAt: menuItem.createdAt ? new Date(menuItem.createdAt) : undefined,
-    })
+    .values(values)
     .onConflictDoUpdate({
       target: menuItems.id,
       set: {
