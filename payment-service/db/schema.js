@@ -6,15 +6,15 @@ export const payment_svc = pgSchema("payment_svc");
 export const paymentStatusEnum = payment_svc.enum("payment_status", [
   "pending",
   "processing",
-  "completed",
+  "success",
   "failed",
   "refunded",
 ]);
 
 export const paymentMethodEnum = payment_svc.enum("payment_method", [
   "card",
-  "cash",
-  "digital_wallet",
+  "wallet",
+  "bank_transfer",
 ]);
 
 export const payments = payment_svc.table("payments", {

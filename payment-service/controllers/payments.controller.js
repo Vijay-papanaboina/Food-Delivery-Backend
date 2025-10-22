@@ -165,7 +165,7 @@ export const processPayment = async (req, res) => {
     await upsertPayment({
       orderId,
       amount: order.total, // Use actual total from database, not frontend
-      method: "card", // Stripe payments are card payments
+      method: "card", // Default to card, will be updated in webhook with actual method
       userId,
       status: "pending",
       transactionId: session.id,

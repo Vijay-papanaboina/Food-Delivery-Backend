@@ -56,9 +56,40 @@ export const handleStripeWebhook = async (req, res) => {
         return res.status(404).json({ error: "Payment not found" });
       }
 
-      // Update payment status using the payment's internal ID
+      // Get actual payment method used from Stripe
+      let method = "card"; // Default
+      try {
+        if (session.payment_method) {
+          // Retrieve the actual PaymentMethod object from Stripe
+          const paymentMethod = await stripe.paymentMethods.retrieve(
+            session.payment_method
+          );
+
+          // Map Stripe payment method types to our enum
+          const methodMap = {
+            card: "card",
+            us_bank_account: "bank_transfer",
+            link: "wallet",
+            cashapp: "wallet",
+            paypal: "wallet",
+          };
+
+          method = methodMap[paymentMethod.type] || "card";
+          console.log(
+            `💳 [payment-service] Payment method: ${paymentMethod.type} → ${method}`
+          );
+        }
+      } catch (error) {
+        console.warn(
+          `⚠️ [payment-service] Could not retrieve payment method: ${error.message}`
+        );
+        // Use default "card" method
+      }
+
+      // Update payment status and method using the payment's internal ID
       await updatePaymentFields(payment.payment_id, {
         status: "success",
+        method: method,
         processedAt: new Date().toISOString(),
       });
 

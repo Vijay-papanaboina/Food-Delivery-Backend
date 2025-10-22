@@ -36,14 +36,17 @@ export async function upsertPayment(p) {
 export async function updatePaymentFields(paymentId, fields) {
   const updateSet = {};
   if (fields.status !== undefined) updateSet.status = fields.status;
-  if (fields.processedAt !== undefined) updateSet.processedAt = fields.processedAt ? new Date(fields.processedAt) : null;
-  if (fields.transactionId !== undefined) updateSet.transactionId = fields.transactionId;
-  if (fields.failureReason !== undefined) updateSet.failureReason = fields.failureReason;
+  if (fields.method !== undefined) updateSet.method = fields.method;
+  if (fields.processedAt !== undefined)
+    updateSet.processedAt = fields.processedAt
+      ? new Date(fields.processedAt)
+      : null;
+  if (fields.transactionId !== undefined)
+    updateSet.transactionId = fields.transactionId;
+  if (fields.failureReason !== undefined)
+    updateSet.failureReason = fields.failureReason;
 
-  await db
-    .update(payments)
-    .set(updateSet)
-    .where(eq(payments.id, paymentId));
+  await db.update(payments).set(updateSet).where(eq(payments.id, paymentId));
 }
 
 export async function getPaymentByOrderId(orderId) {
@@ -62,7 +65,7 @@ export async function getPaymentByOrderId(orderId) {
     })
     .from(payments)
     .where(eq(payments.orderId, orderId))
-    .orderBy(desc(payments.createdAt))  // ← Get most recent payment
+    .orderBy(desc(payments.createdAt)) // ← Get most recent payment
     .limit(1);
   return rows[0] || null;
 }
