@@ -12,6 +12,12 @@ import {
 
 export const restaurant_svc = pgSchema("restaurant_svc");
 
+// Define enums within the schema
+export const kitchenOrderStatusEnum = restaurant_svc.enum(
+  "kitchen_order_status",
+  ["received", "preparing", "ready", "completed", "cancelled"]
+);
+
 export const restaurants = restaurant_svc.table("restaurants", {
   id: uuid("id").primaryKey().defaultRandom().notNull(),
   ownerId: uuid("owner_id").notNull(),
@@ -59,7 +65,7 @@ export const kitchenOrders = restaurant_svc.table("kitchen_orders", {
   customerName: text("customer_name"),
   customerPhone: text("customer_phone"),
   total: numeric("total", { precision: 12, scale: 2 }).notNull(),
-  status: text("status").notNull().default("received"),
+  status: kitchenOrderStatusEnum("status").notNull().default("received"),
   receivedAt: timestamp("received_at", { withTimezone: true }).notNull(),
   startedAt: timestamp("started_at", { withTimezone: true }),
   estimatedReadyTime: timestamp("estimated_ready_time", { withTimezone: true }),

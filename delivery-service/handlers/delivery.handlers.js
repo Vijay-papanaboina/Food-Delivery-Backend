@@ -71,7 +71,7 @@ export async function assignDelivery(
 
     // Mark driver as unavailable
     await upsertDriver({
-      driverId: driver.driver_id,
+      driverId: driver.id, // driver.id now equals user.id
       name: driver.name,
       phone: driver.phone,
       vehicle: driver.vehicle,
@@ -201,8 +201,7 @@ export async function completeDelivery(
 
     const incrementedTotal = (existingDriver?.total_deliveries || 0) + 1;
     await upsertDriver({
-      driverId: existingDriver.driver_id, // Use the database driver ID
-      userId: existingDriver.user_id, // Use the user ID
+      driverId: existingDriver.id, // driver.id now equals user.id
       name: existingDriver?.name,
       phone: existingDriver?.phone,
       vehicle: existingDriver?.vehicle,
@@ -274,8 +273,7 @@ export async function autoAssignDriver(orderData, producer, serviceName) {
     // Get all available drivers (not currently on delivery)
     const availableDrivers = await db
       .select({
-        driverId: drivers.userId, // Use userId instead of id to match JWT tokens
-        driverTableId: drivers.id, // Keep the table ID for updates
+        driverId: drivers.id, // driver.id now equals user.id
         name: drivers.name,
         phone: drivers.phone,
         vehicle: drivers.vehicle,
@@ -349,11 +347,11 @@ export async function autoAssignDriver(orderData, producer, serviceName) {
       licensePlate: selectedDriver.licensePlate,
     });
 
-    // Update driver availability to false (use driverTableId for database operations)
-    await updateDriverAvailability(selectedDriver.driverTableId, false);
+    // Update driver availability to false
+    await updateDriverAvailability(selectedDriver.driverId, false);
 
-    // Increment driver's delivery count (use driverTableId for database operations)
-    await incrementDriverDeliveries(selectedDriver.driverTableId);
+    // Increment driver's delivery count
+    await incrementDriverDeliveries(selectedDriver.driverId);
 
     // Publish delivery assigned event
     await publishMessage(
@@ -594,13 +592,13 @@ export async function reassignDelivery(
 
     // Assign to the new driver
     await updateDeliveryFields(deliveryId, {
-      driverId: availableDriver.driver_id,
+      driverId: availableDriver.id,
       status: "assigned",
       assignedAt: new Date().toISOString(),
     });
 
     // Set new driver as unavailable
-    await updateDriverAvailability(availableDriver.driver_id, false);
+    await updateDriverAvailability(availableDriver.id, false);
 
     console.log(
       `✅ [${serviceName}] Delivery ${deliveryId} reassigned to driver ${availableDriver.name}`
@@ -613,7 +611,7 @@ export async function reassignDelivery(
       {
         deliveryId,
         orderId,
-        newDriverId: availableDriver.driver_id,
+        newDriverId: availableDriver.id,
         newDriverName: availableDriver.name,
         previousDeclines: excludeDriverIds.length,
         timestamp: new Date().toISOString(),

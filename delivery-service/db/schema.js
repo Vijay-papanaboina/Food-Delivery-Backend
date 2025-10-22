@@ -10,6 +10,22 @@ import {
 
 export const delivery_svc = pgSchema("delivery_svc");
 
+// Define enums within the schema
+export const deliveryStatusEnum = delivery_svc.enum("delivery_status", [
+  "pending_assignment",
+  "assigned",
+  "picked_up",
+  "completed",
+  "cancelled",
+  "unassigned",
+]);
+
+export const acceptanceStatusEnum = delivery_svc.enum("acceptance_status", [
+  "pending",
+  "accepted",
+  "declined",
+]);
+
 export const deliveries = delivery_svc.table("deliveries", {
   id: uuid("id").primaryKey().defaultRandom().notNull(),
   orderId: uuid("order_id").notNull(),
@@ -19,7 +35,7 @@ export const deliveries = delivery_svc.table("deliveries", {
   vehicle: text("vehicle").notNull(),
   licensePlate: text("license_plate").notNull(),
   deliveryAddress: jsonb("delivery_address_json").notNull(),
-  status: text("status").notNull(),
+  status: deliveryStatusEnum("status").notNull(),
   assignedAt: timestamp("assigned_at", { withTimezone: true }),
   pickedUpAt: timestamp("picked_up_at", { withTimezone: true }),
   estimatedDeliveryTime: timestamp("estimated_delivery_time", {
@@ -33,7 +49,8 @@ export const deliveries = delivery_svc.table("deliveries", {
   deliveryFee: numeric("delivery_fee", { precision: 10, scale: 2 }).default(
     "3.50"
   ),
-  acceptanceStatus: text("acceptance_status").default("pending"),
+  acceptanceStatus:
+    acceptanceStatusEnum("acceptance_status").default("pending"),
   declinedByDrivers: text("declined_by_drivers").array().default([]),
   // Restaurant information
   restaurantId: uuid("restaurant_id"),
@@ -49,8 +66,9 @@ export const deliveries = delivery_svc.table("deliveries", {
 });
 
 export const drivers = delivery_svc.table("drivers", {
-  id: uuid("id").primaryKey().defaultRandom().notNull(),
-  userId: uuid("user_id").notNull(), // Foreign key to user_svc.users
+  // Shared primary key pattern: driver.id === user.id from user_svc.users
+  // This creates a 1:1 relationship between users and drivers
+  id: uuid("id").primaryKey().notNull(),
   name: text("name").notNull(),
   phone: text("phone").notNull(),
   vehicle: text("vehicle").notNull(),

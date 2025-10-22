@@ -20,9 +20,6 @@ import {
 export default function userRoutes(serviceName) {
   const router = Router();
 
-  // Get user by ID (for inter-service communication - authenticated but no role check)
-  router.get("/api/users/:id", authenticateToken, getUserByIdController);
-
   // Protected user profile routes (customer role only)
   router.get(
     "/api/users/profile",
@@ -77,6 +74,10 @@ export default function userRoutes(serviceName) {
     requireRole("customer"),
     setDefaultAddressById
   );
+
+  // Get user by ID (for inter-service communication - authenticated but no role check)
+  // IMPORTANT: This must be LAST because it's a catch-all route that matches /api/users/:anything
+  router.get("/api/users/:id", authenticateToken, getUserByIdController);
 
   return router;
 }

@@ -18,7 +18,7 @@ import {
   completeDelivery,
   reassignDelivery,
 } from "../handlers/delivery.handlers.js";
-import { createLogger, sanitizeForLogging } from "../../shared/utils/logger.js";
+import { createLogger } from "../../shared/utils/logger.js";
 import { publishMessage, TOPICS } from "../config/kafka.js";
 
 export const getDeliveryByOrder = async (req, res) => {
@@ -89,8 +89,8 @@ export const listDeliveries = async (req, res) => {
           message: "Please contact support to set up your driver account",
         });
       }
-      // Deliveries store userId (not driver table ID) in the driverId field
-      filters.driverId = driver.user_id;
+      // driver.id equals user.id (shared primary key)
+      filters.driverId = driver.id;
     }
 
     const deliveries = await getDeliveries(filters);
@@ -274,7 +274,7 @@ export const toggleMyAvailability = async (req, res) => {
     // Check if driver has an active delivery
     if (!isAvailable) {
       const activeDeliveries = await getDeliveries({
-        driverId: driver.driver_id,
+        driverId: driver.id,
         status: "picked_up",
         limit: 1,
       });
@@ -287,10 +287,10 @@ export const toggleMyAvailability = async (req, res) => {
     }
 
     // Update availability
-    await updateDriverAvailability(driver.driver_id, isAvailable);
+    await updateDriverAvailability(driver.id, isAvailable);
 
     logger.info("Driver availability updated", {
-      driverId: driver.driver_id,
+      driverId: driver.id,
       isAvailable,
     });
 
@@ -330,8 +330,8 @@ export const acceptDelivery = async (req, res) => {
     }
 
     // Verify delivery is assigned to this driver
-    // delivery.driverId stores the user_id, not the driver table ID
-    if (delivery.driverId !== driver.user_id) {
+    // delivery.driverId stores the user ID (driver.id now equals user.id)
+    if (delivery.driverId !== driver.id) {
       return res.status(403).json({
         error: "This delivery is not assigned to you",
       });
@@ -344,15 +344,15 @@ export const acceptDelivery = async (req, res) => {
       });
     }
 
-    // Accept the delivery (pass user_id since deliveries.driver_id stores user_id)
-    await acceptDeliveryRepo(deliveryId, driver.user_id);
+    // Accept the delivery
+    await acceptDeliveryRepo(deliveryId, driver.id);
 
-    // Set driver to unavailable (use driver table ID for driver updates)
-    await updateDriverAvailability(driver.driver_id, false);
+    // Set driver to unavailable
+    await updateDriverAvailability(driver.id, false);
 
     logger.info("Delivery accepted", {
       deliveryId,
-      driverId: driver.driver_id,
+      driverId: driver.id,
     });
 
     // Publish event
@@ -362,7 +362,7 @@ export const acceptDelivery = async (req, res) => {
       {
         deliveryId,
         orderId: delivery.orderId,
-        driverId: driver.user_id, // Use user_id for consistency
+        driverId: driver.id,
         driverName: driver.name,
         timestamp: new Date().toISOString(),
       },
@@ -406,8 +406,8 @@ export const declineDelivery = async (req, res) => {
     }
 
     // Verify delivery is assigned to this driver
-    // delivery.driverId stores the user_id, not the driver table ID
-    if (delivery.driverId !== driver.user_id) {
+    // delivery.driverId stores the user ID (driver.id now equals user.id)
+    if (delivery.driverId !== driver.id) {
       return res.status(403).json({
         error: "This delivery is not assigned to you",
       });
@@ -420,15 +420,15 @@ export const declineDelivery = async (req, res) => {
       });
     }
 
-    // Decline the delivery (pass user_id since deliveries.driver_id stores user_id)
-    await declineDeliveryRepo(deliveryId, driver.user_id);
+    // Decline the delivery
+    await declineDeliveryRepo(deliveryId, driver.id);
 
-    // Set driver back to available (use driver table ID for driver updates)
-    await updateDriverAvailability(driver.driver_id, true);
+    // Set driver back to available
+    await updateDriverAvailability(driver.id, true);
 
     logger.info("Delivery declined", {
       deliveryId,
-      driverId: driver.driver_id,
+      driverId: driver.id,
       reason,
     });
 
@@ -439,7 +439,7 @@ export const declineDelivery = async (req, res) => {
       {
         deliveryId,
         orderId: delivery.orderId,
-        driverId: driver.user_id, // Use user_id for consistency
+        driverId: driver.id,
         driverName: driver.name,
         reason,
         timestamp: new Date().toISOString(),
@@ -449,7 +449,7 @@ export const declineDelivery = async (req, res) => {
 
     // Trigger reassignment
     const declinedByDrivers = delivery.declinedByDrivers || [];
-    declinedByDrivers.push(driver.user_id); // Use user_id for consistency
+    declinedByDrivers.push(driver.id);
 
     await reassignDelivery(
       delivery.orderId,

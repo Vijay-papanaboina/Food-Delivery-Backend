@@ -165,7 +165,7 @@ export const processPayment = async (req, res) => {
     await upsertPayment({
       orderId,
       amount: order.total, // Use actual total from database, not frontend
-      method: "stripe",
+      method: "card", // Stripe payments are card payments
       userId,
       status: "pending",
       transactionId: session.id,

@@ -1600,14 +1600,14 @@ ON CONFLICT (id) DO NOTHING;
 -- =============================================
 
 -- Insert sample drivers
+-- NOTE: driver.id now equals user.id (shared primary key pattern)
 INSERT INTO delivery_svc.drivers (
-    id, user_id, name, phone, vehicle, license_plate, is_available,
+    id, name, phone, vehicle, license_plate, is_available,
     current_location_lat, current_location_lng, rating, total_deliveries,
     created_at, updated_at
 ) VALUES 
 (
-    '550e8400-e29b-41d4-a716-446655440201',
-    '550e8400-e29b-41d4-a716-446655440200',
+    '550e8400-e29b-41d4-a716-446655440200',  -- Same as user ID (John Smith)
     'John Smith',
     '+1-555-1001',
     'Honda Civic',
@@ -1621,8 +1621,7 @@ INSERT INTO delivery_svc.drivers (
     NOW()
 ),
 (
-    '550e8400-e29b-41d4-a716-446655440202',
-    '550e8400-e29b-41d4-a716-446655440201',
+    '550e8400-e29b-41d4-a716-446655440201',  -- Same as user ID (Sarah Johnson)
     'Sarah Johnson',
     '+1-555-1002',
     'Toyota Corolla',
@@ -1636,8 +1635,7 @@ INSERT INTO delivery_svc.drivers (
     NOW()
 ),
 (
-    '550e8400-e29b-41d4-a716-446655440203',
-    '550e8400-e29b-41d4-a716-446655440202',
+    '550e8400-e29b-41d4-a716-446655440202',  -- Same as user ID (Mike Davis)
     'Mike Davis',
     '+1-555-1003',
     'Ford Focus',
@@ -1651,8 +1649,7 @@ INSERT INTO delivery_svc.drivers (
     NOW()
 ),
 (
-    '550e8400-e29b-41d4-a716-446655440204',
-    '550e8400-e29b-41d4-a716-446655440203',
+    '550e8400-e29b-41d4-a716-446655440203',  -- Same as user ID (Emily Wilson)
     'Emily Wilson',
     '+1-555-1004',
     'Nissan Altima',
@@ -1666,8 +1663,7 @@ INSERT INTO delivery_svc.drivers (
     NOW()
 ),
 (
-    '550e8400-e29b-41d4-a716-446655440205',
-    '550e8400-e29b-41d4-a716-446655440204',
+    '550e8400-e29b-41d4-a716-446655440204',  -- Same as user ID (Alex Brown)
     'Alex Brown',
     '+1-555-1005',
     'Hyundai Elantra',
