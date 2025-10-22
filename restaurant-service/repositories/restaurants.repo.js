@@ -53,6 +53,7 @@ export async function getRestaurant(restaurantId) {
       opening_time: restaurants.openingTime,
       closing_time: restaurants.closingTime,
       is_active: restaurants.isActive,
+      image_url: restaurants.imageUrl,
       created_at: restaurants.createdAt,
     })
     .from(restaurants)
@@ -77,6 +78,7 @@ export async function getRestaurantByOwner(ownerId) {
       opening_time: restaurants.openingTime,
       closing_time: restaurants.closingTime,
       is_active: restaurants.isActive,
+      image_url: restaurants.imageUrl,
       created_at: restaurants.createdAt,
     })
     .from(restaurants)
@@ -100,6 +102,7 @@ export async function getRestaurants(filters = {}) {
       opening_time: restaurants.openingTime,
       closing_time: restaurants.closingTime,
       is_active: restaurants.isActive,
+      image_url: restaurants.imageUrl,
       created_at: restaurants.createdAt,
     })
     .from(restaurants)

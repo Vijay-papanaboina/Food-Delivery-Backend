@@ -145,6 +145,7 @@ export const getRestaurantMenu = async (req, res) => {
       category: item.category,
       isAvailable: item.is_available,
       preparationTime: item.preparation_time,
+      imageUrl: item.image_url,
       createdAt: item.created_at,
     }));
 

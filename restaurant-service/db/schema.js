@@ -36,6 +36,7 @@ export const restaurants = restaurant_svc.table("restaurants", {
   openingTime: time("opening_time"),
   closingTime: time("closing_time"),
   isActive: boolean("is_active").notNull().default(true),
+  imageUrl: text("image_url"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -50,6 +51,7 @@ export const menuItems = restaurant_svc.table("menu_items", {
   category: text("category").notNull(),
   isAvailable: boolean("is_available").notNull().default(true),
   preparationTime: integer("preparation_time").notNull().default(15),
+  imageUrl: text("image_url"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

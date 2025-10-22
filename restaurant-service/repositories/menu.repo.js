@@ -11,6 +11,7 @@ export async function upsertMenuItem(menuItem) {
     category: menuItem.category,
     isAvailable: menuItem.isAvailable,
     preparationTime: menuItem.preparationTime,
+    imageUrl: menuItem.imageUrl || null,
     createdAt: menuItem.createdAt ? new Date(menuItem.createdAt) : undefined,
   };
 
@@ -32,6 +33,7 @@ export async function upsertMenuItem(menuItem) {
         category: sql`excluded.category`,
         isAvailable: sql`excluded.is_available`,
         preparationTime: sql`excluded.preparation_time`,
+        imageUrl: sql`excluded.image_url`,
       },
     });
 }
@@ -47,6 +49,7 @@ export async function getMenuItems(restaurantId, filters = {}) {
       category: menuItems.category,
       is_available: menuItems.isAvailable,
       preparation_time: menuItems.preparationTime,
+      image_url: menuItems.imageUrl,
       created_at: menuItems.createdAt,
     })
     .from(menuItems)
@@ -76,6 +79,7 @@ export async function getMenuItemById(itemId) {
       category: menuItems.category,
       is_available: menuItems.isAvailable,
       preparation_time: menuItems.preparationTime,
+      image_url: menuItems.imageUrl,
       created_at: menuItems.createdAt,
     })
     .from(menuItems)

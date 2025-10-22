@@ -56,7 +56,7 @@ ON CONFLICT (id) DO NOTHING;
 -- Insert sample restaurants
 INSERT INTO restaurant_svc.restaurants (
     id, owner_id, name, cuisine, address, phone, rating, delivery_time, delivery_fee,
-    is_open, opening_time, closing_time, is_active, created_at
+    is_open, opening_time, closing_time, is_active, image_url, created_at
 ) VALUES
 (
     '550e8400-e29b-41d4-a716-446655440001',
@@ -72,6 +72,7 @@ INSERT INTO restaurant_svc.restaurants (
     '11:00',
     '22:00',
     true,
+    'https://images.unsplash.com/photo-1579751626657-72bc17010498?w=800',
     NOW()
 ),
 (
@@ -88,6 +89,7 @@ INSERT INTO restaurant_svc.restaurants (
     '10:00',
     '23:00',
     true,
+    'https://images.unsplash.com/photo-1550547660-d9450f859349?w=800',
     NOW()
 ),
 (
@@ -104,6 +106,7 @@ INSERT INTO restaurant_svc.restaurants (
     '12:00',
     '21:00',
     true,
+    NULL,
     NOW()
 ),
 (
@@ -120,6 +123,7 @@ INSERT INTO restaurant_svc.restaurants (
     '11:30',
     '21:30',
     true,
+    NULL,
     NOW()
 ),
 (
@@ -136,6 +140,7 @@ INSERT INTO restaurant_svc.restaurants (
     '12:00',
     '22:00',
     true,
+    NULL,
     NOW()
 ),
 (
@@ -152,6 +157,7 @@ INSERT INTO restaurant_svc.restaurants (
     '11:00',
     '23:00',
     true,
+    NULL,
     NOW()
 ),
 (
@@ -168,6 +174,7 @@ INSERT INTO restaurant_svc.restaurants (
     '17:00',
     '22:00',
     true,
+    NULL,
     NOW()
 ),
 (
@@ -184,6 +191,7 @@ INSERT INTO restaurant_svc.restaurants (
     '18:00',
     '23:00',
     true,
+    NULL,
     NOW()
 ),
 (
@@ -200,6 +208,7 @@ INSERT INTO restaurant_svc.restaurants (
     '11:00',
     '20:00',
     true,
+    NULL,
     NOW()
 ),
 (
@@ -216,6 +225,7 @@ INSERT INTO restaurant_svc.restaurants (
     '12:00',
     '21:00',
     true,
+    NULL,
     NOW()
 ),
 (
@@ -232,6 +242,7 @@ INSERT INTO restaurant_svc.restaurants (
     '11:30',
     '22:30',
     true,
+    NULL,
     NOW()
 ),
 (
@@ -248,6 +259,7 @@ INSERT INTO restaurant_svc.restaurants (
     '07:00',
     '14:00',
     true,
+    NULL,
     NOW()
 ),
 (
@@ -264,6 +276,7 @@ INSERT INTO restaurant_svc.restaurants (
     '11:00',
     '21:00',
     true,
+    NULL,
     NOW()
 ),
 (
@@ -280,6 +293,7 @@ INSERT INTO restaurant_svc.restaurants (
     '12:00',
     '22:00',
     true,
+    NULL,
     NOW()
 ),
 (
@@ -296,6 +310,7 @@ INSERT INTO restaurant_svc.restaurants (
     '13:00',
     '23:00',
     true,
+    NULL,
     NOW()
 )
 ON CONFLICT (id) DO NOTHING;
@@ -303,7 +318,7 @@ ON CONFLICT (id) DO NOTHING;
 -- Insert sample menu items
 INSERT INTO restaurant_svc.menu_items (
     id, restaurant_id, name, description, price, category,
-    is_available, preparation_time, created_at
+    is_available, preparation_time, image_url, created_at
 ) VALUES
 -- Mario's Pizza Palace menu
 (
@@ -315,6 +330,7 @@ INSERT INTO restaurant_svc.menu_items (
     'pizza',
     true,
     15,
+    'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=500',
     NOW()
 ),
 (
@@ -326,6 +342,7 @@ INSERT INTO restaurant_svc.menu_items (
     'pizza',
     true,
     15,
+    'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=500',
     NOW()
 ),
 (
@@ -337,6 +354,7 @@ INSERT INTO restaurant_svc.menu_items (
     'salad',
     true,
     10,
+    'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=500',
     NOW()
 ),
 (
@@ -348,6 +366,7 @@ INSERT INTO restaurant_svc.menu_items (
     'pasta',
     true,
     18,
+    'https://images.unsplash.com/photo-1612874742237-6526221588e3?w=500',
     NOW()
 ),
 (
@@ -359,6 +378,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     8,
+    'https://images.unsplash.com/photo-1573140401552-388e8f45f1df?w=500',
     NOW()
 ),
 (
@@ -370,6 +390,7 @@ INSERT INTO restaurant_svc.menu_items (
     'dessert',
     true,
     5,
+    'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=500',
     NOW()
 ),
 (
@@ -381,6 +402,7 @@ INSERT INTO restaurant_svc.menu_items (
     'pasta',
     true,
     16,
+    'https://images.unsplash.com/photo-1645112411341-6c4fd023714a?w=500',
     NOW()
 ),
 (
@@ -392,6 +414,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sandwich',
     true,
     12,
+    NULL,
     NOW()
 ),
 (
@@ -403,6 +426,7 @@ INSERT INTO restaurant_svc.menu_items (
     'soup',
     true,
     10,
+    NULL,
     NOW()
 ),
 (
@@ -414,6 +438,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     8,
+    NULL,
     NOW()
 ),
 
@@ -427,6 +452,7 @@ INSERT INTO restaurant_svc.menu_items (
     'burger',
     true,
     12,
+    NULL,
     NOW()
 ),
 (
@@ -438,6 +464,7 @@ INSERT INTO restaurant_svc.menu_items (
     'burger',
     true,
     15,
+    NULL,
     NOW()
 ),
 (
@@ -449,6 +476,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sides',
     true,
     8,
+    NULL,
     NOW()
 ),
 (
@@ -460,6 +488,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sides',
     true,
     10,
+    NULL,
     NOW()
 ),
 (
@@ -471,6 +500,7 @@ INSERT INTO restaurant_svc.menu_items (
     'drinks',
     true,
     5,
+    NULL,
     NOW()
 ),
 (
@@ -482,6 +512,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sandwich',
     true,
     14,
+    NULL,
     NOW()
 ),
 (
@@ -493,6 +524,7 @@ INSERT INTO restaurant_svc.menu_items (
     'burger',
     true,
     12,
+    NULL,
     NOW()
 ),
 (
@@ -504,6 +536,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sides',
     true,
     12,
+    NULL,
     NOW()
 ),
 (
@@ -515,6 +548,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     10,
+    NULL,
     NOW()
 ),
 (
@@ -526,6 +560,7 @@ INSERT INTO restaurant_svc.menu_items (
     'salad',
     true,
     8,
+    NULL,
     NOW()
 ),
 
@@ -539,6 +574,7 @@ INSERT INTO restaurant_svc.menu_items (
     'noodles',
     true,
     20,
+    NULL,
     NOW()
 ),
 (
@@ -550,6 +586,7 @@ INSERT INTO restaurant_svc.menu_items (
     'curry',
     true,
     18,
+    NULL,
     NOW()
 ),
 (
@@ -561,6 +598,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     10,
+    NULL,
     NOW()
 ),
 (
@@ -572,6 +610,7 @@ INSERT INTO restaurant_svc.menu_items (
     'soup',
     true,
     15,
+    NULL,
     NOW()
 ),
 (
@@ -583,6 +622,7 @@ INSERT INTO restaurant_svc.menu_items (
     'dessert',
     true,
     12,
+    NULL,
     NOW()
 ),
 (
@@ -594,6 +634,7 @@ INSERT INTO restaurant_svc.menu_items (
     'curry',
     true,
     18,
+    NULL,
     NOW()
 ),
 (
@@ -605,6 +646,7 @@ INSERT INTO restaurant_svc.menu_items (
     'noodles',
     true,
     20,
+    NULL,
     NOW()
 ),
 (
@@ -616,6 +658,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     15,
+    NULL,
     NOW()
 ),
 (
@@ -627,6 +670,7 @@ INSERT INTO restaurant_svc.menu_items (
     'rice',
     true,
     16,
+    NULL,
     NOW()
 ),
 (
@@ -638,6 +682,7 @@ INSERT INTO restaurant_svc.menu_items (
     'drinks',
     true,
     5,
+    NULL,
     NOW()
 ),
 
@@ -651,6 +696,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     18,
+    NULL,
     NOW()
 ),
 (
@@ -662,6 +708,7 @@ INSERT INTO restaurant_svc.menu_items (
     'soup',
     true,
     10,
+    NULL,
     NOW()
 ),
 (
@@ -673,6 +720,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     16,
+    NULL,
     NOW()
 ),
 (
@@ -684,6 +732,7 @@ INSERT INTO restaurant_svc.menu_items (
     'rice',
     true,
     15,
+    NULL,
     NOW()
 ),
 (
@@ -695,6 +744,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     18,
+    NULL,
     NOW()
 ),
 (
@@ -706,6 +756,7 @@ INSERT INTO restaurant_svc.menu_items (
     'soup',
     true,
     12,
+    NULL,
     NOW()
 ),
 (
@@ -717,6 +768,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     12,
+    NULL,
     NOW()
 ),
 (
@@ -728,6 +780,7 @@ INSERT INTO restaurant_svc.menu_items (
     'noodles',
     true,
     15,
+    NULL,
     NOW()
 ),
 (
@@ -739,6 +792,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     18,
+    NULL,
     NOW()
 ),
 (
@@ -750,6 +804,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     10,
+    NULL,
     NOW()
 ),
 (
@@ -761,6 +816,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sushi',
     true,
     10,
+    NULL,
     NOW()
 ),
 (
@@ -772,6 +828,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sushi',
     true,
     12,
+    NULL,
     NOW()
 ),
 (
@@ -783,6 +840,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sushi',
     true,
     15,
+    NULL,
     NOW()
 ),
 (
@@ -794,6 +852,7 @@ INSERT INTO restaurant_svc.menu_items (
     'nigiri',
     true,
     8,
+    NULL,
     NOW()
 ),
 (
@@ -805,6 +864,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sashimi',
     true,
     10,
+    NULL,
     NOW()
 ),
 (
@@ -816,6 +876,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     5,
+    NULL,
     NOW()
 ),
 (
@@ -827,6 +888,7 @@ INSERT INTO restaurant_svc.menu_items (
     'soup',
     true,
     5,
+    NULL,
     NOW()
 ),
 (
@@ -838,6 +900,7 @@ INSERT INTO restaurant_svc.menu_items (
     'salad',
     true,
     7,
+    NULL,
     NOW()
 ),
 (
@@ -849,6 +912,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     20,
+    NULL,
     NOW()
 ),
 (
@@ -860,6 +924,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     15,
+    NULL,
     NOW()
 ),
 
@@ -873,6 +938,7 @@ INSERT INTO restaurant_svc.menu_items (
     'tacos',
     true,
     10,
+    NULL,
     NOW()
 ),
 (
@@ -884,6 +950,7 @@ INSERT INTO restaurant_svc.menu_items (
     'tacos',
     true,
     10,
+    NULL,
     NOW()
 ),
 (
@@ -895,6 +962,7 @@ INSERT INTO restaurant_svc.menu_items (
     'burrito',
     true,
     12,
+    NULL,
     NOW()
 ),
 (
@@ -906,6 +974,7 @@ INSERT INTO restaurant_svc.menu_items (
     'quesadilla',
     true,
     8,
+    NULL,
     NOW()
 ),
 (
@@ -917,6 +986,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     7,
+    NULL,
     NOW()
 ),
 (
@@ -928,6 +998,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     15,
+    NULL,
     NOW()
 ),
 (
@@ -939,6 +1010,7 @@ INSERT INTO restaurant_svc.menu_items (
     'drinks',
     true,
     3,
+    NULL,
     NOW()
 ),
 (
@@ -950,6 +1022,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sides',
     true,
     10,
+    NULL,
     NOW()
 ),
 (
@@ -961,6 +1034,7 @@ INSERT INTO restaurant_svc.menu_items (
     'tacos',
     true,
     12,
+    NULL,
     NOW()
 ),
 (
@@ -972,6 +1046,7 @@ INSERT INTO restaurant_svc.menu_items (
     'dessert',
     true,
     8,
+    NULL,
     NOW()
 ),
 
@@ -985,6 +1060,7 @@ INSERT INTO restaurant_svc.menu_items (
     'curry',
     true,
     25,
+    NULL,
     NOW()
 ),
 (
@@ -996,6 +1072,7 @@ INSERT INTO restaurant_svc.menu_items (
     'curry',
     true,
     25,
+    NULL,
     NOW()
 ),
 (
@@ -1007,6 +1084,7 @@ INSERT INTO restaurant_svc.menu_items (
     'curry',
     true,
     30,
+    NULL,
     NOW()
 ),
 (
@@ -1018,6 +1096,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     15,
+    NULL,
     NOW()
 ),
 (
@@ -1029,6 +1108,7 @@ INSERT INTO restaurant_svc.menu_items (
     'bread',
     true,
     10,
+    NULL,
     NOW()
 ),
 (
@@ -1040,6 +1120,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sides',
     true,
     10,
+    NULL,
     NOW()
 ),
 (
@@ -1051,6 +1132,7 @@ INSERT INTO restaurant_svc.menu_items (
     'drinks',
     true,
     5,
+    NULL,
     NOW()
 ),
 (
@@ -1062,6 +1144,7 @@ INSERT INTO restaurant_svc.menu_items (
     'curry',
     true,
     20,
+    NULL,
     NOW()
 ),
 (
@@ -1073,6 +1156,7 @@ INSERT INTO restaurant_svc.menu_items (
     'curry',
     true,
     22,
+    NULL,
     NOW()
 ),
 (
@@ -1084,6 +1168,7 @@ INSERT INTO restaurant_svc.menu_items (
     'rice',
     true,
     30,
+    NULL,
     NOW()
 ),
 
@@ -1097,6 +1182,7 @@ INSERT INTO restaurant_svc.menu_items (
     'soup',
     true,
     20,
+    NULL,
     NOW()
 ),
 (
@@ -1108,6 +1194,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     25,
+    NULL,
     NOW()
 ),
 (
@@ -1119,6 +1206,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     40,
+    NULL,
     NOW()
 ),
 (
@@ -1130,6 +1218,7 @@ INSERT INTO restaurant_svc.menu_items (
     'dessert',
     true,
     10,
+    NULL,
     NOW()
 ),
 (
@@ -1141,6 +1230,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     18,
+    NULL,
     NOW()
 ),
 (
@@ -1152,6 +1242,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     35,
+    NULL,
     NOW()
 ),
 (
@@ -1163,6 +1254,7 @@ INSERT INTO restaurant_svc.menu_items (
     'salad',
     true,
     15,
+    NULL,
     NOW()
 ),
 (
@@ -1174,6 +1266,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     45,
+    NULL,
     NOW()
 ),
 (
@@ -1185,6 +1278,7 @@ INSERT INTO restaurant_svc.menu_items (
     'dessert',
     true,
     10,
+    NULL,
     NOW()
 ),
 (
@@ -1196,6 +1290,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sides',
     true,
     5,
+    NULL,
     NOW()
 ),
 
@@ -1216,6 +1311,7 @@ INSERT INTO restaurant_svc.menu_items (
     'bowl',
     true,
     15,
+    NULL,
     NOW()
 ),
 (
@@ -1227,6 +1323,7 @@ INSERT INTO restaurant_svc.menu_items (
     'burger',
     true,
     18,
+    NULL,
     NOW()
 ),
 (
@@ -1238,6 +1335,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     25,
+    NULL,
     NOW()
 ),
 (
@@ -1249,6 +1347,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     10,
+    NULL,
     NOW()
 ),
 (
@@ -1260,6 +1359,7 @@ INSERT INTO restaurant_svc.menu_items (
     'dessert',
     true,
     10,
+    NULL,
     NOW()
 ),
 (
@@ -1271,6 +1371,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sandwich',
     true,
     15,
+    NULL,
     NOW()
 ),
 (
@@ -1282,6 +1383,7 @@ INSERT INTO restaurant_svc.menu_items (
     'plate',
     true,
     20,
+    NULL,
     NOW()
 ),
 (
@@ -1293,6 +1395,7 @@ INSERT INTO restaurant_svc.menu_items (
     'ribs',
     true,
     25,
+    NULL,
     NOW()
 ),
 (
@@ -1304,6 +1407,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sides',
     true,
     12,
+    NULL,
     NOW()
 ),
 (
@@ -1315,6 +1419,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sides',
     true,
     10,
+    NULL,
     NOW()
 ),
 (
@@ -1326,6 +1431,7 @@ INSERT INTO restaurant_svc.menu_items (
     'platter',
     true,
     18,
+    NULL,
     NOW()
 ),
 (
@@ -1337,6 +1443,7 @@ INSERT INTO restaurant_svc.menu_items (
     'wrap',
     true,
     15,
+    NULL,
     NOW()
 ),
 (
@@ -1348,6 +1455,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     12,
+    NULL,
     NOW()
 ),
 (
@@ -1359,6 +1467,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     8,
+    NULL,
     NOW()
 ),
 (
@@ -1370,6 +1479,7 @@ INSERT INTO restaurant_svc.menu_items (
     'dessert',
     true,
     5,
+    NULL,
     NOW()
 ),
 (
@@ -1381,6 +1491,7 @@ INSERT INTO restaurant_svc.menu_items (
     'pancakes',
     true,
     12,
+    NULL,
     NOW()
 ),
 (
@@ -1392,6 +1503,7 @@ INSERT INTO restaurant_svc.menu_items (
     'eggs',
     true,
     15,
+    NULL,
     NOW()
 ),
 (
@@ -1403,6 +1515,7 @@ INSERT INTO restaurant_svc.menu_items (
     'burrito',
     true,
     14,
+    NULL,
     NOW()
 ),
 (
@@ -1414,6 +1527,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sides',
     true,
     8,
+    NULL,
     NOW()
 ),
 (
@@ -1425,6 +1539,7 @@ INSERT INTO restaurant_svc.menu_items (
     'drinks',
     true,
     4,
+    NULL,
     NOW()
 ),
 (
@@ -1436,6 +1551,7 @@ INSERT INTO restaurant_svc.menu_items (
     'pho',
     true,
     20,
+    NULL,
     NOW()
 ),
 (
@@ -1447,6 +1563,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     12,
+    NULL,
     NOW()
 ),
 (
@@ -1458,6 +1575,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sandwich',
     true,
     15,
+    NULL,
     NOW()
 ),
 (
@@ -1469,6 +1587,7 @@ INSERT INTO restaurant_svc.menu_items (
     'noodles',
     true,
     18,
+    NULL,
     NOW()
 ),
 (
@@ -1480,6 +1599,7 @@ INSERT INTO restaurant_svc.menu_items (
     'drinks',
     true,
     7,
+    NULL,
     NOW()
 ),
 (
@@ -1491,6 +1611,7 @@ INSERT INTO restaurant_svc.menu_items (
     'rice',
     true,
     18,
+    NULL,
     NOW()
 ),
 (
@@ -1502,6 +1623,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     20,
+    NULL,
     NOW()
 ),
 (
@@ -1513,6 +1635,7 @@ INSERT INTO restaurant_svc.menu_items (
     'stew',
     true,
     22,
+    NULL,
     NOW()
 ),
 (
@@ -1524,6 +1647,7 @@ INSERT INTO restaurant_svc.menu_items (
     'chicken',
     true,
     25,
+    NULL,
     NOW()
 ),
 (
@@ -1535,6 +1659,7 @@ INSERT INTO restaurant_svc.menu_items (
     'noodles',
     true,
     18,
+    NULL,
     NOW()
 ),
 (
@@ -1546,6 +1671,7 @@ INSERT INTO restaurant_svc.menu_items (
     'cake',
     true,
     15,
+    NULL,
     NOW()
 ),
 (
@@ -1557,6 +1683,7 @@ INSERT INTO restaurant_svc.menu_items (
     'cake',
     true,
     8,
+    NULL,
     NOW()
 ),
 (
@@ -1568,6 +1695,7 @@ INSERT INTO restaurant_svc.menu_items (
     'ice cream',
     true,
     10,
+    NULL,
     NOW()
 ),
 (
@@ -1579,6 +1707,7 @@ INSERT INTO restaurant_svc.menu_items (
     'pie',
     true,
     12,
+    NULL,
     NOW()
 ),
 (
@@ -1590,6 +1719,7 @@ INSERT INTO restaurant_svc.menu_items (
     'drinks',
     true,
     7,
+    NULL,
     NOW()
 )
 

@@ -67,6 +67,7 @@ export const updateMenuItem = async (req, res) => {
       category: row.category,
       isAvailable: row.is_available,
       preparationTime: row.preparation_time,
+      imageUrl: row.image_url,
       createdAt: new Date().toISOString(),
     };
 
@@ -141,6 +142,7 @@ export const getMenuItem = async (req, res) => {
       category: row.category,
       isAvailable: row.is_available,
       preparationTime: row.preparation_time,
+      imageUrl: row.image_url,
       createdAt: row.created_at,
     };
 
