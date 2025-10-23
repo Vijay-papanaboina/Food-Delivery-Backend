@@ -22,20 +22,20 @@ export default function userRoutes(serviceName) {
 
   // Protected user profile routes (customer role only)
   router.get(
-    "/api/users/profile",
+    "/users/profile",
     authenticateToken,
     requireRole("customer"),
     getProfile
   );
   router.put(
-    "/api/users/profile",
+    "/users/profile",
     authenticateToken,
     requireRole("customer"),
     validateUpdateProfile,
     updateProfile
   );
   router.delete(
-    "/api/users/profile",
+    "/users/profile",
     authenticateToken,
     requireRole("customer"),
     deleteProfile
@@ -43,41 +43,41 @@ export default function userRoutes(serviceName) {
 
   // Protected address routes (customer role only)
   router.get(
-    "/api/users/addresses",
+    "/users/addresses",
     authenticateToken,
     requireRole("customer"),
     getAddresses
   );
   router.post(
-    "/api/users/addresses",
+    "/users/addresses",
     authenticateToken,
     requireRole("customer"),
     validateAddress,
     addAddress
   );
   router.put(
-    "/api/users/addresses/:id",
+    "/users/addresses/:id",
     authenticateToken,
     requireRole("customer"),
     validateAddress,
     updateAddressById
   );
   router.delete(
-    "/api/users/addresses/:id",
+    "/users/addresses/:id",
     authenticateToken,
     requireRole("customer"),
     deleteAddressById
   );
   router.put(
-    "/api/users/addresses/:id/default",
+    "/users/addresses/:id/default",
     authenticateToken,
     requireRole("customer"),
     setDefaultAddressById
   );
 
   // Get user by ID (for inter-service communication - authenticated but no role check)
-  // IMPORTANT: This must be LAST because it's a catch-all route that matches /api/users/:anything
-  router.get("/api/users/:id", authenticateToken, getUserByIdController);
+  // IMPORTANT: This must be LAST because it's a catch-all route that matches /users/:anything
+  router.get("/users/:id", authenticateToken, getUserByIdController);
 
   return router;
 }

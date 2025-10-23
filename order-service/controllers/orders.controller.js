@@ -103,10 +103,10 @@ export const buildCreateOrderController =
       }
 
       // Validate restaurant status and menu items via restaurant-service
+      const restaurantServiceUrl =
+        process.env.RESTAURANT_SERVICE_URL || "http://localhost:5006";
       const statusResp = await fetch(
-        `http://localhost:${
-          process.env.RESTAURANT_SERVICE_PORT || 5006
-        }/api/restaurants/${restaurantId}/status`
+        `${restaurantServiceUrl}/api/restaurant-service/restaurants/${restaurantId}/status`
       );
       if (!statusResp.ok) {
         return res.status(400).json({ error: "Restaurant not found" });
@@ -120,9 +120,7 @@ export const buildCreateOrderController =
       }
 
       const validateResp = await fetch(
-        `http://localhost:${
-          process.env.RESTAURANT_SERVICE_PORT || 5006
-        }/api/restaurants/${restaurantId}/menu/validate`,
+        `${restaurantServiceUrl}/api/restaurant-service/restaurants/${restaurantId}/menu/validate`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -147,9 +145,7 @@ export const buildCreateOrderController =
 
       // Fetch restaurant details to get delivery fee
       const restaurantResp = await fetch(
-        `http://localhost:${
-          process.env.RESTAURANT_SERVICE_PORT || 5006
-        }/api/restaurants/${restaurantId}`
+        `${restaurantServiceUrl}/api/restaurant-service/restaurants/${restaurantId}`
       );
       if (!restaurantResp.ok) {
         return res.status(400).json({
@@ -168,10 +164,10 @@ export const buildCreateOrderController =
 
       if (!finalCustomerName || !finalCustomerPhone) {
         try {
+          const userServiceUrl =
+            process.env.USER_SERVICE_URL || "http://localhost:5005";
           const userResp = await fetch(
-            `http://localhost:${
-              process.env.USER_SERVICE_PORT || 5005
-            }/api/users/${userId}`,
+            `${userServiceUrl}/api/user-service/users/${userId}`,
             {
               headers: {
                 Authorization: req.headers.authorization, // Pass through JWT token

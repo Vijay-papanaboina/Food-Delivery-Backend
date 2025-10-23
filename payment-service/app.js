@@ -21,7 +21,7 @@ function createApp(producer) {
   );
   app.use(morgan("dev"));
   // Webhook route needs raw body parsing BEFORE json middleware
-  app.use("/api/webhooks/stripe", express.raw({ type: "application/json" }));
+  app.use("/api/payment-service/webhooks/stripe", express.raw({ type: "application/json" }));
 
   app.use(express.json());
 
@@ -33,11 +33,8 @@ function createApp(producer) {
 
   // Database will be used for all payment storage
 
-  // Mount routes
-  app.use("/", buildRoutes());
-
   // Health check endpoint
-  app.get("/health", async (req, res) => {
+  app.get("/api/payment-service/health", async (req, res) => {
     const count = await getPaymentsCount();
     res.json({
       service: SERVICE_NAME,
@@ -47,6 +44,9 @@ function createApp(producer) {
       timestamp: new Date().toISOString(),
     });
   });
+
+  // Mount routes with service prefix
+  app.use("/api/payment-service", buildRoutes());
 
   // Error handling middleware
   app.use((error, req, res, next) => {

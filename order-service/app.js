@@ -23,11 +23,8 @@ function createApp(producer) {
   app.use(morgan("dev"));
   // Database will be used for all order storage
 
-  // Mount routes
-  app.use("/", buildRoutes({ producer, serviceName: SERVICE_NAME }));
-
   // Health check endpoint
-  app.get("/health", async (req, res) => {
+  app.get("/api/order-service/health", async (req, res) => {
     const count = await getOrdersCount();
     res.json({
       service: SERVICE_NAME,
@@ -37,6 +34,9 @@ function createApp(producer) {
       timestamp: new Date().toISOString(),
     });
   });
+
+  // Mount routes with service prefix
+  app.use("/api/order-service", buildRoutes({ producer, serviceName: SERVICE_NAME }));
 
   // Error handling middleware
   app.use((error, req, res, next) => {

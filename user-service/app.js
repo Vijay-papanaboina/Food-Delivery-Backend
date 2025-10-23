@@ -55,7 +55,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 // Health check
-app.get("/health", (req, res) => {
+app.get("/api/user-service/health", (req, res) => {
   res.json({
     status: "OK",
     service: SERVICE_NAME,
@@ -64,8 +64,8 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Mount routes
-app.use("/", createRoutes(SERVICE_NAME));
+// Mount routes with service prefix
+app.use("/api/user-service", createRoutes(SERVICE_NAME));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

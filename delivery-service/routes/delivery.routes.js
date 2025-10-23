@@ -18,39 +18,39 @@ export default function deliveryRoutes() {
   const router = Router();
 
   // Public read-only routes (no authentication required)
-  router.get("/api/drivers", listDrivers);
+  router.get("/drivers", listDrivers);
 
   // Protected driver-only routes (require driver role)
   // IMPORTANT: Define specific routes BEFORE parameterized routes
   router.get(
-    "/api/delivery/stats",
+    "/delivery/stats",
     authenticateToken,
     requireRole("driver"),
     deliveryStats
   );
   router.get(
-    "/api/delivery",
+    "/delivery",
     authenticateToken,
     requireRole("driver"),
     listDeliveries
   );
   router.get(
-    "/api/delivery/:deliveryId/details",
+    "/delivery/:deliveryId/details",
     authenticateToken,
     requireRole("driver"),
     getDeliveryDetails
   );
 
   // Parameterized routes - must come AFTER specific routes
-  router.get("/api/delivery/:orderId", getDeliveryByOrder);
+  router.get("/delivery/:orderId", getDeliveryByOrder);
   router.post(
-    "/api/delivery/pickup",
+    "/delivery/pickup",
     authenticateToken,
     requireRole("driver"),
     pickupDeliveryByDriver
   );
   router.post(
-    "/api/delivery/complete",
+    "/delivery/complete",
     authenticateToken,
     requireRole("driver"),
     completeDeliveryByDriver
@@ -58,19 +58,19 @@ export default function deliveryRoutes() {
 
   // Gig-worker model routes
   router.patch(
-    "/api/drivers/me/availability",
+    "/drivers/me/availability",
     authenticateToken,
     requireRole("driver"),
     toggleMyAvailability
   );
   router.post(
-    "/api/delivery/:deliveryId/accept",
+    "/delivery/:deliveryId/accept",
     authenticateToken,
     requireRole("driver"),
     acceptDelivery
   );
   router.post(
-    "/api/delivery/:deliveryId/decline",
+    "/delivery/:deliveryId/decline",
     authenticateToken,
     requireRole("driver"),
     declineDelivery

@@ -27,21 +27,11 @@ export default function authRoutes(serviceName) {
   });
 
   // Public auth routes with rate limiting
-  router.post("/api/auth/signup", authLimiter, validateSignup, signup);
-  router.post("/api/auth/login/:role", authLimiter, validateLogin, login);
-  router.post(
-    "/api/auth/refresh",
-    authLimiter,
-    validateRefreshToken,
-    refreshToken
-  );
-  router.post(
-    "/api/auth/validate",
-    authLimiter,
-    authenticateToken,
-    validateToken
-  );
-  router.post("/api/auth/logout", authLimiter, authenticateToken, logout);
+  router.post("/auth/signup", authLimiter, validateSignup, signup);
+  router.post("/auth/login/:role", authLimiter, validateLogin, login);
+  router.post("/auth/refresh", authLimiter, validateRefreshToken, refreshToken);
+  router.post("/auth/validate", authLimiter, authenticateToken, validateToken);
+  router.post("/auth/logout", authLimiter, authenticateToken, logout);
 
   return router;
 }

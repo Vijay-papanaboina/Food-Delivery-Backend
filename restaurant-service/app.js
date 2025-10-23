@@ -32,11 +32,8 @@ function createApp(producer) {
 
   // Database will be used for all restaurant storage
 
-  // Mount routes
-  app.use("/", buildRoutes(producer));
-
   // Health check endpoint
-  app.get("/health", async (req, res) => {
+  app.get("/api/restaurant-service/health", async (req, res) => {
     try {
       const stats = await getRestaurantStats();
       res.json({
@@ -56,6 +53,9 @@ function createApp(producer) {
       });
     }
   });
+
+  // Mount routes with service prefix
+  app.use("/api/restaurant-service", buildRoutes(producer));
 
   // Error handling middleware
   app.use((error, req, res, next) => {

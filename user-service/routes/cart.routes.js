@@ -21,16 +21,16 @@ export default function cartRoutes(serviceName) {
   ];
 
   // Protected cart routes (customer role only)
-  router.get("/api/cart", authenticateToken, requireRole("customer"), getCart);
+  router.get("/cart", authenticateToken, requireRole("customer"), getCart);
   router.put(
-    "/api/cart",
+    "/cart",
     authenticateToken,
     requireRole("customer"),
     validateCart,
     updateCart
   );
   router.delete(
-    "/api/cart",
+    "/cart",
     authenticateToken,
     requireRole("customer"),
     clearUserCart

@@ -22,11 +22,8 @@ function createApp() {
   app.use(morgan("dev"));
   // Database will be used for storage, no in-memory storage needed
 
-  // Mount routes
-  app.use("/", buildRoutes());
-
   // Health check endpoint
-  app.get("/health", async (req, res) => {
+  app.get("/api/notification-service/health", async (req, res) => {
     res.json({
       service: SERVICE_NAME,
       status: "healthy",
@@ -37,6 +34,9 @@ function createApp() {
       timestamp: new Date().toISOString(),
     });
   });
+
+  // Mount routes with service prefix
+  app.use("/api/notification-service", buildRoutes());
 
   // Error handling middleware
   app.use((error, req, res, next) => {

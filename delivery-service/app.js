@@ -29,11 +29,8 @@ function createApp(producer) {
 
   // Database will be used for all delivery storage
 
-  // Mount routes
-  app.use("/", buildRoutes());
-
   // Health check endpoint
-  app.get("/health", async (req, res) => {
+  app.get("/api/delivery-service/health", async (req, res) => {
     try {
       const deliveryStats = await getDeliveryStats();
       const driverStats = await getDrivers();
@@ -57,6 +54,9 @@ function createApp(producer) {
       });
     }
   });
+
+  // Mount routes with service prefix
+  app.use("/api/delivery-service", buildRoutes());
 
   // Error handling middleware
   app.use((error, req, res, next) => {

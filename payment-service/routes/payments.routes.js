@@ -7,10 +7,10 @@ export default function paymentsRoutes() {
   const router = Router();
 
   // Webhook route - no authentication required, uses raw body
-  router.post("/api/webhooks/stripe", handleStripeWebhook);
+  router.post("/webhooks/stripe", handleStripeWebhook);
 
   // Protected route - create Stripe checkout session
-  router.post("/api/payments", authenticateToken, processPayment);
+  router.post("/payments", authenticateToken, processPayment);
 
   return router;
 }

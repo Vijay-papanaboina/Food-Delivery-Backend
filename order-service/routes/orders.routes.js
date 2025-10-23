@@ -14,19 +14,19 @@ export default function orders(producer, serviceName) {
 
   // Protected routes - require JWT authentication
   router.post(
-    "/api/orders",
+    "/orders",
     authenticateToken,
     buildCreateOrderController(producer, serviceName)
   );
-  router.get("/api/orders/:id", authenticateToken, getOrderById);
-  router.get("/api/orders", authenticateToken, listOrders);
-  router.get("/api/orders/stats", authenticateToken, getOrderStats);
+  router.get("/orders/:id", authenticateToken, getOrderById);
+  router.get("/orders", authenticateToken, listOrders);
+  router.get("/orders/stats", authenticateToken, getOrderStats);
   router.get(
-    "/api/orders/restaurant/:restaurantId/stats",
+    "/orders/restaurant/:restaurantId/stats",
     authenticateToken,
     getRestaurantOrderStatsController
   );
-  router.put("/api/orders/:orderId/status", updateOrderStatusController);
+  router.put("/orders/:orderId/status", updateOrderStatusController);
 
   return router;
 }

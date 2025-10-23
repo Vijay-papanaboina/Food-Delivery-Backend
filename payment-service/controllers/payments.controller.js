@@ -30,7 +30,7 @@ export const processPayment = async (req, res) => {
     const orderServiceUrl =
       process.env.ORDER_SERVICE_URL || "http://localhost:5001";
     const orderResponse = await fetch(
-      `${orderServiceUrl}/api/orders/${orderId}`,
+      `${orderServiceUrl}/api/order-service/orders/${orderId}`,
       {
         headers: {
           Authorization: req.headers.authorization, // Pass through JWT token
@@ -69,7 +69,7 @@ export const processPayment = async (req, res) => {
     try {
       // Get restaurant menu items to map item IDs to names
       const menuResponse = await fetch(
-        `${restaurantServiceUrl}/api/restaurants/${order.restaurantId}/menu`,
+        `${restaurantServiceUrl}/api/restaurant-service/restaurants/${order.restaurantId}/menu`,
         {
           headers: {
             Authorization: req.headers.authorization,
