@@ -106,7 +106,7 @@ INSERT INTO restaurant_svc.restaurants (
     '12:00',
     '21:00',
     true,
-    NULL,
+    'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800',
     NOW()
 ),
 (
@@ -123,7 +123,7 @@ INSERT INTO restaurant_svc.restaurants (
     '11:30',
     '21:30',
     true,
-    NULL,
+    'https://images.unsplash.com/photo-1526318472351-c75fcf070305?w=800',
     NOW()
 ),
 (
@@ -140,7 +140,7 @@ INSERT INTO restaurant_svc.restaurants (
     '12:00',
     '22:00',
     true,
-    NULL,
+    'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=800',
     NOW()
 ),
 (
@@ -157,7 +157,7 @@ INSERT INTO restaurant_svc.restaurants (
     '11:00',
     '23:00',
     true,
-    NULL,
+    'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800',
     NOW()
 ),
 (
@@ -174,7 +174,7 @@ INSERT INTO restaurant_svc.restaurants (
     '17:00',
     '22:00',
     true,
-    NULL,
+    'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800',
     NOW()
 ),
 (
@@ -191,7 +191,7 @@ INSERT INTO restaurant_svc.restaurants (
     '18:00',
     '23:00',
     true,
-    NULL,
+    'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800',
     NOW()
 ),
 (
@@ -208,7 +208,7 @@ INSERT INTO restaurant_svc.restaurants (
     '11:00',
     '20:00',
     true,
-    NULL,
+    'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800',
     NOW()
 ),
 (
@@ -225,7 +225,7 @@ INSERT INTO restaurant_svc.restaurants (
     '12:00',
     '21:00',
     true,
-    NULL,
+    'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=800',
     NOW()
 ),
 (
@@ -242,7 +242,7 @@ INSERT INTO restaurant_svc.restaurants (
     '11:30',
     '22:30',
     true,
-    NULL,
+    'https://images.unsplash.com/photo-1544025162-d76694265947?w=800',
     NOW()
 ),
 (
@@ -259,7 +259,7 @@ INSERT INTO restaurant_svc.restaurants (
     '07:00',
     '14:00',
     true,
-    NULL,
+    'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=800',
     NOW()
 ),
 (
@@ -276,7 +276,7 @@ INSERT INTO restaurant_svc.restaurants (
     '11:00',
     '21:00',
     true,
-    NULL,
+    'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=800',
     NOW()
 ),
 (
@@ -293,7 +293,7 @@ INSERT INTO restaurant_svc.restaurants (
     '12:00',
     '22:00',
     true,
-    NULL,
+    'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=800',
     NOW()
 ),
 (
@@ -310,7 +310,7 @@ INSERT INTO restaurant_svc.restaurants (
     '13:00',
     '23:00',
     true,
-    NULL,
+    'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=800',
     NOW()
 )
 ON CONFLICT (id) DO NOTHING;
@@ -414,7 +414,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sandwich',
     true,
     12,
-    NULL,
+    'https://images.unsplash.com/photo-1590947132387-155cc02f3212?w=500',
     NOW()
 ),
 (
@@ -426,7 +426,7 @@ INSERT INTO restaurant_svc.menu_items (
     'soup',
     true,
     10,
-    NULL,
+    'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=500',
     NOW()
 ),
 (
@@ -438,7 +438,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     8,
-    NULL,
+    'https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?w=500',
     NOW()
 ),
 
@@ -452,7 +452,7 @@ INSERT INTO restaurant_svc.menu_items (
     'burger',
     true,
     12,
-    NULL,
+    'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500',
     NOW()
 ),
 (
@@ -464,7 +464,7 @@ INSERT INTO restaurant_svc.menu_items (
     'burger',
     true,
     15,
-    NULL,
+    'https://images.unsplash.com/photo-1553979459-d2229ba7433b?w=500',
     NOW()
 ),
 (
@@ -476,7 +476,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sides',
     true,
     8,
-    NULL,
+    'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=500',
     NOW()
 ),
 (
@@ -488,7 +488,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sides',
     true,
     10,
-    NULL,
+    'https://images.unsplash.com/photo-1639024471283-03518883512d?w=500',
     NOW()
 ),
 (
@@ -500,7 +500,7 @@ INSERT INTO restaurant_svc.menu_items (
     'drinks',
     true,
     5,
-    NULL,
+    'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=500',
     NOW()
 ),
 (
@@ -512,7 +512,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sandwich',
     true,
     14,
-    NULL,
+    'https://images.unsplash.com/photo-1606755962773-d324e0a13086?w=500',
     NOW()
 ),
 (
@@ -524,7 +524,7 @@ INSERT INTO restaurant_svc.menu_items (
     'burger',
     true,
     12,
-    NULL,
+    'https://images.unsplash.com/photo-1520072959219-c595dc870360?w=500',
     NOW()
 ),
 (
@@ -536,7 +536,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sides',
     true,
     12,
-    NULL,
+    'https://images.unsplash.com/photo-1630431341973-02e1f662fd46?w=500',
     NOW()
 ),
 (
@@ -548,7 +548,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     10,
-    NULL,
+    'https://images.unsplash.com/photo-1612392062798-2dbee80e0566?w=500',
     NOW()
 ),
 (
@@ -560,7 +560,7 @@ INSERT INTO restaurant_svc.menu_items (
     'salad',
     true,
     8,
-    NULL,
+    'https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=500',
     NOW()
 ),
 
@@ -574,7 +574,7 @@ INSERT INTO restaurant_svc.menu_items (
     'noodles',
     true,
     20,
-    NULL,
+    'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=500',
     NOW()
 ),
 (
@@ -586,7 +586,7 @@ INSERT INTO restaurant_svc.menu_items (
     'curry',
     true,
     18,
-    NULL,
+    'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=500',
     NOW()
 ),
 (
@@ -598,7 +598,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     10,
-    NULL,
+    'https://images.unsplash.com/photo-1594007653729-c5b5ddfe77c9?w=500',
     NOW()
 ),
 (
@@ -610,7 +610,7 @@ INSERT INTO restaurant_svc.menu_items (
     'soup',
     true,
     15,
-    NULL,
+    'https://images.unsplash.com/photo-1548943487-a2e4e43b4853?w=500',
     NOW()
 ),
 (
@@ -622,7 +622,7 @@ INSERT INTO restaurant_svc.menu_items (
     'dessert',
     true,
     12,
-    NULL,
+    'https://images.unsplash.com/photo-1620641021611-ee1feb91c3d0?w=500',
     NOW()
 ),
 (
@@ -634,7 +634,7 @@ INSERT INTO restaurant_svc.menu_items (
     'curry',
     true,
     18,
-    NULL,
+    'https://images.unsplash.com/photo-1604908816595-094177eb7ddc?w=500',
     NOW()
 ),
 (
@@ -646,7 +646,7 @@ INSERT INTO restaurant_svc.menu_items (
     'noodles',
     true,
     20,
-    NULL,
+    'https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?w=500',
     NOW()
 ),
 (
@@ -658,7 +658,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     15,
-    NULL,
+    'https://images.unsplash.com/photo-1609501676725-7186f017a4b7?w=500',
     NOW()
 ),
 (
@@ -670,7 +670,7 @@ INSERT INTO restaurant_svc.menu_items (
     'rice',
     true,
     16,
-    NULL,
+    'https://images.unsplash.com/photo-1633508388457-0da02c793bc6?w=500',
     NOW()
 ),
 (
@@ -682,7 +682,7 @@ INSERT INTO restaurant_svc.menu_items (
     'drinks',
     true,
     5,
-    NULL,
+    'https://images.unsplash.com/photo-1641890887458-8eb66df0df2a?w=500',
     NOW()
 ),
 
@@ -696,7 +696,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     18,
-    NULL,
+    'https://images.unsplash.com/photo-1606850780554-b55ea4dd0b70?w=500',
     NOW()
 ),
 (
@@ -708,7 +708,7 @@ INSERT INTO restaurant_svc.menu_items (
     'soup',
     true,
     10,
-    NULL,
+    'https://images.unsplash.com/photo-1603105037880-880cd4edfb0d?w=500',
     NOW()
 ),
 (
@@ -720,7 +720,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     16,
-    NULL,
+    'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=500',
     NOW()
 ),
 (
@@ -732,7 +732,7 @@ INSERT INTO restaurant_svc.menu_items (
     'rice',
     true,
     15,
-    NULL,
+    'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=500',
     NOW()
 ),
 (
@@ -744,7 +744,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     18,
-    NULL,
+    'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=500',
     NOW()
 ),
 (
@@ -756,7 +756,7 @@ INSERT INTO restaurant_svc.menu_items (
     'soup',
     true,
     12,
-    NULL,
+    'https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=500',
     NOW()
 ),
 (
@@ -768,7 +768,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     12,
-    NULL,
+    'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=500',
     NOW()
 ),
 (
@@ -780,7 +780,7 @@ INSERT INTO restaurant_svc.menu_items (
     'noodles',
     true,
     15,
-    NULL,
+    'https://images.unsplash.com/photo-1582169296194-e4d644c48063?w=500',
     NOW()
 ),
 (
@@ -792,7 +792,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     18,
-    NULL,
+    'https://images.unsplash.com/photo-1515443961218-a51367888e4b?w=500',
     NOW()
 ),
 (
@@ -804,7 +804,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     10,
-    NULL,
+    'https://images.unsplash.com/photo-1619523689018-82c7e8196d09?w=500',
     NOW()
 ),
 (
@@ -816,7 +816,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sushi',
     true,
     10,
-    NULL,
+    'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=500',
     NOW()
 ),
 (
@@ -828,7 +828,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sushi',
     true,
     12,
-    NULL,
+    'https://images.unsplash.com/photo-1617196034183-421b4917c92d?w=500',
     NOW()
 ),
 (
@@ -840,7 +840,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sushi',
     true,
     15,
-    NULL,
+    'https://images.unsplash.com/photo-1563612116625-3012372fccce?w=500',
     NOW()
 ),
 (
@@ -852,7 +852,7 @@ INSERT INTO restaurant_svc.menu_items (
     'nigiri',
     true,
     8,
-    NULL,
+    'https://images.unsplash.com/photo-1617196035154-b35c7926f99a?w=500',
     NOW()
 ),
 (
@@ -864,7 +864,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sashimi',
     true,
     10,
-    NULL,
+    'https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=500',
     NOW()
 ),
 (
@@ -876,7 +876,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     5,
-    NULL,
+    'https://images.unsplash.com/photo-1607301405945-f40f2c1b888e?w=500',
     NOW()
 ),
 (
@@ -888,7 +888,7 @@ INSERT INTO restaurant_svc.menu_items (
     'soup',
     true,
     5,
-    NULL,
+    'https://images.unsplash.com/photo-1606850780554-b55ea4dd0b70?w=500',
     NOW()
 ),
 (
@@ -900,7 +900,7 @@ INSERT INTO restaurant_svc.menu_items (
     'salad',
     true,
     7,
-    NULL,
+    'https://images.unsplash.com/photo-1606491956689-2ea866880c84?w=500',
     NOW()
 ),
 (
@@ -912,7 +912,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     20,
-    NULL,
+    'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=500',
     NOW()
 ),
 (
@@ -924,7 +924,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     15,
-    NULL,
+    'https://images.unsplash.com/photo-1576777647209-e8733c0b16c9?w=500',
     NOW()
 ),
 
@@ -938,7 +938,7 @@ INSERT INTO restaurant_svc.menu_items (
     'tacos',
     true,
     10,
-    NULL,
+    'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=500',
     NOW()
 ),
 (
@@ -950,7 +950,7 @@ INSERT INTO restaurant_svc.menu_items (
     'tacos',
     true,
     10,
-    NULL,
+    'https://images.unsplash.com/photo-1614647457818-2037f5d79e08?w=500',
     NOW()
 ),
 (
@@ -962,7 +962,7 @@ INSERT INTO restaurant_svc.menu_items (
     'burrito',
     true,
     12,
-    NULL,
+    'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=500',
     NOW()
 ),
 (
@@ -974,7 +974,7 @@ INSERT INTO restaurant_svc.menu_items (
     'quesadilla',
     true,
     8,
-    NULL,
+    'https://images.unsplash.com/photo-1618040996337-56904b7850b9?w=500',
     NOW()
 ),
 (
@@ -986,7 +986,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     7,
-    NULL,
+    'https://images.unsplash.com/photo-1628502459046-e39a96f6f48b?w=500',
     NOW()
 ),
 (
@@ -998,7 +998,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     15,
-    NULL,
+    'https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?w=500',
     NOW()
 ),
 (
@@ -1010,7 +1010,7 @@ INSERT INTO restaurant_svc.menu_items (
     'drinks',
     true,
     3,
-    NULL,
+    'https://images.unsplash.com/photo-1664209220780-088b3e5a0287?w=500',
     NOW()
 ),
 (
@@ -1022,7 +1022,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sides',
     true,
     10,
-    NULL,
+    'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=500',
     NOW()
 ),
 (
@@ -1034,7 +1034,7 @@ INSERT INTO restaurant_svc.menu_items (
     'tacos',
     true,
     12,
-    NULL,
+    'https://images.unsplash.com/photo-1615870123253-df99e8c7a55d?w=500',
     NOW()
 ),
 (
@@ -1046,7 +1046,7 @@ INSERT INTO restaurant_svc.menu_items (
     'dessert',
     true,
     8,
-    NULL,
+    'https://images.unsplash.com/photo-1626790680787-de5e9a07bcf2?w=500',
     NOW()
 ),
 
@@ -1060,7 +1060,7 @@ INSERT INTO restaurant_svc.menu_items (
     'curry',
     true,
     25,
-    NULL,
+    'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=500',
     NOW()
 ),
 (
@@ -1072,7 +1072,7 @@ INSERT INTO restaurant_svc.menu_items (
     'curry',
     true,
     25,
-    NULL,
+    'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=500',
     NOW()
 ),
 (
@@ -1084,7 +1084,7 @@ INSERT INTO restaurant_svc.menu_items (
     'curry',
     true,
     30,
-    NULL,
+    'https://images.unsplash.com/photo-1639744093009-81f32a5b69e7?w=500',
     NOW()
 ),
 (
@@ -1096,7 +1096,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     15,
-    NULL,
+    'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=500',
     NOW()
 ),
 (
@@ -1108,7 +1108,7 @@ INSERT INTO restaurant_svc.menu_items (
     'bread',
     true,
     10,
-    NULL,
+    'https://images.unsplash.com/photo-1628265820616-e28a96a49c7c?w=500',
     NOW()
 ),
 (
@@ -1120,7 +1120,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sides',
     true,
     10,
-    NULL,
+    'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=500',
     NOW()
 ),
 (
@@ -1132,7 +1132,7 @@ INSERT INTO restaurant_svc.menu_items (
     'drinks',
     true,
     5,
-    NULL,
+    'https://images.unsplash.com/photo-1547558840-8ad9609e4dbd?w=500',
     NOW()
 ),
 (
@@ -1144,7 +1144,7 @@ INSERT INTO restaurant_svc.menu_items (
     'curry',
     true,
     20,
-    NULL,
+    'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=500',
     NOW()
 ),
 (
@@ -1156,7 +1156,7 @@ INSERT INTO restaurant_svc.menu_items (
     'curry',
     true,
     22,
-    NULL,
+    'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=500',
     NOW()
 ),
 (
@@ -1168,7 +1168,7 @@ INSERT INTO restaurant_svc.menu_items (
     'rice',
     true,
     30,
-    NULL,
+    'https://images.unsplash.com/photo-1596797038530-2c107229654b?w=500',
     NOW()
 ),
 
@@ -1182,7 +1182,7 @@ INSERT INTO restaurant_svc.menu_items (
     'soup',
     true,
     20,
-    NULL,
+    'https://images.unsplash.com/photo-1601072649252-1a340c8a26e5?w=500',
     NOW()
 ),
 (
@@ -1194,7 +1194,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     25,
-    NULL,
+    'https://images.unsplash.com/photo-1534080564583-6be75777b70a?w=500',
     NOW()
 ),
 (
@@ -1206,7 +1206,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     40,
-    NULL,
+    'https://images.unsplash.com/photo-1587314156493-baa74df8f0ea?w=500',
     NOW()
 ),
 (
@@ -1218,7 +1218,7 @@ INSERT INTO restaurant_svc.menu_items (
     'dessert',
     true,
     10,
-    NULL,
+    'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=500',
     NOW()
 ),
 (
@@ -1230,7 +1230,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     18,
-    NULL,
+    'https://images.unsplash.com/photo-1619096252214-ef06c45683e3?w=500',
     NOW()
 ),
 (
@@ -1242,7 +1242,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     35,
-    NULL,
+    'https://images.unsplash.com/photo-1608441880776-0282e4a9b7c2?w=500',
     NOW()
 ),
 (
@@ -1254,7 +1254,7 @@ INSERT INTO restaurant_svc.menu_items (
     'salad',
     true,
     15,
-    NULL,
+    'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500',
     NOW()
 ),
 (
@@ -1266,7 +1266,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     45,
-    NULL,
+    'https://images.unsplash.com/photo-1564834744159-ff0ea41ba4b9?w=500',
     NOW()
 ),
 (
@@ -1278,7 +1278,7 @@ INSERT INTO restaurant_svc.menu_items (
     'dessert',
     true,
     10,
-    NULL,
+    'https://images.unsplash.com/photo-1614699099487-34c3d85bb992?w=500',
     NOW()
 ),
 (
@@ -1290,7 +1290,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sides',
     true,
     5,
-    NULL,
+    'https://images.unsplash.com/photo-1541529086526-db283c563270?w=500',
     NOW()
 ),
 
@@ -1311,7 +1311,7 @@ INSERT INTO restaurant_svc.menu_items (
     'bowl',
     true,
     15,
-    NULL,
+    'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=500',
     NOW()
 ),
 (
@@ -1323,7 +1323,7 @@ INSERT INTO restaurant_svc.menu_items (
     'burger',
     true,
     18,
-    NULL,
+    'https://images.unsplash.com/photo-1588137378633-dea1336ce1e2?w=500',
     NOW()
 ),
 (
@@ -1335,7 +1335,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     25,
-    NULL,
+    'https://images.unsplash.com/photo-1585908968640-d84ba96b1152?w=500',
     NOW()
 ),
 (
@@ -1347,7 +1347,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     10,
-    NULL,
+    'https://images.unsplash.com/photo-1529042410759-befb1204b468?w=500',
     NOW()
 ),
 (
@@ -1359,7 +1359,7 @@ INSERT INTO restaurant_svc.menu_items (
     'dessert',
     true,
     10,
-    NULL,
+    'https://images.unsplash.com/photo-1592329347687-5c4d5e0c9c1d?w=500',
     NOW()
 ),
 (
@@ -1371,7 +1371,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sandwich',
     true,
     15,
-    NULL,
+    'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?w=500',
     NOW()
 ),
 (
@@ -1383,7 +1383,7 @@ INSERT INTO restaurant_svc.menu_items (
     'plate',
     true,
     20,
-    NULL,
+    'https://images.unsplash.com/photo-1548940740-204726a19be3?w=500',
     NOW()
 ),
 (
@@ -1395,7 +1395,7 @@ INSERT INTO restaurant_svc.menu_items (
     'ribs',
     true,
     25,
-    NULL,
+    'https://images.unsplash.com/photo-1546457856-b58d9072e59a?w=500',
     NOW()
 ),
 (
@@ -1407,7 +1407,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sides',
     true,
     12,
-    NULL,
+    'https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=500',
     NOW()
 ),
 (
@@ -1419,7 +1419,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sides',
     true,
     10,
-    NULL,
+    'https://images.unsplash.com/photo-1564651705501-98035e85265a?w=500',
     NOW()
 ),
 (
@@ -1431,7 +1431,7 @@ INSERT INTO restaurant_svc.menu_items (
     'platter',
     true,
     18,
-    NULL,
+    'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=500',
     NOW()
 ),
 (
@@ -1443,7 +1443,7 @@ INSERT INTO restaurant_svc.menu_items (
     'wrap',
     true,
     15,
-    NULL,
+    'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=500',
     NOW()
 ),
 (
@@ -1455,7 +1455,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     12,
-    NULL,
+    'https://images.unsplash.com/photo-1601644381175-2d4ab33ec46a?w=500',
     NOW()
 ),
 (
@@ -1467,7 +1467,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     8,
-    NULL,
+    'https://images.unsplash.com/photo-1618897996318-5a901fa6ca71?w=500',
     NOW()
 ),
 (
@@ -1479,7 +1479,7 @@ INSERT INTO restaurant_svc.menu_items (
     'dessert',
     true,
     5,
-    NULL,
+    'https://images.unsplash.com/photo-1519676867240-f03562e64548?w=500',
     NOW()
 ),
 (
@@ -1491,7 +1491,7 @@ INSERT INTO restaurant_svc.menu_items (
     'pancakes',
     true,
     12,
-    NULL,
+    'https://images.unsplash.com/photo-1528207776546-365bb710ee93?w=500',
     NOW()
 ),
 (
@@ -1503,7 +1503,7 @@ INSERT INTO restaurant_svc.menu_items (
     'eggs',
     true,
     15,
-    NULL,
+    'https://images.unsplash.com/photo-1608039755401-742074f0548d?w=500',
     NOW()
 ),
 (
@@ -1515,7 +1515,7 @@ INSERT INTO restaurant_svc.menu_items (
     'burrito',
     true,
     14,
-    NULL,
+    'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=500',
     NOW()
 ),
 (
@@ -1527,7 +1527,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sides',
     true,
     8,
-    NULL,
+    'https://images.unsplash.com/photo-1528207776546-365bb710ee93?w=500',
     NOW()
 ),
 (
@@ -1539,7 +1539,7 @@ INSERT INTO restaurant_svc.menu_items (
     'drinks',
     true,
     4,
-    NULL,
+    'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=500',
     NOW()
 ),
 (
@@ -1551,7 +1551,7 @@ INSERT INTO restaurant_svc.menu_items (
     'pho',
     true,
     20,
-    NULL,
+    'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=500',
     NOW()
 ),
 (
@@ -1563,7 +1563,7 @@ INSERT INTO restaurant_svc.menu_items (
     'appetizer',
     true,
     12,
-    NULL,
+    'https://images.unsplash.com/photo-1594007653729-c5b5ddfe77c9?w=500',
     NOW()
 ),
 (
@@ -1575,7 +1575,7 @@ INSERT INTO restaurant_svc.menu_items (
     'sandwich',
     true,
     15,
-    NULL,
+    'https://images.unsplash.com/photo-1576564878684-5e89f0f05871?w=500',
     NOW()
 ),
 (
@@ -1587,7 +1587,7 @@ INSERT INTO restaurant_svc.menu_items (
     'noodles',
     true,
     18,
-    NULL,
+    'https://images.unsplash.com/photo-1559847844-5315695dadae?w=500',
     NOW()
 ),
 (
@@ -1599,7 +1599,7 @@ INSERT INTO restaurant_svc.menu_items (
     'drinks',
     true,
     7,
-    NULL,
+    'https://images.unsplash.com/photo-1575046786296-dc037b4b7be7?w=500',
     NOW()
 ),
 (
@@ -1611,7 +1611,7 @@ INSERT INTO restaurant_svc.menu_items (
     'rice',
     true,
     18,
-    NULL,
+    'https://images.unsplash.com/photo-1553621042-f6e147245754?w=500',
     NOW()
 ),
 (
@@ -1623,7 +1623,7 @@ INSERT INTO restaurant_svc.menu_items (
     'main',
     true,
     20,
-    NULL,
+    'https://images.unsplash.com/photo-1590073242678-70ee3fc28e8e?w=500',
     NOW()
 ),
 (
@@ -1635,7 +1635,7 @@ INSERT INTO restaurant_svc.menu_items (
     'stew',
     true,
     22,
-    NULL,
+    'https://images.unsplash.com/photo-1598511726623-d2e9996892f0?w=500',
     NOW()
 ),
 (
@@ -1647,7 +1647,7 @@ INSERT INTO restaurant_svc.menu_items (
     'chicken',
     true,
     25,
-    NULL,
+    'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=500',
     NOW()
 ),
 (
@@ -1659,7 +1659,7 @@ INSERT INTO restaurant_svc.menu_items (
     'noodles',
     true,
     18,
-    NULL,
+    'https://images.unsplash.com/photo-1600877992624-3c90d7f484f6?w=500',
     NOW()
 ),
 (
@@ -1671,7 +1671,7 @@ INSERT INTO restaurant_svc.menu_items (
     'cake',
     true,
     15,
-    NULL,
+    'https://images.unsplash.com/photo-1624353365286-3f8d62daad51?w=500',
     NOW()
 ),
 (
@@ -1683,7 +1683,7 @@ INSERT INTO restaurant_svc.menu_items (
     'cake',
     true,
     8,
-    NULL,
+    'https://images.unsplash.com/photo-1533134486753-c833f0ed4866?w=500',
     NOW()
 ),
 (
@@ -1695,7 +1695,7 @@ INSERT INTO restaurant_svc.menu_items (
     'ice cream',
     true,
     10,
-    NULL,
+    'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=500',
     NOW()
 ),
 (
@@ -1707,7 +1707,7 @@ INSERT INTO restaurant_svc.menu_items (
     'pie',
     true,
     12,
-    NULL,
+    'https://images.unsplash.com/photo-1535920527002-b35e96722eb9?w=500',
     NOW()
 ),
 (
@@ -1719,7 +1719,7 @@ INSERT INTO restaurant_svc.menu_items (
     'drinks',
     true,
     7,
-    NULL,
+    'https://images.unsplash.com/photo-1577805947697-89e18249d767?w=500',
     NOW()
 )
 
