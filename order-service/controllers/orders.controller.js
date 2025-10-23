@@ -11,13 +11,12 @@ import {
   getRestaurantOrderStats,
 } from "../repositories/orders.stats.repo.js";
 import { TOPICS, publishMessage } from "../config/kafka.js";
-import { createLogger } from "../../shared/utils/logger.js";
+import { logger } from "../utils/logger.js";
 import { db } from "../config/db.js";
 import { orders, orderItems } from "../db/schema.js";
 
 export const buildCreateOrderController =
   (producer, serviceName) => async (req, res) => {
-    const logger = createLogger(serviceName);
     const userId = req.user?.userId; // Get user ID from JWT token
     const {
       restaurantId,
@@ -208,7 +207,7 @@ export const buildCreateOrderController =
             deliveryAddress,
             customerName: finalCustomerName || null,
             customerPhone: finalCustomerPhone || null,
-            status: "pending_payment",
+            status: "pending",
             paymentStatus: "pending",
             total: String(total),
             createdAt: new Date(),
@@ -352,7 +351,6 @@ export const getRestaurantOrderStatsController = async (req, res) => {
 };
 
 export const updateOrderStatusController = async (req, res) => {
-  const logger = createLogger("order-service");
   const { orderId } = req.params;
   const { status, paymentStatus } = req.body;
 

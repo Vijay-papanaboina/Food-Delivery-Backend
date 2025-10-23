@@ -4,11 +4,9 @@ import {
   upsertCartItem,
   clearCartByUserId,
 } from "../repositories/cart.repo.js";
-import { createLogger, sanitizeForLogging } from "../../shared/utils/logger.js";
+import { logger } from "../utils/logger.js";
 
 export const getCart = async (req, res) => {
-  const logger = createLogger("user-service");
-
   try {
     const userId = req.user.userId;
     logger.info("Getting user cart", { userId });

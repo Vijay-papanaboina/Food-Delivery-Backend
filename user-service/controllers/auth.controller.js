@@ -2,13 +2,11 @@ import bcrypt from "bcrypt";
 import { validationResult } from "express-validator";
 import { createUser, getUserByEmail } from "../repositories/user.repo.js";
 import { generateTokens } from "../config/jwt.js";
-import { createLogger } from "../../shared/utils/logger.js";
+import { logger } from "../utils/logger.js";
 
 // No Kafka events needed for user service
 
 export const signup = async (req, res) => {
-  const logger = createLogger("user-service");
-
   try {
     // Check validation errors
     const errors = validationResult(req);
@@ -98,8 +96,6 @@ export const signup = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-  const logger = createLogger("user-service");
-
   try {
     // Check validation errors
     const errors = validationResult(req);
@@ -290,8 +286,6 @@ export const validateToken = async (req, res) => {
 };
 
 export const logout = async (req, res) => {
-  const logger = createLogger("user-service");
-
   try {
     logger.info("User logout request", {
       userId: req.user?.userId,

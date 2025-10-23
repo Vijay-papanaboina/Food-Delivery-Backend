@@ -18,12 +18,10 @@ import {
   completeDelivery,
   reassignDelivery,
 } from "../handlers/delivery.handlers.js";
-import { createLogger } from "../../shared/utils/logger.js";
+import { logger } from "../utils/logger.js";
 import { publishMessage, TOPICS } from "../config/kafka.js";
 
 export const getDeliveryByOrder = async (req, res) => {
-  const logger = createLogger("delivery-service");
-
   try {
     const { orderId } = req.params;
 
@@ -253,8 +251,6 @@ export const completeDeliveryByDriver = async (req, res) => {
 
 // Toggle driver's own availability (online/offline)
 export const toggleMyAvailability = async (req, res) => {
-  const logger = createLogger("delivery-service");
-
   try {
     const userId = req.user?.userId; // From JWT token
     const { isAvailable } = req.body;
@@ -311,8 +307,6 @@ export const toggleMyAvailability = async (req, res) => {
 
 // Accept delivery
 export const acceptDelivery = async (req, res) => {
-  const logger = createLogger("delivery-service");
-
   try {
     const { deliveryId } = req.params;
     const userId = req.user?.userId; // From JWT token
@@ -386,8 +380,6 @@ export const acceptDelivery = async (req, res) => {
 
 // Decline delivery
 export const declineDelivery = async (req, res) => {
-  const logger = createLogger("delivery-service");
-
   try {
     const { deliveryId } = req.params;
     const { reason } = req.body;
@@ -476,8 +468,6 @@ export const declineDelivery = async (req, res) => {
 
 // Get full delivery details
 export const getDeliveryDetails = async (req, res) => {
-  const logger = createLogger("delivery-service");
-
   try {
     const { deliveryId } = req.params;
 

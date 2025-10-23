@@ -11,12 +11,10 @@ import {
   setDefaultAddress,
   getDefaultAddress,
 } from "../repositories/user.repo.js";
-import { createLogger, sanitizeForLogging } from "../../shared/utils/logger.js";
+import { logger } from "../utils/logger.js";
 // No Kafka events needed for user service
 
 export const getProfile = async (req, res) => {
-  const logger = createLogger("user-service");
-
   try {
     const userId = req.user.userId;
     logger.info("Getting user profile", { userId });
@@ -49,8 +47,6 @@ export const getProfile = async (req, res) => {
 
 // Get user by ID (for inter-service communication)
 export const getUserByIdController = async (req, res) => {
-  const logger = createLogger("user-service");
-
   try {
     const { id } = req.params;
     logger.info("Getting user by ID", { userId: id });

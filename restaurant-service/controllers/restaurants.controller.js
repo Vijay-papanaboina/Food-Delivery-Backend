@@ -5,15 +5,13 @@ import {
   getRestaurantStats,
 } from "../repositories/restaurants.repo.js";
 import { getMenuItems } from "../repositories/menu.repo.js";
-import { createLogger } from "../../shared/utils/logger.js";
+import { logger } from "../utils/logger.js";
 import {
   getKitchenOrders,
   upsertKitchenOrder,
 } from "../repositories/kitchen.repo.js";
 
 export const listRestaurants = async (req, res) => {
-  const logger = createLogger("restaurant-service");
-
   try {
     const { cuisine, isActive, minRating } = req.query;
 
@@ -64,8 +62,6 @@ export const getRestaurantById = async (req, res) => {
 };
 
 export const getMyRestaurant = async (req, res) => {
-  const logger = createLogger("restaurant-service");
-
   try {
     const userId = req.user.userId;
 
@@ -167,8 +163,6 @@ export const getRestaurantMenu = async (req, res) => {
 };
 
 export const listKitchenOrders = async (req, res) => {
-  const logger = createLogger("restaurant-service");
-
   try {
     const { status } = req.query;
     const userId = req.user.userId;

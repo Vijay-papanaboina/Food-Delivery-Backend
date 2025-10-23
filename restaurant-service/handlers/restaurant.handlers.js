@@ -51,7 +51,34 @@ export async function handleOrderConfirmed(orderData, producer, serviceName) {
 }
 
 /**
- * Handle delivery completed event -> update kitchen order status to delivered
+ * Handle delivery picked up event -> update kitchen order status to completed
+ * This moves the order from Active Orders to Order History
+ */
+export async function handleDeliveryPickedUp(eventData, producer, serviceName) {
+  const { orderId } = eventData || {};
+  if (!orderId) return;
+
+  const order = await getKitchenOrder(orderId);
+  if (!order) {
+    console.log(
+      `⚠️ [${serviceName}] Kitchen order ${orderId} not found for delivery-picked-up`
+    );
+    return;
+  }
+
+  if (order.status === "completed" || order.status === "cancelled") {
+    return;
+  }
+
+  await updateKitchenOrderStatus(orderId, "completed");
+  console.log(
+    `✅ [${serviceName}] Order ${orderId} marked as completed (picked up by driver)`
+  );
+}
+
+/**
+ * Handle delivery completed event -> kitchen order already marked as completed on pickup
+ * This is a no-op for kitchen orders
  */
 export async function handleDeliveryCompleted(
   eventData,
@@ -61,20 +88,8 @@ export async function handleDeliveryCompleted(
   const { orderId } = eventData || {};
   if (!orderId) return;
 
-  const order = await getKitchenOrder(orderId);
-  if (!order) {
-    console.log(
-      `⚠️ [${serviceName}] Kitchen order ${orderId} not found for delivery-completed`
-    );
-    return;
-  }
-
-  if (order.status === "delivered") {
-    return;
-  }
-
-  await updateKitchenOrderStatus(orderId, "delivered");
-  console.log(`🍽️ [${serviceName}] Order ${orderId} marked as delivered`);
+  console.log(`📦 [${serviceName}] Order ${orderId} delivered to customer`);
+  // Kitchen order is already "completed" when picked up, no further action needed
 }
 
 /**

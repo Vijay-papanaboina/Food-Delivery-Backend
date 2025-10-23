@@ -9,7 +9,11 @@ import {
   logConsumerMessage,
   TOPICS,
 } from "../config/kafka.js";
-import { handleOrderConfirmed, handleDeliveryCompleted } from "../handlers/restaurant.handlers.js";
+import {
+  handleOrderConfirmed,
+  handleDeliveryPickedUp,
+  handleDeliveryCompleted,
+} from "../handlers/restaurant.handlers.js";
 
 /**
  * Initialize Kafka connections and start consuming messages
@@ -20,48 +24,71 @@ export async function initializeKafka(producer, consumer, serviceName) {
     await connectProducer(producer, serviceName);
     await connectConsumer(consumer, serviceName);
 
-    // Subscribe to order-confirmed and delivery-completed topics
-    await subscribeToTopics(consumer, [TOPICS.ORDER_CONFIRMED, TOPICS.DELIVERY_COMPLETED]);
+    // Subscribe to order-confirmed, delivery-picked-up, and delivery-completed topics
+    await subscribeToTopics(consumer, [
+      TOPICS.ORDER_CONFIRMED,
+      TOPICS.DELIVERY_PICKED_UP,
+      TOPICS.DELIVERY_COMPLETED,
+    ]);
 
     // Start consuming messages
     await consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
         try {
           let messageData;
-          
+
           if (message.value === null || message.value === undefined) {
-            console.log(`⚠️ [${serviceName}] Received null/undefined message value`);
+            console.log(
+              `⚠️ [${serviceName}] Received null/undefined message value`
+            );
             return;
           }
-          
+
           // KafkaJS always provides Buffer, convert to string and parse
           try {
-            const stringValue = message.value.toString('utf8');
+            const stringValue = message.value.toString("utf8");
             messageData = JSON.parse(stringValue);
           } catch (parseError) {
-            console.error(`❌ [${serviceName}] Failed to parse message:`, parseError.message);
-            console.error(`❌ [${serviceName}] Raw value type:`, typeof message.value);
-            console.error(`❌ [${serviceName}] Raw value (first 200 chars):`, 
-              message.value.toString('utf8').substring(0, 200));
+            console.error(
+              `❌ [${serviceName}] Failed to parse message:`,
+              parseError.message
+            );
+            console.error(
+              `❌ [${serviceName}] Raw value type:`,
+              typeof message.value
+            );
+            console.error(
+              `❌ [${serviceName}] Raw value (first 200 chars):`,
+              message.value.toString("utf8").substring(0, 200)
+            );
             return;
           }
-          
-          logConsumerMessage(serviceName, topic, partition, message, messageData);
-          
+
+          logConsumerMessage(
+            serviceName,
+            topic,
+            partition,
+            message,
+            messageData
+          );
+
           if (topic === TOPICS.ORDER_CONFIRMED) {
             await handleOrderConfirmed(messageData, producer, serviceName);
+          } else if (topic === TOPICS.DELIVERY_PICKED_UP) {
+            await handleDeliveryPickedUp(messageData, producer, serviceName);
           } else if (topic === TOPICS.DELIVERY_COMPLETED) {
             await handleDeliveryCompleted(messageData, producer, serviceName);
           }
         } catch (error) {
-          console.error(`❌ [${serviceName}] Error processing message:`, error.message);
+          console.error(
+            `❌ [${serviceName}] Error processing message:`,
+            error.message
+          );
         }
       },
     });
 
-    console.log(
-      `🚀 [${serviceName}] Kafka initialized and consuming messages`
-    );
+    console.log(`🚀 [${serviceName}] Kafka initialized and consuming messages`);
   } catch (error) {
     console.error(
       `❌ [${serviceName}] Failed to initialize Kafka:`,

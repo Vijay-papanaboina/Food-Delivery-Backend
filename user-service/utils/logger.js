@@ -1,9 +1,9 @@
 import winston from "winston";
 
-const SERVICE_NAME = "payment-service";
+const SERVICE_NAME = "user-service";
 
 /**
- * Winston logger instance for the payment service
+ * Winston logger instance for the user service
  */
 export const logger = winston.createLogger({
   level: "info",

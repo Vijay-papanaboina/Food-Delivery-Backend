@@ -1,9 +1,8 @@
 import { upsertPayment } from "../repositories/payments.repo.js";
-import { createLogger } from "../../shared/utils/logger.js";
+import { logger } from "../utils/logger.js";
 import { stripe, STRIPE_CONFIG } from "../config/stripe.js";
 
 export const processPayment = async (req, res) => {
-  const logger = createLogger("payment-service");
   const { orderId } = req.body; // Remove amount - we'll fetch it from order service
   const userId = req.user?.userId; // Get user ID from JWT token
 
@@ -55,10 +54,10 @@ export const processPayment = async (req, res) => {
       });
     }
 
-    // Check if order is in pending_payment status
-    if (order.status !== "pending_payment") {
+    // Check if order payment is pending
+    if (order.paymentStatus !== "pending") {
       return res.status(400).json({
-        error: `Order is not in pending payment status. Current status: ${order.status}`,
+        error: `Order payment is not pending. Current payment status: ${order.paymentStatus}`,
       });
     }
 

@@ -4,9 +4,7 @@ import {
   getPaymentByOrderId,
 } from "../repositories/payments.repo.js";
 import { publishMessage, TOPICS } from "../config/kafka.js";
-import { createLogger } from "../utils/logger.js";
-
-const logger = createLogger("payment-service");
+import { logger } from "../utils/logger.js";
 
 export const handleStripeWebhook = async (req, res) => {
   const sig = req.headers["stripe-signature"];

@@ -1,11 +1,9 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "../config/db.js";
 import { orders, orderItems } from "../db/schema.js";
-import { createLogger } from "../../shared/utils/logger.js";
+import { logger } from "../utils/logger.js";
 
 export async function upsertOrder(o) {
-  const logger = createLogger("order-service");
-
   try {
     logger.info("Upserting order to database", {
       orderId: o.id,
@@ -69,8 +67,6 @@ export async function updateOrderStatus(
   confirmedAt = null,
   deliveredAt = null
 ) {
-  const logger = createLogger("order-service");
-
   try {
     const updateData = { status };
     if (paymentStatus !== null) updateData.paymentStatus = paymentStatus;
@@ -101,8 +97,6 @@ export async function updateOrderStatus(
 
 // Get order with items - joins orders + order_items tables
 export async function getOrderWithItems(orderId) {
-  const logger = createLogger("order-service");
-
   try {
     // Get order details
     const orderRows = await db
@@ -179,8 +173,6 @@ export async function getOrderWithItems(orderId) {
 
 // Insert order items into order_items table
 export async function insertOrderItems(orderId, items) {
-  const logger = createLogger("order-service");
-
   try {
     if (!items || items.length === 0) {
       logger.warn("No items to insert for order", { orderId });

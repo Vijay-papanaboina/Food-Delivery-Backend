@@ -19,9 +19,9 @@ export default function deliveryRoutes() {
 
   // Public read-only routes (no authentication required)
   router.get("/api/drivers", listDrivers);
-  router.get("/api/delivery/:orderId", getDeliveryByOrder);
 
   // Protected driver-only routes (require driver role)
+  // IMPORTANT: Define specific routes BEFORE parameterized routes
   router.get(
     "/api/delivery/stats",
     authenticateToken,
@@ -40,6 +40,9 @@ export default function deliveryRoutes() {
     requireRole("driver"),
     getDeliveryDetails
   );
+
+  // Parameterized routes - must come AFTER specific routes
+  router.get("/api/delivery/:orderId", getDeliveryByOrder);
   router.post(
     "/api/delivery/pickup",
     authenticateToken,
