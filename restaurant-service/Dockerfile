@@ -7,7 +7,8 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install production dependencies only
-RUN npm ci --only=production --ignore-scripts && \
+# Remove --ignore-scripts to allow native modules to build
+RUN npm ci --only=production && \
     npm cache clean --force
 
 # Production stage

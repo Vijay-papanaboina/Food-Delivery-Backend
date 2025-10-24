@@ -3,11 +3,15 @@ FROM node:20-alpine AS deps
 
 WORKDIR /app
 
+# Install build dependencies for native modules (bcrypt)
+RUN apk add --no-cache python3 make g++
+
 # Copy package files
 COPY package*.json ./
 
 # Install production dependencies only
-RUN npm ci --only=production --ignore-scripts && \
+# Remove --ignore-scripts to allow native modules (like bcrypt) to build
+RUN npm ci --only=production && \
     npm cache clean --force
 
 # Production stage
