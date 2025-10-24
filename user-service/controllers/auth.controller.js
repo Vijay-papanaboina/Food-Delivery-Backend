@@ -3,6 +3,7 @@ import { validationResult } from "express-validator";
 import { createUser, getUserByEmail } from "../repositories/user.repo.js";
 import { generateTokens } from "../config/jwt.js";
 import { logger } from "../utils/logger.js";
+import { validateDomainForRole } from "../utils/domainValidator.js";
 
 // No Kafka events needed for user service
 
@@ -151,6 +152,21 @@ export const login = async (req, res) => {
       });
     }
 
+    // Validate domain matches user role (production only)
+    const isDomainValid = validateDomainForRole(req, user.role);
+    if (!isDomainValid) {
+      logger.warn("Login failed - domain does not match user role", {
+        userId: user.id,
+        email,
+        userRole: user.role,
+        origin: req.headers.origin || req.headers.referer,
+      });
+      // Return same error as invalid password to not leak user existence
+      return res.status(401).json({
+        error: "Invalid email or password",
+      });
+    }
+
     // Check role if required
     if (requiredRole && user.role !== requiredRole) {
       logger.warn("Login failed - role mismatch", {
@@ -230,6 +246,19 @@ export const refreshToken = async (req, res) => {
       });
     }
 
+    // Validate domain matches user role (production only)
+    const isDomainValid = validateDomainForRole(req, user.role);
+    if (!isDomainValid) {
+      logger.warn("Token refresh failed - domain does not match user role", {
+        userId: user.id,
+        userRole: user.role,
+        origin: req.headers.origin || req.headers.referer,
+      });
+      return res.status(401).json({
+        error: "Unauthorized",
+      });
+    }
+
     // Generate new access token only (keep same refresh token)
     const { generateTokens } = await import("../config/jwt.js");
     const { accessToken } = generateTokens({
@@ -237,10 +266,6 @@ export const refreshToken = async (req, res) => {
       email: user.email,
       role: user.role,
     });
-    console.log(`========================================================
-Token refreshed successfully: ${accessToken}
-=========================================================
-      `);
 
     // Remove password hash from user response
     const { passwordHash: _, ...userResponse } = user;
@@ -267,6 +292,19 @@ export const validateToken = async (req, res) => {
     if (!user) {
       return res.status(401).json({
         error: "User not found",
+      });
+    }
+
+    // Validate domain matches user role (production only)
+    const isDomainValid = validateDomainForRole(req, user.role);
+    if (!isDomainValid) {
+      logger.warn("Token validation failed - domain does not match user role", {
+        userId: user.id,
+        userRole: user.role,
+        origin: req.headers.origin || req.headers.referer,
+      });
+      return res.status(401).json({
+        error: "Unauthorized",
       });
     }
 
