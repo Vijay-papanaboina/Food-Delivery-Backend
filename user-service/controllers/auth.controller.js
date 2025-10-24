@@ -277,6 +277,12 @@ export const refreshToken = async (req, res) => {
     });
   } catch (error) {
     console.error("Refresh token error:", error);
+    // Clear the invalid refresh token cookie
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
     res.status(401).json({
       error: "Invalid refresh token",
     });
