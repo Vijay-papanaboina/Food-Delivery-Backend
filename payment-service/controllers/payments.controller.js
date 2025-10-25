@@ -35,7 +35,7 @@ export const processPayment = async (req, res) => {
         headers: {
           Authorization: req.headers.authorization, // Pass through JWT token
         },
-      }
+      },
     );
 
     if (!orderResponse.ok) {
@@ -74,7 +74,7 @@ export const processPayment = async (req, res) => {
           headers: {
             Authorization: req.headers.authorization,
           },
-        }
+        },
       );
 
       if (menuResponse.ok) {
@@ -103,7 +103,7 @@ export const processPayment = async (req, res) => {
     // Calculate subtotal and delivery fee
     const subtotal = order.items.reduce(
       (sum, item) => sum + item.price * item.quantity,
-      0
+      0,
     );
     const deliveryFee = order.total - subtotal;
 
@@ -158,6 +158,7 @@ export const processPayment = async (req, res) => {
       success_url: STRIPE_CONFIG.successUrl,
       cancel_url: STRIPE_CONFIG.cancelUrl,
       metadata: { orderId, userId },
+      expires_at: Math.floor(Date.now() / 1000) + 5 * 60, // 5 minutes from now
     });
 
     // Save pending payment with actual amount from database
@@ -193,7 +194,7 @@ export const processPayment = async (req, res) => {
     });
     console.error(
       `❌ [payment-service] Error creating Stripe session:`,
-      error.message
+      error.message,
     );
     res.status(500).json({
       error: "Failed to create payment session",

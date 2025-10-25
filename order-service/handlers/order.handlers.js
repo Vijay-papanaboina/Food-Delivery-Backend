@@ -8,14 +8,14 @@ import { publishMessage, TOPICS } from "../config/kafka.js";
 export async function handlePaymentProcessed(
   paymentData,
   producer,
-  serviceName
+  serviceName,
 ) {
   const { orderId, status } = paymentData;
 
   const order = await getOrder(orderId);
   if (!order) {
     console.log(
-      `⚠️ [${serviceName}] Order ${orderId} not found for payment update`
+      `⚠️ [${serviceName}] Order ${orderId} not found for payment update`,
     );
     return;
   }
@@ -26,7 +26,7 @@ export async function handlePaymentProcessed(
       orderId,
       "confirmed",
       "paid",
-      new Date().toISOString()
+      new Date().toISOString(),
     );
 
     // Publish order confirmed event
@@ -59,12 +59,12 @@ export async function handlePaymentProcessed(
 
     console.log(
       `🔍 [${serviceName}] Publishing ORDER_CONFIRMED with data:`,
-      JSON.stringify(orderConfirmedData, null, 2)
+      JSON.stringify(orderConfirmedData, null, 2),
     );
     await publishMessage(producer, TOPICS.ORDER_CONFIRMED, orderConfirmedData);
 
     console.log(
-      `✅ [${serviceName}] Order ${orderId} confirmed after successful payment`
+      `✅ [${serviceName}] Order ${orderId} confirmed after successful payment`,
     );
   } else {
     // Use simple UPDATE for payment failure too
@@ -80,14 +80,14 @@ export async function handlePaymentProcessed(
 export async function handleDeliveryCompleted(
   deliveryData,
   producer,
-  serviceName
+  serviceName,
 ) {
   const { orderId } = deliveryData;
 
   if (!orderId) {
     console.log(
       `❌ [${serviceName}] No orderId in delivery completed event:`,
-      deliveryData
+      deliveryData,
     );
     return;
   }
@@ -95,7 +95,7 @@ export async function handleDeliveryCompleted(
   const order = await getOrder(orderId);
   if (!order) {
     console.log(
-      `⚠️ [${serviceName}] Order ${orderId} not found for delivery update`
+      `⚠️ [${serviceName}] Order ${orderId} not found for delivery update`,
     );
     return;
   }
@@ -110,7 +110,7 @@ export async function handleDeliveryCompleted(
     "delivered",
     null,
     null,
-    new Date().toISOString()
+    new Date().toISOString(),
   );
   console.log(`✅ [${serviceName}] Order ${orderId} marked as delivered`);
 }
@@ -125,7 +125,7 @@ export async function handleFoodReady(foodData, producer, serviceName) {
   const order = await getOrder(orderId);
   if (!order) {
     console.log(
-      `⚠️ [${serviceName}] Order ${orderId} not found for food ready update`
+      `⚠️ [${serviceName}] Order ${orderId} not found for food ready update`,
     );
     return;
   }
@@ -133,7 +133,7 @@ export async function handleFoodReady(foodData, producer, serviceName) {
   // Use simple UPDATE instead of upsert
   await updateOrderStatus(orderId, "ready");
   console.log(
-    `✅ [${serviceName}] Order ${orderId} marked as ready for pickup`
+    `✅ [${serviceName}] Order ${orderId} marked as ready for pickup`,
   );
 }
 
@@ -144,14 +144,14 @@ export async function handleFoodReady(foodData, producer, serviceName) {
 export async function handleDeliveryPickedUp(
   deliveryData,
   producer,
-  serviceName
+  serviceName,
 ) {
   const { orderId } = deliveryData;
 
   const order = await getOrder(orderId);
   if (!order) {
     console.log(
-      `⚠️ [${serviceName}] Order ${orderId} not found for delivery pickup update`
+      `⚠️ [${serviceName}] Order ${orderId} not found for delivery pickup update`,
     );
     return;
   }
@@ -159,6 +159,6 @@ export async function handleDeliveryPickedUp(
   // Use simple UPDATE instead of upsert
   await updateOrderStatus(orderId, "out_for_delivery");
   console.log(
-    `✅ [${serviceName}] Order ${orderId} marked as out for delivery`
+    `✅ [${serviceName}] Order ${orderId} marked as out for delivery`,
   );
 }

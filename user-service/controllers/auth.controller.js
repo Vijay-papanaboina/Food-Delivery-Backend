@@ -155,12 +155,6 @@ export const login = async (req, res) => {
     // Validate domain matches user role (production only)
     const isDomainValid = validateDomainForRole(req, user.role);
     if (!isDomainValid) {
-      logger.warn("Login failed - domain does not match user role", {
-        userId: user.id,
-        email,
-        userRole: user.role,
-        origin: req.headers.origin || req.headers.referer,
-      });
       // Return same error as invalid password to not leak user existence
       return res.status(401).json({
         error: "Invalid email or password",

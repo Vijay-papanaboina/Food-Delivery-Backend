@@ -13,6 +13,7 @@ export const order_svc = pgSchema("order_svc");
 // Define enums within the schema
 export const orderStatusEnum = order_svc.enum("order_status", [
   "pending",
+  "payment_failed",
   "confirmed",
   "preparing",
   "ready",

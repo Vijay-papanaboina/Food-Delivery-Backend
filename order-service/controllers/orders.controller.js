@@ -34,15 +34,23 @@ export const buildCreateOrderController =
       });
 
       // Validate required fields
-      if (!restaurantId || !items || !deliveryAddress) {
+      if (
+        !restaurantId ||
+        !items ||
+        !deliveryAddress ||
+        !customerName ||
+        !customerPhone
+      ) {
         logger.warn("Order creation failed - missing required fields", {
           hasRestaurantId: !!restaurantId,
           hasItems: !!items,
           hasDeliveryAddress: !!deliveryAddress,
+          hasCustomerName: !!customerName,
+          hasCustomerPhone: !!customerPhone,
         });
         return res.status(400).json({
           error:
-            "Missing required fields: restaurantId, items, deliveryAddress",
+            "Missing required fields: restaurantId, items, deliveryAddress, customerName, customerPhone",
         });
       }
 
@@ -83,6 +91,16 @@ export const buildCreateOrderController =
         });
       }
 
+      // Validate customer info data types
+      if (
+        typeof customerName !== "string" ||
+        typeof customerPhone !== "string"
+      ) {
+        return res.status(400).json({
+          error: "customerName and customerPhone must be strings",
+        });
+      }
+
       // Validate deliveryAddress structure
       if (typeof deliveryAddress !== "object" || deliveryAddress === null) {
         return res.status(400).json({
@@ -106,7 +124,7 @@ export const buildCreateOrderController =
       const restaurantServiceUrl =
         process.env.RESTAURANT_SERVICE_URL || "http://localhost:5006";
       const statusResp = await fetch(
-        `${restaurantServiceUrl}/api/restaurant-service/restaurants/${restaurantId}/status`
+        `${restaurantServiceUrl}/api/restaurant-service/restaurants/${restaurantId}/status`,
       );
       if (!statusResp.ok) {
         return res.status(400).json({ error: "Restaurant not found" });
@@ -125,7 +143,7 @@ export const buildCreateOrderController =
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ items }),
-        }
+        },
       );
       if (!validateResp.ok) {
         return res.status(400).json({ error: "Failed to validate menu items" });
@@ -140,12 +158,12 @@ export const buildCreateOrderController =
       const validatedItems = validateJson.items;
       const subtotal = validatedItems.reduce(
         (sum, item) => sum + item.price * item.quantity,
-        0
+        0,
       );
 
       // Fetch restaurant details to get delivery fee
       const restaurantResp = await fetch(
-        `${restaurantServiceUrl}/api/restaurant-service/restaurants/${restaurantId}`
+        `${restaurantServiceUrl}/api/restaurant-service/restaurants/${restaurantId}`,
       );
       if (!restaurantResp.ok) {
         return res.status(400).json({
@@ -158,39 +176,9 @@ export const buildCreateOrderController =
 
       const total = subtotal + deliveryFee;
 
-      // Fetch user profile to get customer name and phone if not provided
-      let finalCustomerName = customerName;
-      let finalCustomerPhone = customerPhone;
-
-      if (!finalCustomerName || !finalCustomerPhone) {
-        try {
-          const userServiceUrl =
-            process.env.USER_SERVICE_URL || "http://localhost:5005";
-          const userResp = await fetch(
-            `${userServiceUrl}/api/user-service/users/${userId}`,
-            {
-              headers: {
-                Authorization: req.headers.authorization, // Pass through JWT token
-              },
-            }
-          );
-
-          if (userResp.ok) {
-            const userData = await userResp.json();
-            finalCustomerName = finalCustomerName || userData.user.name;
-            finalCustomerPhone = finalCustomerPhone || userData.user.phone;
-            logger.info("Fetched customer info from user profile", {
-              userId,
-              name: finalCustomerName,
-              phone: finalCustomerPhone,
-            });
-          }
-        } catch (error) {
-          logger.warn("Failed to fetch user profile, continuing without", {
-            error: error.message,
-          });
-        }
-      }
+      // Frontend must provide complete customer info - no fallback needed
+      const finalCustomerName = customerName;
+      const finalCustomerPhone = customerPhone;
 
       // Use transaction to ensure order and order items are created together
       const createdOrder = await db.transaction(async (tx) => {
@@ -245,7 +233,7 @@ export const buildCreateOrderController =
           total: createdOrder.total,
           createdAt: createdOrder.createdAt,
         },
-        createdOrder.id
+        createdOrder.id,
       );
 
       logger.info("Order created event published", {
@@ -368,7 +356,7 @@ export const updateOrderStatusController = async (req, res) => {
       status,
       paymentStatus,
       confirmedAt,
-      deliveredAt
+      deliveredAt,
     );
 
     logger.info("Order status updated successfully", {

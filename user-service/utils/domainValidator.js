@@ -39,13 +39,37 @@ export const mapDomainToRole = (origin) => {
   const domainRoleMap = {};
 
   if (process.env.CUSTOMER_DOMAIN) {
-    domainRoleMap[process.env.CUSTOMER_DOMAIN] = "customer";
+    try {
+      const customerUrl = new URL(process.env.CUSTOMER_DOMAIN);
+      domainRoleMap[customerUrl.hostname] = "customer";
+    } catch (error) {
+      console.warn(
+        "Failed to parse CUSTOMER_DOMAIN:",
+        process.env.CUSTOMER_DOMAIN
+      );
+    }
   }
   if (process.env.RESTAURANT_DOMAIN) {
-    domainRoleMap[process.env.RESTAURANT_DOMAIN] = "restaurant";
+    try {
+      const restaurantUrl = new URL(process.env.RESTAURANT_DOMAIN);
+      domainRoleMap[restaurantUrl.hostname] = "restaurant";
+    } catch (error) {
+      console.warn(
+        "Failed to parse RESTAURANT_DOMAIN:",
+        process.env.RESTAURANT_DOMAIN
+      );
+    }
   }
   if (process.env.DELIVERY_DOMAIN) {
-    domainRoleMap[process.env.DELIVERY_DOMAIN] = "driver";
+    try {
+      const deliveryUrl = new URL(process.env.DELIVERY_DOMAIN);
+      domainRoleMap[deliveryUrl.hostname] = "driver";
+    } catch (error) {
+      console.warn(
+        "Failed to parse DELIVERY_DOMAIN:",
+        process.env.DELIVERY_DOMAIN
+      );
+    }
   }
 
   try {
@@ -66,7 +90,7 @@ export const mapDomainToRole = (origin) => {
  */
 export const validateDomainForRole = (req, userRole) => {
   // Only validate in production
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV.toLowerCase() !== "production") {
     return true;
   }
 
@@ -85,9 +109,46 @@ export const validateDomainForRole = (req, userRole) => {
   // If origin is not a known food-delivery domain, block in production
   if (!expectedRole) {
     console.error(`Blocked unknown domain in production: ${origin}`);
-    return false;
   }
 
   // Check if domain matches user role
-  return expectedRole === userRole;
+  const isValid = expectedRole === userRole;
+
+  // Extract hostname for logging
+  let hostname = null;
+  try {
+    const url = new URL(origin);
+    hostname = url.hostname;
+  } catch (error) {
+    hostname = origin; // Fallback to origin if parsing fails
+  }
+
+  // Always log validation result
+  if (isValid) {
+    console.log("✅ Domain validation SUCCESS:", {
+      origin: origin,
+      hostname: hostname,
+      userRole: userRole,
+      expectedRole: expectedRole,
+      envVars: {
+        CUSTOMER_DOMAIN: process.env.CUSTOMER_DOMAIN,
+        RESTAURANT_DOMAIN: process.env.RESTAURANT_DOMAIN,
+        DELIVERY_DOMAIN: process.env.DELIVERY_DOMAIN,
+      },
+    });
+  } else {
+    console.error("❌ Domain validation FAILED:", {
+      origin: origin,
+      hostname: hostname,
+      userRole: userRole,
+      expectedRole: expectedRole,
+      envVars: {
+        CUSTOMER_DOMAIN: process.env.CUSTOMER_DOMAIN,
+        RESTAURANT_DOMAIN: process.env.RESTAURANT_DOMAIN,
+        DELIVERY_DOMAIN: process.env.DELIVERY_DOMAIN,
+      },
+    });
+  }
+
+  return isValid;
 };
