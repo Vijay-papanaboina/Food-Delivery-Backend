@@ -158,7 +158,7 @@ export const processPayment = async (req, res) => {
       success_url: STRIPE_CONFIG.successUrl,
       cancel_url: STRIPE_CONFIG.cancelUrl,
       metadata: { orderId, userId },
-      expires_at: Math.floor(Date.now() / 1000) + 5 * 60, // 5 minutes from now
+      expires_at: Math.floor(Date.now() / 1000) + 30 * 60, // 5 minutes from now
     });
 
     // Save pending payment with actual amount from database
