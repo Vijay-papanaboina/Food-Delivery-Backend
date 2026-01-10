@@ -6,6 +6,7 @@ import {
   updateKitchenOrderStatus,
 } from "../repositories/kitchen.repo.js";
 import { publishMessage, TOPICS } from "../config/kafka.js";
+import mongoose from "mongoose";
 
 // Preparation configuration (10 seconds fixed)
 const PREPARATION_CONFIG = {
@@ -27,7 +28,7 @@ export async function handleOrderConfirmed(orderData, producer, serviceName) {
 
   // Create and persist kitchen order record
   const kitchenOrder = {
-    orderId,
+    orderId: new mongoose.Types.ObjectId(orderId),
     restaurantId,
     userId,
     items,
@@ -58,7 +59,7 @@ export async function handleDeliveryPickedUp(eventData, producer, serviceName) {
   const { orderId } = eventData || {};
   if (!orderId) return;
 
-  const order = await getKitchenOrder(orderId);
+  const order = await getKitchenOrder(new mongoose.Types.ObjectId(orderId));
   if (!order) {
     console.log(
       `⚠️ [${serviceName}] Kitchen order ${orderId} not found for delivery-picked-up`
@@ -70,7 +71,7 @@ export async function handleDeliveryPickedUp(eventData, producer, serviceName) {
     return;
   }
 
-  await updateKitchenOrderStatus(orderId, "completed");
+  await updateKitchenOrderStatus(new mongoose.Types.ObjectId(orderId), "completed");
   console.log(
     `✅ [${serviceName}] Order ${orderId} marked as completed (picked up by driver)`
   );
@@ -96,7 +97,7 @@ export async function handleDeliveryCompleted(
  * Mark order as ready and publish food-ready event
  */
 export async function markOrderReady(orderId, producer, serviceName) {
-  const order = await getKitchenOrder(orderId);
+  const order = await getKitchenOrder(new mongoose.Types.ObjectId(orderId));
   if (!order) {
     console.log(`⚠️ [${serviceName}] Kitchen order ${orderId} not found`);
     return;
@@ -126,7 +127,7 @@ export async function markOrderReady(orderId, producer, serviceName) {
 
   // Update status to ready in database with all timestamps
   await updateKitchenOrderStatus(
-    orderId,
+    new mongoose.Types.ObjectId(orderId),
     "ready",
     readyAt,
     startedAt,
@@ -137,6 +138,7 @@ export async function markOrderReady(orderId, producer, serviceName) {
   console.log(`✅ [${serviceName}] Order ${orderId} is ready for delivery!`);
 
   // Fetch restaurant details
+  // Use Mongoose repo
   const { getRestaurant } = await import("../repositories/restaurants.repo.js");
   const restaurant = await getRestaurant(order.restaurantId);
 

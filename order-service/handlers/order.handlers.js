@@ -46,7 +46,7 @@ export async function handlePaymentProcessed(
     };
 
     const orderConfirmedData = {
-      orderId: order.id,
+      orderId: orderId, // Use the orderId from the function argument
       restaurantId: order.restaurantId,
       userId: order.userId,
       items: sanitizedItems,

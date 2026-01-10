@@ -6,7 +6,7 @@ import {
   createProducer,
   createConsumer,
 } from "./config/kafka.js";
-import { initDb } from "./config/db.js";
+import { initDb } from "./config/db.js"; // Updated to use Mongoose
 import { initializeKafka, shutdownKafka } from "./utils/kafka.utils.js";
 
 /**

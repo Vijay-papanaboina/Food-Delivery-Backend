@@ -1,72 +1,50 @@
 import { validationResult } from "express-validator";
 import {
-  getUserById,
-  updateUser,
-  deleteUser,
-  createAddress,
-  getAddressesByUserId,
-  getAddressById,
-  updateAddress,
-  deleteAddress,
-  setDefaultAddress,
-  getDefaultAddress,
-} from "../repositories/user.repo.js";
-import { logger } from "../utils/logger.js";
-// No Kafka events needed for user service
+  getProfileService,
+  getUserByIdService,
+  updateProfileService,
+  deleteProfileService,
+  getAddressesService,
+  addAddressService,
+  updateAddressService,
+  deleteAddressService,
+  setDefaultAddressService,
+} from "../services/user.service.js";
 
 export const getProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
-    logger.info("Getting user profile", { userId });
-
-    const user = await getUserById(userId);
-    if (!user) {
-      return res.status(404).json({
-        error: "User not found",
-      });
-    }
-
-    // Remove password hash from response
-    const { passwordHash: _, ...userResponse } = user;
-
-    // Debug logging
-    console.log("[getProfile] User data from DB:", user);
-    console.log("[getProfile] User response:", userResponse);
+    const user = await getProfileService(userId);
 
     res.json({
       message: "Profile retrieved successfully",
-      user: userResponse,
+      user,
     });
   } catch (error) {
-    console.error("Get profile error:", error);
+    console.error("Get profile error:", error.message);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     res.status(500).json({
       error: "Internal server error",
     });
   }
 };
 
-// Get user by ID (for inter-service communication)
 export const getUserByIdController = async (req, res) => {
   try {
     const { id } = req.params;
-    logger.info("Getting user by ID", { userId: id });
-
-    const user = await getUserById(id);
-    if (!user) {
-      return res.status(404).json({
-        error: "User not found",
-      });
-    }
-
-    // Remove password hash from response
-    const { passwordHash: _, ...userResponse } = user;
+    const user = await getUserByIdService(id);
 
     res.json({
       message: "User retrieved successfully",
-      user: userResponse,
+      user,
     });
   } catch (error) {
-    logger.error("Get user by ID error", { error: error.message });
+    console.error("Get user by ID error:", error.message);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     res.status(500).json({
       error: "Internal server error",
     });
@@ -75,7 +53,6 @@ export const getUserByIdController = async (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    // Check validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -86,29 +63,20 @@ export const updateProfile = async (req, res) => {
 
     const { name, phone } = req.body;
     const updateData = {};
-
     if (name !== undefined) updateData.name = name;
     if (phone !== undefined) updateData.phone = phone;
 
-    const user = await updateUser(req.user.userId, updateData);
-    if (!user) {
-      return res.status(404).json({
-        error: "User not found",
-      });
-    }
-
-    // Publish user updated event AFTER database update
-    // User updated successfully
-
-    // Remove password hash from response
-    const { passwordHash: _, ...userResponse } = user;
+    const user = await updateProfileService(req.user.userId, updateData);
 
     res.json({
       message: "Profile updated successfully",
-      user: userResponse,
+      user,
     });
   } catch (error) {
-    console.error("Update profile error:", error);
+    console.error("Update profile error:", error.message);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     res.status(500).json({
       error: "Internal server error",
     });
@@ -117,33 +85,25 @@ export const updateProfile = async (req, res) => {
 
 export const deleteProfile = async (req, res) => {
   try {
-    const userId = req.user.userId;
-    await deleteUser(userId);
-
-    // Publish user deleted event AFTER database delete
-    // User deleted successfully
-
-    res.json({
-      message: "Account deleted successfully",
-    });
+    const result = await deleteProfileService(req.user.userId);
+    res.json(result);
   } catch (error) {
-    console.error("Delete profile error:", error);
+    console.error("Delete profile error:", error.message);
     res.status(500).json({
       error: "Internal server error",
     });
   }
 };
 
-// Address management
 export const getAddresses = async (req, res) => {
   try {
-    const addresses = await getAddressesByUserId(req.user.userId);
+    const addresses = await getAddressesService(req.user.userId);
     res.json({
       message: "Addresses retrieved successfully",
       addresses,
     });
   } catch (error) {
-    console.error("Get addresses error:", error);
+    console.error("Get addresses error:", error.message);
     res.status(500).json({
       error: "Internal server error",
     });
@@ -152,7 +112,6 @@ export const getAddresses = async (req, res) => {
 
 export const addAddress = async (req, res) => {
   try {
-    // Check validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -161,32 +120,14 @@ export const addAddress = async (req, res) => {
       });
     }
 
-    const { label, street, city, state, zipCode, isDefault } = req.body;
-
-    // If this is being set as default, unset other defaults first
-    if (isDefault) {
-      await setDefaultAddress(null, req.user.userId); // This will unset all defaults
-    }
-
-    const address = await createAddress({
-      userId: req.user.userId,
-      label,
-      street,
-      city,
-      state,
-      zipCode,
-      isDefault: isDefault || false,
-    });
-
-    // Publish address created event AFTER database insert
-    // Address created successfully
+    const address = await addAddressService(req.user.userId, req.body);
 
     res.status(201).json({
       message: "Address added successfully",
       address,
     });
   } catch (error) {
-    console.error("Add address error:", error);
+    console.error("Add address error:", error.message);
     res.status(500).json({
       error: "Internal server error",
     });
@@ -195,7 +136,6 @@ export const addAddress = async (req, res) => {
 
 export const updateAddressById = async (req, res) => {
   try {
-    // Check validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -205,39 +145,17 @@ export const updateAddressById = async (req, res) => {
     }
 
     const { id } = req.params;
-    const { label, street, city, state, zipCode, isDefault } = req.body;
-
-    // Check if address exists and belongs to user
-    const existingAddress = await getAddressById(id, req.user.userId);
-    if (!existingAddress) {
-      return res.status(404).json({
-        error: "Address not found",
-      });
-    }
-
-    // If this is being set as default, unset other defaults first
-    if (isDefault) {
-      await setDefaultAddress(null, req.user.userId); // This will unset all defaults
-    }
-
-    const address = await updateAddress(id, req.user.userId, {
-      label,
-      street,
-      city,
-      state,
-      zipCode,
-      isDefault: isDefault || false,
-    });
-
-    // Publish address updated event AFTER database update
-    // Address updated successfully
+    const address = await updateAddressService(req.user.userId, id, req.body);
 
     res.json({
       message: "Address updated successfully",
       address,
     });
   } catch (error) {
-    console.error("Update address error:", error);
+    console.error("Update address error:", error.message);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     res.status(500).json({
       error: "Internal server error",
     });
@@ -247,25 +165,13 @@ export const updateAddressById = async (req, res) => {
 export const deleteAddressById = async (req, res) => {
   try {
     const { id } = req.params;
-
-    // Check if address exists and belongs to user
-    const existingAddress = await getAddressById(id, req.user.userId);
-    if (!existingAddress) {
-      return res.status(404).json({
-        error: "Address not found",
-      });
-    }
-
-    await deleteAddress(id, req.user.userId);
-
-    // Publish address deleted event AFTER database delete
-    // Address deleted successfully
-
-    res.json({
-      message: "Address deleted successfully",
-    });
+    const result = await deleteAddressService(req.user.userId, id);
+    res.json(result);
   } catch (error) {
-    console.error("Delete address error:", error);
+    console.error("Delete address error:", error.message);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     res.status(500).json({
       error: "Internal server error",
     });
@@ -275,23 +181,17 @@ export const deleteAddressById = async (req, res) => {
 export const setDefaultAddressById = async (req, res) => {
   try {
     const { id } = req.params;
-
-    // Check if address exists and belongs to user
-    const existingAddress = await getAddressById(id, req.user.userId);
-    if (!existingAddress) {
-      return res.status(404).json({
-        error: "Address not found",
-      });
-    }
-
-    const address = await setDefaultAddress(id, req.user.userId);
+    const address = await setDefaultAddressService(req.user.userId, id);
 
     res.json({
       message: "Default address updated successfully",
       address,
     });
   } catch (error) {
-    console.error("Set default address error:", error);
+    console.error("Set default address error:", error.message);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     res.status(500).json({
       error: "Internal server error",
     });

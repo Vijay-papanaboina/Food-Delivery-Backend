@@ -104,22 +104,27 @@ services:
       "
     restart: "no"
 
-  postgres:
-    image: postgres:16
-    container_name: postgres
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
     environment:
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: app
-      POSTGRES_DB: microservices
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
     ports:
-      - "5432:5432"
+      - "27017:27017"
     volumes:
-      - pg-data:/var/lib/postgresql/data
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   kafka-data:
     driver: local
 
-  pg-data:
+  mongo-data:
     driver: local
 
 networks:

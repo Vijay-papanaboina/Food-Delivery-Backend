@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node start-all-services.js",
     "dev": "concurrently \"cd user-service && npm run dev\" \"cd order-service && npm run dev\" \"cd payment-service && npm run dev\" \"cd delivery-service && npm run dev\" \"cd restaurant-service && npm run dev\" \"cd notification-service && npm run dev\"",
-    "install-all": "npm install && cd user-service && npm install && cd .. && cd order-service && npm install && cd .. && cd payment-service && npm install && cd .. && cd delivery-service && npm install && cd .. && cd restaurant-service && npm install && cd .. && cd notification-service && npm install && cd .."
+    "install-all": "npm install && cd user-service && npm install && cd .. && cd order-service && npm install && cd .. && cd payment-service && npm install && cd .. && cd delivery-service && npm install && cd .. && cd restaurant-service && npm install && cd .. && cd notification-service && npm install && cd ..",
+    "seed": "node seed-mongodb.mjs"
   },
   "keywords": [
     "microservices",
@@ -20,5 +21,9 @@
   "license": "ISC",
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "mongoose": "^8.20.0"
   }
 }

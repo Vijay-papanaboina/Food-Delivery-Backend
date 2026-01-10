@@ -1,6 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
-import { db } from "../config/db.js";
-import { orders, orderItems } from "../db/schema.js";
+import { Order } from "../db/schema.js";
 import { logger } from "../utils/logger.js";
 
 export async function upsertOrder(o) {
@@ -12,39 +10,33 @@ export async function upsertOrder(o) {
       status: o.status,
     });
 
-    const [result] = await db
-      .insert(orders)
-      .values({
-        id: o.orderId || o.id, // Use orderId if available, fallback to id
-        restaurantId: o.restaurantId,
-        userId: o.userId,
-        items: o.items,
-        deliveryAddress: o.deliveryAddress,
-        customerName: o.customerName || null,
-        customerPhone: o.customerPhone || null,
-        status: o.status,
-        paymentStatus: o.paymentStatus,
-        total: String(o.total),
-        createdAt: o.createdAt ? new Date(o.createdAt) : undefined,
-        confirmedAt: o.confirmedAt ? new Date(o.confirmedAt) : null,
-        deliveredAt: o.deliveredAt ? new Date(o.deliveredAt) : null,
-      })
-      .onConflictDoUpdate({
-        target: orders.id, // This will now work because id is properly set
-        set: {
-          status: sql`excluded.status`,
-          paymentStatus: sql`excluded.payment_status`,
-          confirmedAt: sql`excluded.confirmed_at`,
-          deliveredAt: sql`excluded.delivered_at`,
+    // Mongoose upsert
+    const result = await Order.findOneAndUpdate(
+      { _id: o.id || o.orderId },
+      {
+        $set: {
+          restaurantId: o.restaurantId,
+          userId: o.userId,
+          items: o.items, // Assuming items structure matches schema
+          deliveryAddress: o.deliveryAddress,
+          customerName: o.customerName,
+          customerPhone: o.customerPhone,
+          status: o.status,
+          paymentStatus: o.paymentStatus,
+          total: o.total,
+          createdAt: o.createdAt ? new Date(o.createdAt) : undefined,
+          confirmedAt: o.confirmedAt ? new Date(o.confirmedAt) : undefined,
+          deliveredAt: o.deliveredAt ? new Date(o.deliveredAt) : undefined,
         },
-      })
-      .returning();
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
 
     logger.info("Order upserted successfully", {
-      orderId: o.id,
+      orderId: result._id,
     });
 
-    return result;
+    return result.toObject();
   } catch (error) {
     logger.error("Failed to upsert order", {
       orderId: o.id,
@@ -55,11 +47,9 @@ export async function upsertOrder(o) {
 }
 
 export async function getOrder(orderId) {
-  // Use the new getOrderWithItems function since we need items
   return await getOrderWithItems(orderId);
 }
 
-// Simple update function for order status changes
 export async function updateOrderStatus(
   orderId,
   status,
@@ -73,11 +63,11 @@ export async function updateOrderStatus(
     if (confirmedAt !== null) updateData.confirmedAt = new Date(confirmedAt);
     if (deliveredAt !== null) updateData.deliveredAt = new Date(deliveredAt);
 
-    const [result] = await db
-      .update(orders)
-      .set(updateData)
-      .where(eq(orders.id, orderId))
-      .returning();
+    const result = await Order.findByIdAndUpdate(
+      orderId,
+      { $set: updateData },
+      { new: true }
+    );
 
     logger.info("Order status updated successfully", {
       orderId,
@@ -85,7 +75,7 @@ export async function updateOrderStatus(
       paymentStatus,
     });
 
-    return result;
+    return result.toObject();
   } catch (error) {
     logger.error("Failed to update order status", {
       orderId,
@@ -95,73 +85,13 @@ export async function updateOrderStatus(
   }
 }
 
-// Get order with items - joins orders + order_items tables
 export async function getOrderWithItems(orderId) {
   try {
-    // Get order details
-    const orderRows = await db
-      .select({
-        order_id: orders.id,
-        restaurant_id: orders.restaurantId,
-        user_id: orders.userId,
-        delivery_address_json: orders.deliveryAddress,
-        customer_name: orders.customerName,
-        customer_phone: orders.customerPhone,
-        status: orders.status,
-        payment_status: orders.paymentStatus,
-        total: orders.total,
-        created_at: orders.createdAt,
-        confirmed_at: orders.confirmedAt,
-        delivered_at: orders.deliveredAt,
-      })
-      .from(orders)
-      .where(eq(orders.id, orderId))
-      .limit(1);
+    const order = await Order.findById(orderId);
 
-    if (!orderRows[0]) return null;
-    const orderRow = orderRows[0];
+    if (!order) return null;
 
-    // Get order items
-    const itemRows = await db
-      .select({
-        item_id: orderItems.itemId,
-        quantity: orderItems.quantity,
-        price: orderItems.price,
-      })
-      .from(orderItems)
-      .where(eq(orderItems.orderId, orderId));
-
-    // Transform to match frontend expectations
-    const order = {
-      orderId: orderRow.order_id,
-      id: orderRow.order_id,
-      restaurantId: orderRow.restaurant_id,
-      userId: orderRow.user_id,
-      items: itemRows.map((item) => ({
-        itemId: item.item_id,
-        quantity: item.quantity,
-        price: parseFloat(item.price),
-      })),
-      deliveryAddress:
-        typeof orderRow.delivery_address_json === "string"
-          ? JSON.parse(orderRow.delivery_address_json)
-          : orderRow.delivery_address_json,
-      customerName: orderRow.customer_name,
-      customerPhone: orderRow.customer_phone,
-      status: orderRow.status,
-      paymentStatus: orderRow.payment_status,
-      total: parseFloat(orderRow.total),
-      createdAt: orderRow.created_at,
-      confirmedAt: orderRow.confirmed_at,
-      deliveredAt: orderRow.delivered_at,
-    };
-
-    logger.info("Order with items retrieved successfully", {
-      orderId,
-      itemsCount: order.items.length,
-    });
-
-    return order;
+    return order.toObject();
   } catch (error) {
     logger.error("Failed to get order with items", {
       orderId,
@@ -171,7 +101,6 @@ export async function getOrderWithItems(orderId) {
   }
 }
 
-// Insert order items into order_items table
 export async function insertOrderItems(orderId, items) {
   try {
     if (!items || items.length === 0) {
@@ -179,24 +108,30 @@ export async function insertOrderItems(orderId, items) {
       return [];
     }
 
-    const orderItemsData = items.map((item) => ({
-      orderId: orderId,
-      itemId: item.id || item.itemId, // Support both formats
+    // In Mongoose, items are embedded, so we update the order
+    // This function might be redundant if upsertOrder handles items, 
+    // but keeping it for compatibility with controller logic if it calls this separately.
+    // However, usually insertOrderItems was for SQL relational insert.
+    // If the controller calls this AFTER creating the order, we should update the order.
+    
+    const formattedItems = items.map((item) => ({
+      itemId: item.id || item.itemId,
       quantity: item.quantity,
-      price: String(item.price), // Convert to string for numeric field
+      price: item.price,
     }));
 
-    const insertedItems = await db
-      .insert(orderItems)
-      .values(orderItemsData)
-      .returning();
+    const result = await Order.findByIdAndUpdate(
+      orderId,
+      { $push: { items: { $each: formattedItems } } },
+      { new: true }
+    );
 
     logger.info("Order items inserted successfully", {
       orderId,
-      itemsCount: insertedItems.length,
+      itemsCount: items.length,
     });
 
-    return insertedItems;
+    return result.items.map(item => item.toObject());
   } catch (error) {
     logger.error("Failed to insert order items", {
       orderId,

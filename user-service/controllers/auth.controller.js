@@ -1,15 +1,19 @@
-import bcrypt from "bcrypt";
 import { validationResult } from "express-validator";
-import { createUser, getUserByEmail } from "../repositories/user.repo.js";
-import { generateTokens } from "../config/jwt.js";
+import {
+  signupService,
+  loginService,
+  refreshTokenService,
+  validateTokenService,
+} from "../services/auth.service.js";
 import { logger } from "../utils/logger.js";
-import { validateDomainForRole } from "../utils/domainValidator.js";
-
-// No Kafka events needed for user service
+import {
+  validateDomainForRole,
+  extractOrigin,
+  mapDomainToRole,
+} from "../utils/domainValidator.js";
 
 export const signup = async (req, res) => {
   try {
-    // Check validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       logger.warn("Signup validation failed", {
@@ -21,57 +25,10 @@ export const signup = async (req, res) => {
       });
     }
 
-    const { name, email, phone, password } = req.body;
+    const result = await signupService(req.body);
 
-    logger.info("User signup attempt", {
-      email,
-      name,
-      hasPhone: !!phone,
-    });
-
-    // Check if user already exists
-    const existingUser = await getUserByEmail(email);
-    if (existingUser) {
-      logger.warn("Signup failed - user already exists", {
-        email,
-      });
-      return res.status(409).json({
-        error: "User already exists with this email",
-      });
-    }
-
-    // Hash password
-    const saltRounds = 12;
-    const passwordHash = await bcrypt.hash(password, saltRounds);
-
-    // Create user (let database generate userId)
-    const user = await createUser({
-      name,
-      email,
-      phone,
-      passwordHash,
-    });
-
-    // Generate tokens (minimal payload)
-    const { accessToken, refreshToken } = generateTokens({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    });
-
-    logger.info("User signup successful", {
-      userId: user.id,
-      email: user.email,
-    });
-
-    // Publish user created event AFTER database insert
-    // User created successfully
-
-    // Remove password hash from response
-    const { passwordHash: _, ...userResponse } = user;
-
-    // Set refresh token in HTTP-only cookie
-    res.cookie("refreshToken", refreshToken, {
+    // Set refresh token in HTTP-only cookie (Always customer for signup)
+    res.cookie("refreshToken_customer", result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
@@ -79,17 +36,18 @@ export const signup = async (req, res) => {
     });
 
     res.status(201).json({
-      message: "User created successfully",
-      user: userResponse,
-      accessToken,
+      message: result.message,
+      user: result.user,
+      accessToken: result.accessToken,
     });
   } catch (error) {
     logger.error("Signup failed", {
       error: error.message,
-      stack: error.stack,
       email: req.body?.email,
     });
-    console.error("Signup error:", error);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     res.status(500).json({
       error: "Internal server error",
     });
@@ -98,7 +56,6 @@ export const signup = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    // Check validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       logger.warn("Login validation failed", {
@@ -111,88 +68,21 @@ export const login = async (req, res) => {
     }
 
     const { email, password } = req.body;
-    const { role: requiredRole } = req.params; // Get role from URL parameter
+    const { role: requiredRole } = req.params;
 
-    logger.info("User login attempt", {
-      email,
-      requiredRole: requiredRole || "any",
-    });
-
-    // Get user by email
-    const user = await getUserByEmail(email);
-    if (!user) {
-      logger.warn("Login failed - user not found", {
-        email,
-      });
-      return res.status(401).json({
-        error: "Invalid email or password",
-      });
-    }
-
-    // Check if user is active
-    if (!user.isActive) {
-      logger.warn("Login failed - account deactivated", {
-        userId: user.id,
-        email,
-      });
-      return res.status(401).json({
-        error: "Account is deactivated",
-      });
-    }
-
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
-    if (!isValidPassword) {
-      logger.warn("Login failed - invalid password", {
-        userId: user.id,
-        email,
-      });
-      return res.status(401).json({
-        error: "Invalid email or password",
-      });
-    }
+    const result = await loginService(email, password, requiredRole);
 
     // Validate domain matches user role (production only)
-    const isDomainValid = validateDomainForRole(req, user.role);
+    const isDomainValid = validateDomainForRole(req, result.user.role);
     if (!isDomainValid) {
-      // Return same error as invalid password to not leak user existence
       return res.status(401).json({
         error: "Invalid email or password",
       });
     }
 
-    // Check role if required
-    if (requiredRole && user.role !== requiredRole) {
-      logger.warn("Login failed - role mismatch", {
-        userId: user.id,
-        email,
-        userRole: user.role,
-        requiredRole,
-      });
-      return res.status(403).json({
-        error: `Access denied. This login is restricted to ${requiredRole} users only.`,
-      });
-    }
-
-    // Generate tokens (minimal payload)
-    const { accessToken, refreshToken } = generateTokens({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    });
-
-    logger.info("User login successful", {
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      requiredRole: requiredRole || "any",
-    });
-
-    // Remove password hash from response
-    const { passwordHash: _, ...userResponse } = user;
-
-    // Set refresh token in HTTP-only cookie
-    res.cookie("refreshToken", refreshToken, {
+    // Set refresh token in HTTP-only cookie with role-specific name
+    const cookieName = `refreshToken_${result.user.role}`;
+    res.cookie(cookieName, result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
@@ -200,12 +90,15 @@ export const login = async (req, res) => {
     });
 
     res.json({
-      message: "Login successful",
-      user: userResponse,
-      accessToken,
+      message: result.message,
+      user: result.user,
+      accessToken: result.accessToken,
     });
   } catch (error) {
-    console.error("Login error:", error);
+    logger.error("Login error", { error: error.message });
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     res.status(500).json({
       error: "Internal server error",
     });
@@ -214,69 +107,50 @@ export const login = async (req, res) => {
 
 export const refreshToken = async (req, res) => {
   try {
-    const refreshToken = req.cookies.refreshToken;
-
-    if (!refreshToken) {
-      console.log("No refresh token found in cookies");
-      return res.status(401).json({
-        error: "Refresh token required",
-      });
+    // Determine which cookie to read based on the domain
+    const origin = extractOrigin(req);
+    const expectedRole = mapDomainToRole(origin);
+    
+    if (!expectedRole) {
+      logger.warn(`Refresh request from unknown origin: ${origin}`);
+      return res.status(401).json({ error: "Unauthorized origin" });
     }
 
-    // Verify refresh token
-    const { verifyToken } = await import("../config/jwt.js");
-    const decoded = verifyToken(refreshToken, true);
+    const cookieName = `refreshToken_${expectedRole}`;
+    const token = req.cookies[cookieName];
 
-    // Get fresh user data from database
-    const { getUserById } = await import("../repositories/user.repo.js");
-    const user = await getUserById(decoded.userId);
-
-    if (!user) {
-      logger.warn("User not found during token refresh", {
-        userId: decoded.userId,
-      });
-      return res.status(401).json({
-        error: "User not found",
-      });
+    if (!token) {
+      return res.status(401).json({ error: "No refresh token found" });
     }
 
-    // Validate domain matches user role (production only)
-    const isDomainValid = validateDomainForRole(req, user.role);
+    const result = await refreshTokenService(token);
+    
+    // Validate domain matches user role
+    const isDomainValid = validateDomainForRole(req, result.user.role);
     if (!isDomainValid) {
-      logger.warn("Token refresh failed - domain does not match user role", {
-        userId: user.id,
-        userRole: user.role,
-        origin: req.headers.origin || req.headers.referer,
-      });
-      return res.status(401).json({
-        error: "Unauthorized",
+      logger.warn("Token refresh failed - domain does not match user role");
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error("Refresh token error:", error.message);
+    
+    // Clear the cookie we tried to use
+    const origin = extractOrigin(req);
+    const expectedRole = mapDomainToRole(origin);
+    if (expectedRole) {
+      const cookieName = `refreshToken_${expectedRole}`;
+      res.clearCookie(cookieName, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
       });
     }
 
-    // Generate new access token only (keep same refresh token)
-    const { generateTokens } = await import("../config/jwt.js");
-    const { accessToken } = generateTokens({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    });
-
-    // Remove password hash from user response
-    const { passwordHash: _, ...userResponse } = user;
-
-    res.json({
-      message: "Token refreshed successfully",
-      accessToken,
-      user: userResponse,
-    });
-  } catch (error) {
-    console.error("Refresh token error:", error);
-    // Clear the invalid refresh token cookie
-    res.clearCookie("refreshToken", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     res.status(401).json({
       error: "Invalid refresh token",
     });
@@ -285,38 +159,19 @@ export const refreshToken = async (req, res) => {
 
 export const validateToken = async (req, res) => {
   try {
-    // Get fresh user data from database (req.user only has JWT payload)
-    const { getUserById } = await import("../repositories/user.repo.js");
-    const user = await getUserById(req.user.userId);
+    const result = await validateTokenService(req.user.userId);
 
-    if (!user) {
-      return res.status(401).json({
-        error: "User not found",
-      });
-    }
-
-    // Validate domain matches user role (production only)
-    const isDomainValid = validateDomainForRole(req, user.role);
+    const isDomainValid = validateDomainForRole(req, result.user.role);
     if (!isDomainValid) {
-      logger.warn("Token validation failed - domain does not match user role", {
-        userId: user.id,
-        userRole: user.role,
-        origin: req.headers.origin || req.headers.referer,
-      });
-      return res.status(401).json({
-        error: "Unauthorized",
-      });
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    // Remove password hash from user response
-    const { passwordHash: _, ...userResponse } = user;
-
-    res.json({
-      message: "Token is valid",
-      user: userResponse,
-    });
+    res.json(result);
   } catch (error) {
-    console.error("Token validation error:", error);
+    console.error("Token validation error:", error.message);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     res.status(500).json({
       error: "Internal server error",
     });
@@ -330,16 +185,23 @@ export const logout = async (req, res) => {
       email: req.user?.email,
     });
 
-    // Clear the refresh token cookie
-    res.clearCookie("refreshToken", {
+    // Clear cookie based on role (if known) or Origin
+    let cookieName = "refreshToken"; // Default fallback
+    
+    if (req.user?.role) {
+      cookieName = `refreshToken_${req.user.role}`;
+    } else {
+      const origin = extractOrigin(req);
+      const role = mapDomainToRole(origin);
+      if (role) {
+        cookieName = `refreshToken_${role}`;
+      }
+    }
+
+    res.clearCookie(cookieName, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-    });
-
-    logger.info("User logout successful", {
-      userId: req.user?.userId,
-      email: req.user?.email,
     });
 
     res.json({

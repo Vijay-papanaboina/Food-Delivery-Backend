@@ -1,9 +1,7 @@
-import dotenv from "dotenv";
-dotenv.config({ silent: true });
-
+import "dotenv/config";
 import createApp from "./app.js";
 import { createProducer, createConsumer } from "./config/kafka.js";
-import { initDb } from "./config/db.js";
+import { initDb } from "./config/db.js"; // Updated to use Mongoose
 import { initializeKafka, shutdownKafka } from "./utils/kafka.utils.js";
 
 /**

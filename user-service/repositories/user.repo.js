@@ -1,100 +1,113 @@
-import { eq, and } from "drizzle-orm";
-import { db } from "../config/db.js";
-import { users, userAddresses } from "../db/schema.js";
+import { User } from "../db/schema.js";
 
+// User operations
 export const createUser = async (userData) => {
-  const [user] = await db.insert(users).values(userData).returning();
-  return user;
+  const user = new User(userData);
+  await user.save();
+  return user.toObject();
 };
 
 export const getUserByEmail = async (email) => {
-  const [user] = await db.select().from(users).where(eq(users.email, email));
-  return user;
+  return await User.findOne({ email });
 };
 
 export const getUserById = async (id) => {
-  const [user] = await db.select().from(users).where(eq(users.id, id));
-  return user;
+  return await User.findById(id).lean();
 };
 
 export const updateUser = async (id, userData) => {
-  const [user] = await db
-    .update(users)
-    .set({ ...userData, updatedAt: new Date() })
-    .where(eq(users.id, id))
-    .returning();
-  return user;
+  return await User.findByIdAndUpdate(
+    id,
+    { $set: userData },
+    { new: true, runValidators: true }
+  ).lean();
 };
 
 export const deleteUser = async (id) => {
-  await db.delete(users).where(eq(users.id, id));
+  await User.findByIdAndDelete(id);
   return true;
 };
 
-// Address operations
-export const createAddress = async (addressData) => {
-  const [address] = await db
-    .insert(userAddresses)
-    .values(addressData)
-    .returning();
-  return address;
+// Address operations (embedded in user document)
+export const createAddress = async (userId, addressData) => {
+  const user = await User.findById(userId);
+  if (!user) throw new Error("User not found");
+  
+  user.addresses.push(addressData);
+  await user.save();
+  
+  return user.addresses[user.addresses.length - 1].toObject();
 };
 
 export const getAddressesByUserId = async (userId) => {
-  return await db
-    .select()
-    .from(userAddresses)
-    .where(eq(userAddresses.userId, userId))
-    .orderBy(userAddresses.isDefault, userAddresses.createdAt);
+  const user = await User.findById(userId).select("addresses");
+  if (!user) return [];
+  
+  // Sort by isDefault (true first), then by createdAt
+  return user.addresses.sort((a, b) => {
+    if (a.isDefault === b.isDefault) {
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    }
+    return b.isDefault - a.isDefault;
+  });
 };
 
-export const getAddressById = async (id, userId) => {
-  const [address] = await db
-    .select()
-    .from(userAddresses)
-    .where(and(eq(userAddresses.id, id), eq(userAddresses.userId, userId)));
-  return address;
+export const getAddressById = async (addressId, userId) => {
+  const user = await User.findById(userId);
+  if (!user) return null;
+  
+  return user.addresses.id(addressId);
 };
 
-export const updateAddress = async (id, userId, addressData) => {
-  const [address] = await db
-    .update(userAddresses)
-    .set({ ...addressData, updatedAt: new Date() })
-    .where(and(eq(userAddresses.id, id), eq(userAddresses.userId, userId)))
-    .returning();
-  return address;
+export const updateAddress = async (addressId, userId, addressData) => {
+  const user = await User.findById(userId);
+  if (!user) throw new Error("User not found");
+  
+  const address = user.addresses.id(addressId);
+  if (!address) throw new Error("Address not found");
+  
+  Object.assign(address, addressData);
+  await user.save();
+  
+  return address.toObject();
 };
 
-export const deleteAddress = async (id, userId) => {
-  await db
-    .delete(userAddresses)
-    .where(and(eq(userAddresses.id, id), eq(userAddresses.userId, userId)));
+export const deleteAddress = async (addressId, userId) => {
+  const user = await User.findById(userId);
+  if (!user) throw new Error("User not found");
+  
+  user.addresses.pull(addressId);
+  await user.save();
+  
   return true;
 };
 
-export const setDefaultAddress = async (id, userId) => {
-  // First, unset all default addresses for this user
-  await db
-    .update(userAddresses)
-    .set({ isDefault: false, updatedAt: new Date() })
-    .where(eq(userAddresses.userId, userId));
-
-  // Then set the specified address as default
-  const [address] = await db
-    .update(userAddresses)
-    .set({ isDefault: true, updatedAt: new Date() })
-    .where(and(eq(userAddresses.id, id), eq(userAddresses.userId, userId)))
-    .returning();
-
-  return address;
+export const setDefaultAddress = async (addressId, userId) => {
+  const user = await User.findById(userId);
+  if (!user) throw new Error("User not found");
+  
+  // Unset all default addresses
+  user.addresses.forEach((addr) => {
+    addr.isDefault = false;
+  });
+  
+  // Set the specified address as default if provided
+  if (addressId) {
+    const address = user.addresses.id(addressId);
+    if (!address) throw new Error("Address not found");
+    
+    address.isDefault = true;
+    await user.save();
+    return address.toObject();
+  }
+  
+  await user.save();
+  return null;
 };
 
 export const getDefaultAddress = async (userId) => {
-  const [address] = await db
-    .select()
-    .from(userAddresses)
-    .where(
-      and(eq(userAddresses.userId, userId), eq(userAddresses.isDefault, true))
-    );
-  return address;
+  const user = await User.findById(userId).select("addresses");
+  if (!user) return null;
+  
+  return user.addresses.find((addr) => addr.isDefault);
 };

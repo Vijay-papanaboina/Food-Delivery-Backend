@@ -14,7 +14,7 @@ export default function cartRoutes(serviceName) {
   // Cart validation middleware
   const validateCart = [
     body("items").isArray().withMessage("Items must be an array"),
-    body("items.*.itemId").isUUID().withMessage("Item ID must be a valid UUID"),
+    body("items.*.itemId").isMongoId().withMessage("Item ID must be a valid MongoDB ObjectId"),
     body("items.*.quantity")
       .isInt({ min: 1 })
       .withMessage("Item quantity must be at least 1"),

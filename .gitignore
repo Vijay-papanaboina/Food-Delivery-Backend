@@ -201,7 +201,6 @@ dist
 .pnp.*
 
 # Docker
-.dockerignore
 docker-compose.override.yml
 .docker/
 
@@ -289,7 +288,6 @@ coverage/
 # Rush
 common/temp/
 .cursorignore
-*/drizzle/*
 insert-mock-data.ps1
 start-all-services.ps1
 migrate.ps1

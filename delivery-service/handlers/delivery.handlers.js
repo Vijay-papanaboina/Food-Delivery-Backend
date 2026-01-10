@@ -1,7 +1,4 @@
 // Removed uuid import - using database-generated IDs now
-import { eq, sql } from "drizzle-orm";
-import { db } from "../config/db.js";
-import { drivers } from "../db/schema.js";
 import {
   upsertDriver,
   getDriver,
@@ -66,7 +63,7 @@ export async function assignDelivery(
       driverName: driver.name,
       driverPhone: driver.phone,
       vehicle: driver.vehicle,
-      licensePlate: driver.license_plate,
+      licensePlate: driver.licensePlate,
     });
 
     // Mark driver as unavailable
@@ -75,11 +72,11 @@ export async function assignDelivery(
       name: driver.name,
       phone: driver.phone,
       vehicle: driver.vehicle,
-      licensePlate: driver.license_plate,
+      licensePlate: driver.licensePlate,
       isAvailable: false,
-      currentLocation: driver.current_location,
+      currentLocation: driver.currentLocation,
       rating: driver.rating,
-      totalDeliveries: driver.total_deliveries,
+      totalDeliveries: driver.totalDeliveries,
       updatedAt: assignedAt,
     });
 
@@ -88,7 +85,7 @@ export async function assignDelivery(
       producer,
       TOPICS.DELIVERY_ASSIGNED,
       {
-        deliveryId: createdDelivery.id,
+        deliveryId: createdDelivery.deliveryId,
         orderId,
         driverId,
         assignedAt,
@@ -98,10 +95,10 @@ export async function assignDelivery(
     );
 
     console.log(
-      `✅ [${serviceName}] Delivery ${createdDelivery.id} assigned to driver ${driverId} for order ${orderId}`
+      `✅ [${serviceName}] Delivery ${createdDelivery.deliveryId} assigned to driver ${driverId} for order ${orderId}`
     );
 
-    return createdDelivery.id; // Return the deliveryId for use in pickup
+    return createdDelivery.deliveryId; // Return the deliveryId for use in pickup
   } catch (error) {
     console.error(
       `❌ [${serviceName}] Error assigning delivery:`,
@@ -199,16 +196,16 @@ export async function completeDelivery(
       return;
     }
 
-    const incrementedTotal = (existingDriver?.total_deliveries || 0) + 1;
+    const incrementedTotal = (existingDriver?.totalDeliveries || 0) + 1;
     await upsertDriver({
       driverId: existingDriver.id, // driver.id now equals user.id
       name: existingDriver?.name,
       phone: existingDriver?.phone,
       vehicle: existingDriver?.vehicle,
-      licensePlate: existingDriver?.license_plate,
+      licensePlate: existingDriver?.licensePlate,
       isAvailable: true,
-      currentLocation: existingDriver?.current_location, // Preserve existing location
-      rating: existingDriver?.rating || "0.0",
+      currentLocation: existingDriver?.currentLocation, // Preserve existing location
+      rating: existingDriver?.rating || 0.0,
       totalDeliveries: incrementedTotal,
       updatedAt: new Date().toISOString(),
     });
@@ -271,21 +268,8 @@ export async function autoAssignDriver(orderData, producer, serviceName) {
     }
 
     // Get all available drivers (not currently on delivery)
-    const availableDrivers = await db
-      .select({
-        driverId: drivers.id, // driver.id now equals user.id
-        name: drivers.name,
-        phone: drivers.phone,
-        vehicle: drivers.vehicle,
-        licensePlate: drivers.licensePlate,
-        isAvailable: drivers.isAvailable,
-        currentLocationLat: drivers.currentLocationLat,
-        currentLocationLng: drivers.currentLocationLng,
-        rating: drivers.rating,
-        totalDeliveries: drivers.totalDeliveries,
-      })
-      .from(drivers)
-      .where(eq(drivers.isAvailable, true));
+    // Mongoose repo returns camelCase
+    const availableDrivers = await import("../repositories/drivers.repo.js").then(m => m.getDrivers({ isAvailable: true }));
 
     console.log(
       `📊 [${serviceName}] Found ${availableDrivers.length} available drivers`
@@ -316,7 +300,7 @@ export async function autoAssignDriver(orderData, producer, serviceName) {
 
     console.log(`🚗 [${serviceName}] Driver selected for auto-assignment`, {
       orderId,
-      driverId: selectedDriver.driverId,
+      driverId: selectedDriver.id,
       driverName: selectedDriver.name,
       rating: selectedDriver.rating,
       totalDeliveries: selectedDriver.totalDeliveries,
@@ -334,7 +318,7 @@ export async function autoAssignDriver(orderData, producer, serviceName) {
     // Create delivery record
     const delivery = await createDelivery({
       orderId,
-      driverId: selectedDriver.driverId,
+      driverId: selectedDriver.id,
       restaurantId,
       userId: orderData.userId,
       deliveryAddress,
@@ -348,19 +332,19 @@ export async function autoAssignDriver(orderData, producer, serviceName) {
     });
 
     // Update driver availability to false
-    await updateDriverAvailability(selectedDriver.driverId, false);
+    await updateDriverAvailability(selectedDriver.id, false);
 
     // Increment driver's delivery count
-    await incrementDriverDeliveries(selectedDriver.driverId);
+    await incrementDriverDeliveries(selectedDriver.id);
 
     // Publish delivery assigned event
     await publishMessage(
       producer,
       TOPICS.DELIVERY_ASSIGNED,
       {
-        deliveryId: delivery.deliveryId,
+        deliveryId: delivery.id,
         orderId,
-        driverId: selectedDriver.driverId,
+        driverId: selectedDriver.id,
         assignedAt: delivery.assignedAt,
         estimatedDeliveryTime: estimatedDeliveryTime,
       },
@@ -369,14 +353,14 @@ export async function autoAssignDriver(orderData, producer, serviceName) {
 
     console.log(`✅ [${serviceName}] Driver auto-assigned successfully`, {
       orderId,
-      deliveryId: delivery.deliveryId,
-      driverId: selectedDriver.driverId,
+      deliveryId: delivery.id,
+      driverId: selectedDriver.id,
       driverName: selectedDriver.name,
     });
 
     return {
-      deliveryId: delivery.deliveryId,
-      driverId: selectedDriver.driverId,
+      deliveryId: delivery.id,
+      driverId: selectedDriver.id,
       driverName: selectedDriver.name,
       driverPhone: selectedDriver.phone,
       vehicle: selectedDriver.vehicle,
@@ -423,13 +407,21 @@ function selectBestDriver(availableDrivers) {
  */
 async function incrementDriverDeliveries(driverId) {
   try {
-    await db
-      .update(drivers)
-      .set({
-        totalDeliveries: sql`${drivers.totalDeliveries} + 1`,
+    const driver = await getDriver(driverId);
+    if (driver) {
+      await upsertDriver({
+        driverId: driver.id,
+        name: driver.name,
+        phone: driver.phone,
+        vehicle: driver.vehicle,
+        licensePlate: driver.licensePlate,
+        isAvailable: driver.isAvailable,
+        currentLocation: driver.currentLocation,
+        rating: driver.rating,
+        totalDeliveries: (driver.totalDeliveries || 0) + 1,
         updatedAt: new Date(),
-      })
-      .where(eq(drivers.id, driverId));
+      });
+    }
 
     console.log(`🚗 [delivery-service] Driver deliveries count incremented`, {
       driverId,
@@ -472,7 +464,7 @@ export async function handleFoodReady(orderData, producer, serviceName) {
       items,
       total,
       deliveryAddress,
-      restaurant,
+      restaurant, // Destructure restaurant from orderData
       customer,
     } = orderData;
 
@@ -515,7 +507,7 @@ export async function handleFoodReady(orderData, producer, serviceName) {
     await enrichDeliveryWithOrderDetails(assignedDriver.deliveryId, {
       restaurantId,
       restaurantName: restaurant?.name || null,
-      restaurantAddress: restaurant?.address || null,
+      restaurantAddress: restaurant?.address || null, // Pass restaurant.address
       restaurantPhone: restaurant?.phone || null,
       customerName: customer?.name || null,
       customerPhone: customer?.phone || null,

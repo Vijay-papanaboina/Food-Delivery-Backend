@@ -1,58 +1,107 @@
-import {
-  pgSchema,
-  text,
-  timestamp,
-  boolean,
-  uuid,
-  jsonb,
-  numeric,
-  integer,
-} from "drizzle-orm/pg-core";
+import mongoose from "mongoose";
 
-export const user_svc = pgSchema("user_svc");
+const addressSchema = new mongoose.Schema(
+  {
+    label: { type: String, required: true },
+    street: { type: String, required: true },
+    city: { type: String, required: true },
+    state: { type: String, required: true },
+    zipCode: { type: String, required: true },
+    isDefault: { type: Boolean, default: false },
+  },
+  {
+    toJSON: {
+      virtuals: true,
+      versionKey: false,
+      transform: function (doc, ret) {
+        delete ret._id;
+      }
+    },
+    toObject: {
+      virtuals: true,
+      versionKey: false,
+      transform: function (doc, ret) {
+        delete ret._id;
+      }
+    }
+  }
+);
 
-export const users = user_svc.table("users", {
-  id: uuid("id").primaryKey().defaultRandom().notNull(),
-  email: text("email").notNull().unique(),
-  passwordHash: text("password_hash").notNull(),
-  name: text("name").notNull(),
-  phone: text("phone"),
-  role: text("role").notNull().default("customer"),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
+// Virtual property for address ID
+addressSchema.virtual('id').get(function() {
+  return this._id;
 });
 
-export const userAddresses = user_svc.table("user_addresses", {
-  id: uuid("id").primaryKey().defaultRandom().notNull(),
-  userId: uuid("user_id").notNull(),
-  label: text("label").notNull(),
-  street: text("street").notNull(),
-  city: text("city").notNull(),
-  state: text("state").notNull(),
-  zipCode: text("zip_code").notNull(),
-  isDefault: boolean("is_default").default(false),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
+const cartItemSchema = new mongoose.Schema(
+  {
+    itemId: { type: mongoose.Schema.Types.ObjectId, required: true }, // Reference to MenuItem in restaurant-service
+    quantity: { type: Number, required: true, min: 1 },
+  },
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      versionKey: false,
+      transform: function (doc, ret) {
+        delete ret._id;
+      }
+    },
+    toObject: {
+      virtuals: true,
+      versionKey: false,
+      transform: function (doc, ret) {
+        delete ret._id;
+      }
+    }
+  },
+);
+
+// Virtual property for cartItem ID
+cartItemSchema.virtual('id').get(function() {
+  return this._id;
 });
 
-export const cartItems = user_svc.table("cart_items", {
-  id: uuid("id").primaryKey().defaultRandom().notNull(),
-  userId: uuid("user_id").notNull(),
-  itemId: uuid("item_id").notNull(),
-  quantity: integer("quantity").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
+const userSchema = new mongoose.Schema(
+  {
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    passwordHash: { type: String, required: true },
+    name: { type: String, required: true, trim: true },
+    phone: { type: String, unique:true, trim: true },
+    role: {
+      type: String,
+      required: true,
+      default: "customer",
+      enum: ["customer", "admin", "driver", "restaurant"],
+    },
+    isActive: { type: Boolean, default: true },
+    addresses: [addressSchema],
+    cart: [cartItemSchema],
+  },
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      versionKey: false,
+      transform: function (doc, ret) {
+        delete ret._id;
+      }
+    },
+    toObject: {
+      virtuals: true,
+      versionKey: false,
+      transform: function (doc, ret) {
+        delete ret._id;
+      }
+    }
+  },
+);
+
+// Virtual property for user ID
+userSchema.virtual('id').get(function() {
+  return this._id;
 });
+
+
+// Export only the User model (Address and CartItem are embedded subdocuments)
+export const User = mongoose.model("User", userSchema);
+export { userSchema };

@@ -1,33 +1,51 @@
-import { pgSchema, text, timestamp, numeric, uuid } from "drizzle-orm/pg-core";
+import mongoose from "mongoose";
 
-export const payment_svc = pgSchema("payment_svc");
+const paymentStatusEnum = ["pending", "processing", "success", "failed", "refunded"];
+const paymentMethodEnum = ["card", "wallet", "bank_transfer"];
 
-// Define enums within the schema
-export const paymentStatusEnum = payment_svc.enum("payment_status", [
-  "pending",
-  "processing",
-  "success",
-  "failed",
-  "refunded",
-]);
+const paymentSchema = new mongoose.Schema(
+  {
+    orderId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true }, // References Order
+    amount: { type: Number, required: true, min: 0 },
+    method: {
+      type: String,
+      required: true,
+      enum: paymentMethodEnum,
+    },
+    userId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true }, // References User
+    status: {
+      type: String,
+      required: true,
+      enum: paymentStatusEnum,
+      default: "pending",
+      index: true,
+    },
+    transactionId: { type: String },
+    failureReason: { type: String },
+    processedAt: { type: Date },
+  },
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      versionKey: false,
+      transform: function (doc, ret) {
+        delete ret._id;
+      }
+    },
+    toObject: {
+      virtuals: true,
+      versionKey: false,
+      transform: function (doc, ret) {
+        delete ret._id;
+      }
+    }
+  }
+);
 
-export const paymentMethodEnum = payment_svc.enum("payment_method", [
-  "card",
-  "wallet",
-  "bank_transfer",
-]);
-
-export const payments = payment_svc.table("payments", {
-  id: uuid("id").primaryKey().defaultRandom().notNull(),
-  orderId: uuid("order_id").notNull(),
-  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
-  method: paymentMethodEnum("method").notNull(),
-  userId: uuid("user_id").notNull(),
-  status: paymentStatusEnum("status").notNull(),
-  transactionId: text("transaction_id"),
-  failureReason: text("failure_reason"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  processedAt: timestamp("processed_at", { withTimezone: true }),
+// Virtual property for payment ID
+paymentSchema.virtual('id').get(function() {
+  return this._id;
 });
+
+export const Payment = mongoose.model("Payment", paymentSchema);

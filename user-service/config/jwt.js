@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 export const jwtConfig = {
   secret:
     process.env.JWT_SECRET || "your-super-secret-jwt-key-change-in-production",
-  expiresIn: process.env.JWT_EXPIRY || "1h",
+  expiresIn: process.env.JWT_EXPIRY || "24h",
   refreshSecret:
     process.env.REFRESH_TOKEN_SECRET ||
     "your-super-secret-refresh-key-change-in-production",

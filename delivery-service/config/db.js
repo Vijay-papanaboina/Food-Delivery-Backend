@@ -1,44 +1,33 @@
+import mongoose from "mongoose";
 import dotenv from "dotenv";
+
 dotenv.config();
 
-import { drizzle } from "drizzle-orm/node-postgres";
-import {
-  getDelivery,
-  getDeliveryByOrderId,
-  getDeliveries,
-  upsertDelivery,
-  getDeliveryStats,
-  getDriverStats,
-} from "../repositories/deliveries.repo.js";
-import {
-  getDriver,
-  getDrivers,
-  upsertDriver,
-} from "../repositories/drivers.repo.js";
+export const initDb = async () => {
+  try {
+    const mongoUri = process.env.MONGODB_URI|| process.env.DATABASE_URL;
+    if (!mongoUri) {
+      throw new Error("MONGODB_URI environment variable is not defined");
+    }
 
-export const db = drizzle(process.env.DATABASE_URL);
+    await mongoose.connect(mongoUri);
+    console.log("✅ [delivery-service] Connected to MongoDB");
 
-export async function initDb() {
-  // Schemas/tables handled by migrations and compose init job
-  console.log("[delivery-service] Drizzle DB initialized");
-}
+    mongoose.connection.on("error", (err) => {
+      console.error("❌ [delivery-service] MongoDB connection error:", err);
+    });
 
-// Delivery functions
-export { upsertDelivery };
+    mongoose.connection.on("disconnected", () => {
+      console.warn("⚠️ [delivery-service] MongoDB disconnected");
+    });
 
-export { getDelivery };
-
-export { getDeliveryByOrderId };
-
-export { getDeliveries };
-
-// Driver functions
-export { upsertDriver };
-
-export { getDriver };
-
-export { getDrivers };
-
-export { getDeliveryStats };
-
-export { getDriverStats };
+    process.on("SIGINT", async () => {
+      await mongoose.connection.close();
+      console.log("🛑 [delivery-service] MongoDB connection closed");
+      process.exit(0);
+    });
+  } catch (error) {
+    console.error("❌ [delivery-service] Failed to connect to MongoDB:", error);
+    process.exit(1);
+  }
+};

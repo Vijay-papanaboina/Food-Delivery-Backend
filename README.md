@@ -1,484 +1,387 @@
-# Food Ordering Microservices System
+# Food Delivery Backend - Microservices Architecture
 
-A comprehensive microservices architecture for a food ordering system built with Node.js, Express, and Apache Kafka. This system demonstrates event-driven architecture, service communication patterns, and real-world microservices concepts.
+Event-driven microservices platform for a food delivery application, built with Node.js, Express, MongoDB, and Apache Kafka.
 
 ## 🏗️ Architecture Overview
 
-The system consists of 5 microservices that communicate through Kafka events:
+This backend implements a **microservices architecture** with event-driven communication via Kafka, enabling scalable, loosely-coupled services.
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Order Service │    │ Payment Service │    │ Restaurant Svc  │
-│    Port: 5001   │    │    Port: 5002   │    │    Port: 5006   │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-                    ┌─────────────────┐
-                    │   Kafka Broker  │
-                    │   Port: 9092    │
-                    └─────────────────┘
-                                 │
-         ┌───────────────────────┼───────────────────────┐
-         │                       │                       │
-┌─────────────────┐    ┌─────────────────┐
-│Delivery Service │    │Notification Svc │
-│    Port: 5004   │    │    Port: 5003   │
-└─────────────────┘    └─────────────────┘
-```
+### **Key Design Patterns:**
+*   **Microservices:** Each service is independently deployable and scalable
+*   **Event-Driven:** Services communicate asynchronously via Kafka topics
+*   **Service Layer Pattern:** Clear separation between controllers, services, and repositories
+*   **API Gateway Ready:** All services expose REST APIs with CORS support
 
-## 🚀 Services
+### **Tech Stack**
+*   **Runtime:** Node.js 20.x
+*   **Framework:** Express.js 4.x/5.x
+*   **Database:** MongoDB 5.0+ (via Mongoose ODM)
+*   **Message Broker:** Apache Kafka (via KafkaJS)
+*   **Authentication:** JWT (JSON Web Tokens)
+*   **Payment Processing:** Stripe API
+*   **Container:** Docker + Docker Compose
 
-### 1. Order Service (Port 5001)
+## 📦 Microservices
 
-**Purpose**: Manages food orders and orchestrates the order lifecycle.
+The platform consists of **6 independent microservices**, each with its own database and responsibilities:
 
-**REST APIs**:
+| Service | Port | Database | Key Responsibilities | README |
+|---------|------|----------|---------------------|--------|
+| **User Service** | 5005 | MongoDB | Authentication, profiles, addresses, cart | [README](user-service/README.md) |
+| **Order Service** | 5001 | MongoDB | Order creation, lifecycle, orchestration | [README](order-service/README.md) |
+| **Payment Service** | 5002 | MongoDB | Stripe integration, payment processing | [README](payment-service/README.md) |
+| **Restaurant Service** | 5006 | MongoDB | Restaurants, menus, kitchen orders | [README](restaurant-service/README.md) |
+| **Delivery Service** | 5004 | MongoDB | Driver management, delivery assignments | [README](delivery-service/README.md) |
+| **Notification Service** | 5003 | In-Memory | Event consumption, notification generation | [README](notification-service/README.md) |
 
-- `POST /api/orders` - Create new order
-- `GET /api/orders/:id` - Get order details
-- `GET /api/orders` - List all orders (with filters)
-- `GET /api/orders/stats` - Get order statistics
+> 📖 **For detailed setup, API endpoints, and configuration for each service, see their individual README files linked above.**
 
-**Kafka Integration**:
+## 🎯 Event-Driven Workflow
 
-- **Producer**: Publishes to `order-created` topic
-- **Consumer**: Listens to `payment-processed`, `delivery-completed` topics
-
-**Key Features**:
-
-- Order creation and validation
-- Status tracking (pending → confirmed → delivered)
-- Order statistics and analytics
-
-### 2. Payment Service (Port 5002)
-
-**Purpose**: Processes payments for orders with simulated payment gateways.
-
-**REST APIs**:
-
-- `POST /api/payments` - Process payment manually
-- `GET /api/payments/:orderId` - Get payment status
-- `GET /api/payments` - List all payments
-- `GET /api/payments/stats` - Get payment statistics
-- `GET /api/payments/methods` - Get available payment methods
-
-**Kafka Integration**:
-
-- **Producer**: Publishes to `payment-processed` topic
-- **Consumer**: None (manual processing only)
-
-**Key Features**:
-
-- Multiple payment methods (credit card, debit card, PayPal, cash, crypto)
-- Different success rates per payment method
-- Simulated processing delays
-- Payment failure handling
-
-### 3. Restaurant Service (Port 5006)
-
-Manages restaurant information, menus, availability, and kitchen operations. Inventory service has been removed; availability is managed via simple boolean flags per menu item and restaurant open/closed status.
-
-### 4. Delivery Service (Port 5004)
-
-**Purpose**: Manages order deliveries and driver assignments.
-
-**REST APIs**:
-
-- `POST /api/delivery/assign` - Assign delivery manually
-- `POST /api/delivery/pickup` - Pick up delivery manually
-- `POST /api/delivery/complete` - Mark delivery as completed
-- `GET /api/delivery/:orderId` - Get delivery status
-- `GET /api/delivery` - List all deliveries
-- `GET /api/drivers` - List all drivers
-- `GET /api/delivery/stats` - Get delivery statistics
-
-**Kafka Integration**:
-
-- **Producer**: Publishes to `delivery-assigned`, `delivery-picked-up`, `delivery-completed` topics
-- **Consumer**: None (manual operations only)
-
-**Key Features**:
-
-- Driver management and availability tracking
-- Automatic driver assignment
-- Delivery time estimation
-- Driver rating system
-
-### 5. Notification Service (Port 5003)
-
-**Purpose**: Simulates notifications for all system events (log-only; no database persistence).
-
-**REST APIs** (simulated responses):
-
-- `GET /api/notifications` - List notifications
-- `GET /api/notifications/:id` - Get specific notification
-- `PUT /api/notifications/:id/read` - Mark notification as read
-- `PUT /api/notifications/read-all` - Mark all notifications as read
-- `GET /api/notifications/stats` - Get notification statistics
-- `POST /api/notifications/send` - Send custom notification
-
-**Kafka Integration**:
-
-- **Consumer**: Listens to ALL topics for notifications
-- **Producer**: None (end consumer)
-
-**Key Features**:
-
-- Event-driven notifications (simulated)
-- Multiple notification types
-- Priority-based delivery (simulated)
-
-### Restaurant Service (Port 5006)
-
-**Purpose**: Manages restaurant information, menus, AND kitchen operations (food preparation) in a unified service.
-
-**REST APIs - Restaurant Management**:
-
-- `GET /api/restaurants` - List all restaurants
-- `GET /api/restaurants/:id` - Get specific restaurant
-- `GET /api/restaurants/:id/menu` - Get restaurant menu
-- `POST /api/restaurants` - Create new restaurant
-- `POST /api/restaurants/:id/menu` - Add menu item
-- `GET /api/restaurants/stats` - Get restaurant statistics
-
-**REST APIs - Kitchen Operations**:
-
-- `GET /api/kitchen/orders` - List all kitchen orders (filter by status)
-- `GET /api/kitchen/orders/:orderId` - Get specific kitchen order status
-- `POST /api/kitchen/orders/:orderId/ready` - Manually mark order as ready
-- `GET /api/kitchen/stats` - Get kitchen preparation statistics
-
-**Kafka Integration**:
-
-- **Producer**: Publishes to `food-ready` topic
-- **Consumer**: Listens to `order-confirmed` topic (creates kitchen order only)
-
-**Key Features**:
-
-- **Restaurant Management**: Restaurant data, menu management, cuisine categorization
-- **Kitchen Operations**: Food preparation with 20-30s simulation
-- **Order Tracking**: Status tracking (received → preparing → ready)
-- **Preparation Analytics**: Preparation time statistics by restaurant
-- **Manual Override**: Skip prep delay for testing purposes
-- **Unified Service**: Single service handles entire restaurant operations from menu to kitchen
-
-## 📊 Event Flow
-
-Here's how events flow through the system when a user places an order:
-
-### Complete Order Flow (Manual Operations)
+Services communicate via **Kafka topics** to maintain loose coupling:
 
 ```mermaid
-sequenceDiagram
-    participant User
-    participant OrderService
-    participant PaymentService
-    participant RestaurantService
-    participant DeliveryService
-    participant NotificationService
-    participant Kafka
-
-    User->>OrderService: POST /api/orders
-    Note over OrderService: Order created with status "pending_payment"
-    OrderService->>Kafka: Publish order-created event
-
-    User->>PaymentService: POST /api/payments
-    Note over PaymentService: Manual payment processing
-    PaymentService->>Kafka: Publish payment-processed (success/failed)
-
-    alt Payment Success
-        Kafka->>OrderService: payment-processed (success)
-        OrderService->>Kafka: Publish order-confirmed event
-
-        Kafka->>RestaurantService: order-confirmed event
-        Note over RestaurantService: Kitchen order created (status: "received")
-
-        User->>RestaurantService: POST /api/kitchen/orders/:orderId/ready
-        Note over RestaurantService: Manual mark as ready
-        RestaurantService->>Kafka: Publish food-ready event
-
-        User->>DeliveryService: POST /api/delivery/assign
-        Note over DeliveryService: Manual driver assignment
-        DeliveryService->>Kafka: Publish delivery-assigned event
-
-        User->>DeliveryService: POST /api/delivery/pickup
-        Note over DeliveryService: Manual pickup confirmation
-        DeliveryService->>Kafka: Publish delivery-picked-up event
-
-        User->>DeliveryService: POST /api/delivery/complete
-        Note over DeliveryService: Manual completion
-        DeliveryService->>Kafka: Publish delivery-completed event
-        Kafka->>OrderService: delivery-completed event
-    else Payment Failed
-        Kafka->>OrderService: payment-processed (failed)
-        Note over OrderService: Update order status to failed
-    end
-
-    Note over NotificationService: Consumes all events
-    Kafka->>NotificationService: All events
-    NotificationService->>User: Send notifications
+graph LR
+    Customer[Customer] --> Order[Order Service]
+    Order -->|order-created| Payment[Payment Service]
+    Payment -->|payment-processed| Order
+    Order -->|order-confirmed| Restaurant[Restaurant Service]
+    Restaurant -->|food-ready| Delivery[Delivery Service]
+    Delivery -->|delivery-completed| Order
+    
+    Order -.->|events| Notification[Notification Service]
+    Payment -.->|events| Notification
+    Restaurant -.->|events| Notification
+    Delivery -.->|events| Notification
 ```
 
-<!-- Inventory reservation flow removed: inventory service no longer used -->
+### **Kafka Topics**
 
-### Service Simulation Timings
+| Topic | Publisher | Consumers | Purpose |
+|-------|-----------|-----------|---------|
+| `order-created` | Order Service | Payment Service | Trigger payment processing |
+| `payment-processed` | Payment Service | Order Service | Confirm order after payment |
+| `order-confirmed` | Order Service | Restaurant Service | Send order to kitchen |
+| `food-ready` | Restaurant Service | Delivery Service | Assign driver when food ready |
+| `delivery-assigned` | Delivery Service | Notification Service | Notify customer of driver |
+| `delivery-picked-up` | Delivery Service | Notification Service | Update order status |
+| `delivery-completed` | Delivery Service | Order Service | Mark order as delivered |
 
-| Service  | Action              | Simulation Time | Purpose                         |
-| -------- | ------------------- | --------------- | ------------------------------- |
-| Payment  | Payment processing  | 1.5-3 seconds   | Realistic payment gateway delay |
-| Kitchen  | Food preparation    | Manual only     | No automatic simulation         |
-| Delivery | Delivery completion | Manual only     | No automatic simulation         |
+All events are also consumed by **Notification Service** for customer/driver/restaurant notifications.
 
-**Total Order Time**: Manual operations only - no automatic timing
+## 🚀 Quick Start
 
-## 🛠️ Setup Instructions
+### **Prerequisites**
+*   **Node.js:** 20.x or higher
+*   **Docker:** For MongoDB and Kafka
+*   **npm:** 9.x or higher
+*   **Stripe Account:** For payment processing (test mode API keys)
 
-### Prerequisites
+### **1. Install All Dependencies**
 
-- Docker and Docker Compose
-- Node.js (v16 or higher)
-- npm
-
-### 1. Start Kafka
+Install dependencies for all microservices:
 
 ```bash
-# Start Kafka broker with topic creation
-docker-compose up -d
+cd Food-Delivery-Backend
+npm run install-all
+```
 
-# Verify Kafka is running
+This will install dependencies for the backend root and all 6 microservices.
+
+### **2. Start Infrastructure**
+
+Start MongoDB, Kafka, and Zookeeper:
+
+```bash
+docker-compose up -d
+```
+
+Verify containers are running:
+```bash
 docker-compose ps
 ```
 
-### 2. Install Dependencies
+### **3. Seed Database**
+
+Populate MongoDB with test data (users, restaurants, menu items, drivers):
 
 ```bash
-# Install dependencies for all services
-cd microservices/order-service && npm install
-cd ../payment-service && npm install
-cd ../delivery-service && npm install
-cd ../notification-service && npm install
-cd ../restaurant-service && npm install
+npm run seed
 ```
 
-### 3. Start All Services
+This creates:
+- 2 customers, 15 restaurant owners, 5 drivers
+- 15 restaurants with full menus
+- Sample addresses and test accounts
+
+### **4. Start All Services**
+
+Start all 6 microservices simultaneously:
 
 ```bash
-# Terminal 1 - Order Service
-cd microservices/order-service && npm run dev
-
-# Terminal 2 - Payment Service
-cd microservices/payment-service && npm run dev
-
-# Terminal 3 - Delivery Service
-cd microservices/delivery-service && npm run dev
-
-# Terminal 4 - Notification Service
-cd microservices/notification-service && npm run dev
-
-# Terminal 5 - Restaurant Service
-cd microservices/restaurant-service && npm run dev
+npm run dev
 ```
 
-### 4. Verify Services
+This uses `concurrently` to run all services in parallel. You'll see color-coded output from each service.
+
+**Alternative: Start Services Individually**
+
+If you prefer to run services in separate terminals:
 
 ```bash
-# Check all services are running
-curl http://localhost:5001/health  # Order Service
-curl http://localhost:5002/health  # Payment Service
-curl http://localhost:5003/health  # Notification Service
-curl http://localhost:5004/health  # Delivery Service
-curl http://localhost:5006/health  # Restaurant Service
+# Terminal 1
+cd user-service && npm run dev
+
+# Terminal 2
+cd order-service && npm run dev
+
+# Terminal 3
+cd payment-service && npm run dev
+
+# Terminal 4
+cd restaurant-service && npm run dev
+
+# Terminal 5
+cd delivery-service && npm run dev
+
+# Terminal 6
+cd notification-service && npm run dev
 ```
 
-## 🧪 Testing the System
+### **5. Verify Services**
 
-### 1. Create a Test Order
-
+Check health endpoints:
 ```bash
-curl -X POST http://localhost:5001/api/orders \
-  -H "Content-Type: application/json" \
-  -d '{
-    "restaurantId": "rest-001",
-    "items": [
-      {"itemId": "item-001", "quantity": 2, "price": 12.99},
-      {"itemId": "item-003", "quantity": 1, "price": 8.99}
-    ],
-    "userId": "user-123",
-    "deliveryAddress": {"street":"123 Main St","city":"City","state":"ST","zipCode":"12345"}
-  }'
+curl http://localhost:5005/api/user-service/health      # User Service
+curl http://localhost:5001/health                       # Order Service
+curl http://localhost:5002/health                       # Payment Service
+curl http://localhost:5006/health                       # Restaurant Service
+curl http://localhost:5004/health                       # Delivery Service
+curl http://localhost:5003/health                       # Notification Service
 ```
 
-### 2. Check Order Status
+## 📝 Available NPM Scripts
 
-```bash
-# Get order details (use orderId from step 1)
-curl http://localhost:5001/api/orders/{orderId}
+From the `Food-Delivery-Backend` directory, you can use these npm scripts:
+
+| Script | Command | Description |
+|--------|---------|-------------|
+| **Install All** | `npm run install-all` | Install dependencies for all 6 microservices |
+| **Start All (Dev)** | `npm run dev` | Start all services in development mode using concurrently |
+| **Seed Database** | `npm run seed` | Populate MongoDB with test data from `seed-mongodb.mjs` |
+| **Start All (Prod)** | `npm start` | Start all services in production mode |
+
+**Individual Service Scripts:**
+
+Each service directory has these scripts:
+- `npm run dev` - Start service with nodemon (auto-restart)
+- `npm start` - Start service in production mode
+
+
+## 🎓 Service Layer Pattern
+
+All services follow a **3-layer architecture** for clean code organization:
+
+```
+Service/
+├── controllers/     # HTTP request handling, input validation
+├── services/        # Business logic, orchestration
+├── repositories/    # Database operations (Mongoose)
+├── routes/          # Express route definitions
+├── middleware/      # Auth, validation, error handling
+├── handlers/        # Kafka event handlers
+├── utils/           # Helper functions, logger
+└── config/          # DB, Kafka, service configuration
 ```
 
-### 3. View Notifications
+**Benefits:**
+- Clear separation of concerns
+- Easier testing and mocking
+- Reusable business logic
+- Simplified controller logic
 
-```bash
-# Get notifications for the user
-curl http://localhost:5003/api/notifications?userId=user-123
-```
+## 🔒 Security Features
 
-### 5. View Delivery Status
-
-```bash
-# Check delivery status (use orderId from step 1)
-curl http://localhost:5004/api/delivery/{orderId}
-```
-
-## 📈 Monitoring and Observability
-
-### Health Checks
-
-All services provide health check endpoints at `/health`:
-
-- Service status
-- Port information
-- Data counts
-- Timestamp
-
-### Statistics Endpoints
-
-Each service provides statistics endpoints:
-
-- Order statistics: `GET /api/orders/stats`
-- Payment statistics: `GET /api/payments/stats`
-
-- Delivery statistics: `GET /api/delivery/stats`
-- Notification statistics: `GET /api/notifications/stats` (simulated)
-- Restaurant statistics: `GET /api/restaurants/stats`
+*   **JWT Authentication:** Stateless token-based auth with refresh tokens
+*   **Password Hashing:** bcrypt with salt rounds
+*   **Role-Based Access Control:** Customer, restaurant, driver roles
+*   **Rate Limiting:** Protection against brute-force attacks
+*   **CORS:** Configurable origin whitelisting
+*   **Helmet:** Security headers
+*   **Input Validation:** Express-validator + Mongoose schemas
 
 ## 🔧 Configuration
 
-### Environment Variables
+Each service requires a `.env` file. Example for User Service:
 
-- `KAFKA_BROKER`: Kafka broker address (default: localhost:9092)
-- `PORT`: Service port (defaults: 5001-5006)
+```env
+PORT=5005
+MONGODB_URI=mongodb://localhost:27017/food-delivery
+JWT_SECRET=your-secret-key
+KAFKA_BROKERS=localhost:9092
+```
 
-### Kafka Topics
+> 📖 **See individual service READMEs for complete environment variable documentation.**
 
-- `order-created` (3 partitions)
-- `payment-processed` (2 partitions)
+## 📊 API Standardization
 
-- `order-confirmed` (2 partitions)
-- `delivery-assigned` (2 partitions)
-- `delivery-completed` (2 partitions)
-- `notifications` (1 partition)
+All APIs follow consistent conventions:
 
-## 🏗️ Architecture Patterns
+### **Response Format**
+```json
+{
+  "success": true,
+  "data": { ... },
+  "message": "Operation successful"
+}
+```
 
-### Event-Driven Architecture
+### **Naming Conventions**
+*   **Case:** camelCase for all JSON fields
+*   **Primary Keys:** All entities use `id` (mapped from MongoDB `_id`)
+*   **Foreign Keys:** `userId`, `orderId`, `restaurantId`, etc.
+*   **Timestamps:** ISO 8601 format (`createdAt`, `updatedAt`)
 
-- Services communicate through Kafka events
-- Loose coupling between services
-- Asynchronous processing
-- Event sourcing capabilities
+### **HTTP Status Codes**
+*   `200` - Success
+*   `201` - Created
+*   `400` - Bad Request
+*   `401` - Unauthorized
+*   `403` - Forbidden
+*   `404` - Not Found
+*   `500` - Internal Server Error
 
-### Microservices Patterns
+## 🧪 Test Accounts
 
-- **Database per Service**: Each service has its own data store
-- **API Gateway**: REST APIs for external communication
-- **Event Sourcing**: All state changes through events
-- **CQRS**: Separate read/write models
-- **Saga Pattern**: Distributed transaction management
+**Customers:**
+- `john@example.com` / `password`
+- `jane@example.com` / `password`
 
-### Resilience Patterns
+**Restaurant Owners:**
+- `mario@pizzapalace.com` / `password` (Mario's Pizza Palace)
+- `burger@junction.com` / `password` (Burger Junction)
+- `thai@garden.com` / `password` (Thai Garden)
 
-- **Circuit Breaker**: Service failure isolation
-- **Retry Logic**: Automatic retry for failed operations
-- **Graceful Degradation**: System continues with partial functionality
-- **Health Checks**: Service monitoring and alerting
+**Drivers:**
+- `sarah.johnson@driver.com` / `password`
+- `john.smith@driver.com` / `password`
+- `mike.davis@driver.com` / `password`
 
-## 🚀 Production Considerations
+## 🐳 Docker Deployment
 
-### Scalability
+Each service includes a `Dockerfile` for containerization.
 
-- Horizontal scaling of services
-- Kafka partitioning for load distribution
-- Stateless service design
-- Connection pooling
-
-### Security
-
-- API authentication and authorization
-- Encrypted communication (TLS)
-- Input validation and sanitization
-- Rate limiting
-
-### Monitoring
-
-- Centralized logging
-- Metrics collection
-- Distributed tracing
-- Alerting systems
-
-### Data Management
-
-- Database migrations
-- Backup and recovery
-- Data consistency
-- Transaction management
-
-## 📚 Learning Outcomes
-
-This project demonstrates:
-
-- **Microservices Architecture**: Service decomposition and communication
-- **Event-Driven Systems**: Asynchronous messaging with Kafka
-- **REST API Design**: Resource-based API endpoints
-- **Service Integration**: Inter-service communication patterns
-- **Data Modeling**: Domain-driven design principles
-- **Error Handling**: Graceful failure management
-- **Testing Strategies**: Service testing approaches
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the ISC License.
-
-## 🆘 Troubleshooting
-
-### Common Issues
-
-**Kafka Connection Issues**:
-
+**Build all services:**
 ```bash
-# Check if Kafka is running
+# From project root
+./build-docker-images.sh  # Linux/Mac
+# or
+./build-docker-images.ps1  # Windows
+```
+
+**Run with Docker Compose:**
+```bash
+docker-compose -f docker-compose-full.yml up -d
+```
+
+## 📝 Available Scripts
+
+From backend root directory:
+
+*   `node seed-mongodb.mjs` - Seed database with test data
+*   `npm run start-all` - Start all services (requires pm2)
+*   `docker-compose up -d` - Start infrastructure (MongoDB, Kafka)
+*   `docker-compose down` - Stop infrastructure
+
+## 🔧 Troubleshooting
+
+### **Kafka Connection Issues**
+```bash
+# Check Kafka is running
 docker-compose ps
 
-# Check Kafka logs
+# View Kafka logs
 docker-compose logs kafka
+
+# Restart Kafka
+docker-compose restart kafka
 ```
 
-**Service Port Conflicts**:
-
+### **MongoDB Connection Issues**
 ```bash
-# Check if ports are in use
-netstat -tulpn | grep :5001
+# Check MongoDB is running
+docker-compose ps mongodb
+
+# Connect to MongoDB shell
+docker exec -it food-delivery-mongodb mongosh
+
+# View databases
+show dbs
+use food-delivery
+show collections
 ```
 
-**Missing Dependencies**:
+### **Service Won't Start**
+1. Check port isn't already in use: `netstat -ano | findstr :5005`
+2. Verify `.env` file exists and has required variables
+3. Ensure MongoDB and Kafka are running
+4. Check service logs for errors
 
-```bash
-# Reinstall dependencies
-rm -rf node_modules package-lock.json
-npm install
+### **Events Not Publishing/Consuming**
+1. Verify Kafka broker is running
+2. Check topic names match across services
+3. Look for Kafka connection errors in service logs
+4. Ensure Kafka consumer/producer are initialized
+
+## 📚 Documentation
+
+*   **Service READMEs:** Each service directory contains detailed documentation
+*   **API Endpoints:** Documented in individual service READMEs
+*   **Kafka Topics:** See Event-Driven Workflow section above
+*   **Database Schemas:** Defined in service `models/` directories
+
+## 🛠️ Development Tools
+
+**Recommended:**
+*   **MongoDB Compass:** GUI for MongoDB
+*   **Kafka Tool / Conduktor:** Kafka topic visualization
+*   **Postman:** API testing
+*   **VS Code:** With ES Lint and Prettier extensions
+
+## 🚦 Service Dependencies
+
+```
+User Service (Standalone)
+    ↓
+Order Service → Restaurant Service (menu validation)
+    ↓
+Payment Service → Order Service, Restaurant Service (Stripe)
+    ↓
+Restaurant Service → Order Service (kitchen orders)
+    ↓
+Delivery Service → (Kafka events only)
+    ↓
+Notification Service → All services (consumes all events)
 ```
 
-### Getting Help
+## 📈 Scalability Considerations
 
-- Check service logs for error messages
-- Verify Kafka topics are created
-- Ensure all services are running
-- Check network connectivity between services
+*   **Horizontal Scaling:** Services are stateless and can be scaled horizontally
+*   **Database Sharding:** Each service has its own MongoDB database
+*   **Kafka Partitioning:** Topics can be partitioned for parallel processing
+*   **Load Balancing:** Use nginx or cloud load balancers for multiple instances
+*   **Caching:** Add Redis for frequently accessed data (future enhancement)
+
+## 🎯 Future Enhancements
+
+- [ ] API Gateway (Kong/NGINX) for unified entry point
+- [ ] Service mesh (Istio) for advanced traffic management
+- [ ] Distributed tracing (Jaeger/Zipkin)
+- [ ] Centralized logging (ELK stack)
+- [ ] Real-time WebSocket notifications
+- [ ] GraphQL federation across services
+- [ ] Database replication for high availability
+
+---
+
+**For detailed service documentation, refer to individual service READMEs.**

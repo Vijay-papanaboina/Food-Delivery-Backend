@@ -13,7 +13,7 @@ export const requireRestaurantOwnership = async (req, res, next) => {
     return res.status(404).json({ error: "Restaurant not found" });
   }
   
-  if (restaurant.owner_id !== req.user.userId) {
+  if (restaurant.ownerId.toString() !== req.user.userId) {
     return res.status(401).json({ 
       error: "Unauthorized: You do not own this restaurant" 
     });

@@ -6,11 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js",
-    "db:generate": "drizzle-kit generate --config=drizzle.config.js",
-    "db:push": "drizzle-kit push --config=drizzle.config.js",
-    "db:migrate": "drizzle-kit migrate --config=drizzle.config.js",
-    "db:studio": "drizzle-kit studio --config=drizzle.config.js"
+    "dev": "nodemon server.js"
   },
   "keywords": [
     "order",
@@ -23,17 +19,15 @@
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
-    "drizzle-orm": "^0.44.6",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "kafkajs": "^2.2.4",
+    "mongoose": "^8.20.0",
     "morgan": "^1.10.1",
-    "pg": "^8.11.3",
     "uuid": "^10.0.0",
     "winston": "^3.18.3"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.31.5",
     "nodemon": "^3.1.7"
   }
 }

@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import buildRoutes from "./routes/index.routes.js";
-import { getOrdersCount } from "./repositories/orders.stats.repo.js";
+import { getOrderStats } from "./repositories/orders.stats.repo.js";
 
 const SERVICE_NAME = process.env.SERVICE_NAME || "order-service";
 
@@ -25,14 +25,23 @@ function createApp(producer) {
 
   // Health check endpoint
   app.get("/api/order-service/health", async (req, res) => {
-    const count = await getOrdersCount();
-    res.json({
-      service: SERVICE_NAME,
-      status: "healthy",
-      port: process.env.PORT || 5001,
-      ordersCount: count,
-      timestamp: new Date().toISOString(),
-    });
+    try {
+      const stats = await getOrderStats();
+      res.json({
+        service: SERVICE_NAME,
+        status: "healthy",
+        port: process.env.PORT || 5001,
+        ordersCount: stats.totalOrders || 0,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(500).json({
+        service: SERVICE_NAME,
+        status: "error",
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
   });
 
   // Mount routes with service prefix

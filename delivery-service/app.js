@@ -2,7 +2,8 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import buildRoutes from "./routes/index.routes.js";
-import { getDeliveryStats, getDrivers } from "./config/db.js";
+import { getDeliveryStats } from "./repositories/deliveries.repo.js";
+import { getDrivers } from "./repositories/drivers.repo.js";
 
 const SERVICE_NAME = process.env.SERVICE_NAME || "delivery-service";
 
@@ -34,13 +35,13 @@ function createApp(producer) {
     try {
       const deliveryStats = await getDeliveryStats();
       const driverStats = await getDrivers();
-      const availableDrivers = driverStats.filter((d) => d.is_available).length;
+      const availableDrivers = driverStats.filter((d) => d.isAvailable).length; // camelCase in Mongoose
 
       res.json({
         service: SERVICE_NAME,
         status: "healthy",
         port: process.env.PORT || 5004,
-        deliveriesCount: deliveryStats.total || 0,
+        deliveriesCount: deliveryStats.totalDeliveries || 0, // Mongoose repo returns totalDeliveries
         driversCount: driverStats.length,
         availableDrivers: availableDrivers,
         timestamp: new Date().toISOString(),

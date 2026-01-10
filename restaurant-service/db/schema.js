@@ -1,76 +1,224 @@
-import {
-  pgSchema,
-  text,
-  boolean,
-  timestamp,
-  time,
-  numeric,
-  integer,
-  jsonb,
-  uuid,
-} from "drizzle-orm/pg-core";
+import mongoose from "mongoose";
 
-export const restaurant_svc = pgSchema("restaurant_svc");
-
-// Define enums within the schema
-export const kitchenOrderStatusEnum = restaurant_svc.enum(
-  "kitchen_order_status",
-  ["received", "preparing", "ready", "completed", "cancelled"]
+const restaurantSchema = new mongoose.Schema(
+  {
+    ownerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      index: true,
+    },
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    cuisine: {
+      type: String,
+      required: true,
+      trim: true,
+      index: true,
+    },
+    address: {
+      type: String,
+      required: true,
+    },
+    phone: {
+      type: String,
+      required: true,
+    },
+    rating: {
+      type: Number,
+      default: 0.0,
+      min: 0,
+      max: 5,
+    },
+    deliveryTime: {
+      type: String,
+      default: "30-40 min",
+    },
+    deliveryFee: {
+      type: Number,
+      default: 2.99,
+    },
+    isOpen: {
+      type: Boolean,
+      default: true,
+    },
+    openingTime: String,
+    closingTime: String,
+    isActive: {
+      type: Boolean,
+      default: true,
+      index: true,
+    },
+    imageUrl: String,
+  },
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      versionKey: false,
+      transform: function (doc, ret) {
+        delete ret._id;
+      }
+    },
+    toObject: {
+      virtuals: true,
+      versionKey: false,
+      transform: function (doc, ret) {
+        delete ret._id;
+      }
+    }
+  },
 );
 
-export const restaurants = restaurant_svc.table("restaurants", {
-  id: uuid("id").primaryKey().defaultRandom().notNull(),
-  ownerId: uuid("owner_id").notNull(),
-  name: text("name").notNull(),
-  cuisine: text("cuisine").notNull(),
-  address: text("address").notNull(),
-  phone: text("phone").notNull(),
-  rating: numeric("rating", { precision: 3, scale: 2 })
-    .notNull()
-    .default("0.0"),
-  deliveryTime: text("delivery_time").notNull().default("30-40 min"),
-  deliveryFee: numeric("delivery_fee", { precision: 10, scale: 2 })
-    .notNull()
-    .default("2.99"),
-  isOpen: boolean("is_open").notNull().default(true),
-  openingTime: time("opening_time"),
-  closingTime: time("closing_time"),
-  isActive: boolean("is_active").notNull().default(true),
-  imageUrl: text("image_url"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
+// Virtual property for restaurant ID
+restaurantSchema.virtual('id').get(function() {
+  return this._id;
 });
 
-export const menuItems = restaurant_svc.table("menu_items", {
-  id: uuid("id").primaryKey().defaultRandom().notNull(),
-  restaurantId: uuid("restaurant_id").notNull(),
-  name: text("name").notNull(),
-  description: text("description").notNull(),
-  price: numeric("price", { precision: 10, scale: 2 }).notNull(),
-  category: text("category").notNull(),
-  isAvailable: boolean("is_available").notNull().default(true),
-  preparationTime: integer("preparation_time").notNull().default(15),
-  imageUrl: text("image_url"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
+const menuItemSchema = new mongoose.Schema(
+  {
+    restaurantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Restaurant",
+      required: true,
+      index: true,
+    },
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    category: {
+      type: String,
+      required: true,
+      index: true,
+    },
+    isAvailable: {
+      type: Boolean,
+      default: true,
+    },
+    preparationTime: {
+      type: Number,
+      default: 15, // minutes
+    },
+    imageUrl: String,
+  },
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      versionKey: false,
+      transform: function (doc, ret) {
+        delete ret._id;
+      }
+    },
+    toObject: {
+      virtuals: true,
+      versionKey: false,
+      transform: function (doc, ret) {
+        delete ret._id;
+      }
+    }
+  },
+);
+
+// Virtual property for menuItem ID
+menuItemSchema.virtual('id').get(function() {
+  return this._id;
 });
 
-export const kitchenOrders = restaurant_svc.table("kitchen_orders", {
-  id: uuid("id").primaryKey().defaultRandom().notNull(),
-  orderId: uuid("order_id").notNull().unique(), // Reference to order service order ID - must be unique
-  restaurantId: uuid("restaurant_id").notNull(),
-  userId: uuid("user_id").notNull(),
-  items: jsonb("items_json").notNull(),
-  deliveryAddress: jsonb("delivery_address_json").notNull(),
-  customerName: text("customer_name"),
-  customerPhone: text("customer_phone"),
-  total: numeric("total", { precision: 12, scale: 2 }).notNull(),
-  status: kitchenOrderStatusEnum("status").notNull().default("received"),
-  receivedAt: timestamp("received_at", { withTimezone: true }).notNull(),
-  startedAt: timestamp("started_at", { withTimezone: true }),
-  estimatedReadyTime: timestamp("estimated_ready_time", { withTimezone: true }),
-  readyAt: timestamp("ready_at", { withTimezone: true }),
-  preparationTime: integer("preparation_time"),
+const kitchenOrderSchema = new mongoose.Schema(
+  {
+    orderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      unique: true,
+      index: true,
+    },
+    restaurantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Restaurant",
+      required: true,
+      index: true,
+    },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+    },
+    items: [
+      {
+        itemId: String,
+        name: String,
+        quantity: Number,
+        price: Number,
+        _id: false,
+      },
+    ],
+    deliveryAddress: {
+      street: String,
+      city: String,
+      state: String,
+      zipCode: String,
+      _id: false,
+    },
+    customerName: String,
+    customerPhone: String,
+    total: {
+      type: Number,
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ["received", "preparing", "ready", "completed", "cancelled"],
+      default: "received",
+      index: true,
+    },
+    receivedAt: {
+      type: Date,
+      required: true,
+      default: Date.now,
+    },
+    startedAt: Date,
+    estimatedReadyTime: Date,
+    readyAt: Date,
+    preparationTime: Number,
+  },
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      versionKey: false,
+      transform: function (doc, ret) {
+        delete ret._id;
+      }
+    },
+    toObject: {
+      virtuals: true,
+      versionKey: false,
+      transform: function (doc, ret) {
+        delete ret._id;
+      }
+    }
+  },
+);
+
+// Virtual property for kitchenOrder ID
+kitchenOrderSchema.virtual('id').get(function() {
+  return this._id;
 });
+
+export const Restaurant = mongoose.model("Restaurant", restaurantSchema);
+export const MenuItem = mongoose.model("MenuItem", menuItemSchema);
+export const KitchenOrder = mongoose.model("KitchenOrder", kitchenOrderSchema);
+export { restaurantSchema, menuItemSchema };

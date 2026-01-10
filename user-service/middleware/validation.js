@@ -12,7 +12,7 @@ export const validateSignup = [
     .withMessage("Please provide a valid email"),
   body("phone")
     .optional()
-    .isMobilePhone()
+    .matches(/^[+]?[0-9\\-]+$/)
     .withMessage("Please provide a valid phone number"),
   body("password")
     .isLength({ min: 8 })
@@ -46,7 +46,7 @@ export const validateUpdateProfile = [
     .withMessage("Name must be between 2 and 100 characters"),
   body("phone")
     .optional()
-    .isMobilePhone()
+    .matches(/^[+]?[0-9\\-]+$/)
     .withMessage("Please provide a valid phone number"),
 ];
 

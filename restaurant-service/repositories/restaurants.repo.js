@@ -1,172 +1,102 @@
-import { and, desc, eq, sql } from "drizzle-orm";
-import { db } from "../config/db.js";
-import { restaurants } from "../db/schema.js";
+import { Restaurant } from "../db/schema.js";
 
-export async function upsertRestaurant(restaurant) {
-  await db
-    .insert(restaurants)
-    .values({
-      restaurantId: restaurant.id,
-      name: restaurant.name,
-      cuisine: restaurant.cuisine,
-      address: restaurant.address,
-      phone: restaurant.phone,
-      rating: restaurant.rating != null ? String(restaurant.rating) : undefined,
-      deliveryTime: restaurant.deliveryTime,
-      deliveryFee:
-        restaurant.deliveryFee != null
-          ? String(restaurant.deliveryFee)
-          : undefined,
-      isActive: restaurant.isActive,
-      createdAt: restaurant.createdAt
-        ? new Date(restaurant.createdAt)
-        : undefined,
-    })
-    .onConflictDoUpdate({
-      target: restaurants.id,
-      set: {
-        name: sql`excluded.name`,
-        cuisine: sql`excluded.cuisine`,
-        address: sql`excluded.address`,
-        phone: sql`excluded.phone`,
-        rating: sql`excluded.rating`,
-        deliveryTime: sql`excluded.delivery_time`,
-        deliveryFee: sql`excluded.delivery_fee`,
-        isActive: sql`excluded.is_active`,
-      },
-    });
+export async function upsertRestaurant(restaurantData) {
+  // If ID is provided, try to find and update
+  if (restaurantData.id) {
+    const existing = await Restaurant.findById(restaurantData.id);
+    if (existing) {
+      Object.assign(existing, restaurantData);
+      await existing.save();
+      return existing.toObject();
+    }
+  }
+
+  // Otherwise create new
+  // Note: Mongoose generates _id automatically, so we don't need to pass it if it's new
+  // But if we want to preserve the UUID from the input as _id (if it's a migration), we can try
+  // However, Mongoose _id is ObjectId by default. 
+  // The user wants to migrate to MongoDB, so we should let Mongo generate IDs.
+  // BUT, if the input `restaurantData` comes from a seed script with specific IDs, we might need to handle that.
+  // For now, we'll assume standard Mongoose behavior: new doc = new _id.
+  
+  const newRestaurant = new Restaurant(restaurantData);
+  await newRestaurant.save();
+  return newRestaurant.toObject();
 }
 
+
+
 export async function getRestaurant(restaurantId) {
-  const rows = await db
-    .select({
-      restaurant_id: restaurants.id,
-      owner_id: restaurants.ownerId,
-      name: restaurants.name,
-      cuisine: restaurants.cuisine,
-      address: restaurants.address,
-      phone: restaurants.phone,
-      rating: restaurants.rating,
-      delivery_time: restaurants.deliveryTime,
-      delivery_fee: restaurants.deliveryFee,
-      is_open: restaurants.isOpen,
-      opening_time: restaurants.openingTime,
-      closing_time: restaurants.closingTime,
-      is_active: restaurants.isActive,
-      image_url: restaurants.imageUrl,
-      created_at: restaurants.createdAt,
-    })
-    .from(restaurants)
-    .where(eq(restaurants.id, restaurantId))
-    .limit(1);
-  return rows[0] || null;
+  const restaurant = await Restaurant.findById(restaurantId);
+  return restaurant ? restaurant.toObject() : null;
 }
 
 export async function getRestaurantByOwner(ownerId) {
-  const rows = await db
-    .select({
-      restaurant_id: restaurants.id,
-      owner_id: restaurants.ownerId,
-      name: restaurants.name,
-      cuisine: restaurants.cuisine,
-      address: restaurants.address,
-      phone: restaurants.phone,
-      rating: restaurants.rating,
-      delivery_time: restaurants.deliveryTime,
-      delivery_fee: restaurants.deliveryFee,
-      is_open: restaurants.isOpen,
-      opening_time: restaurants.openingTime,
-      closing_time: restaurants.closingTime,
-      is_active: restaurants.isActive,
-      image_url: restaurants.imageUrl,
-      created_at: restaurants.createdAt,
-    })
-    .from(restaurants)
-    .where(eq(restaurants.ownerId, ownerId))
-    .limit(1);
-  return rows[0] || null;
+  const restaurant = await Restaurant.findOne({ ownerId });
+  return restaurant ? restaurant.toObject() : null;
 }
 
 export async function getRestaurants(filters = {}) {
-  let query = db
-    .select({
-      restaurant_id: restaurants.id,
-      name: restaurants.name,
-      cuisine: restaurants.cuisine,
-      address: restaurants.address,
-      phone: restaurants.phone,
-      rating: restaurants.rating,
-      delivery_time: restaurants.deliveryTime,
-      delivery_fee: restaurants.deliveryFee,
-      is_open: restaurants.isOpen,
-      opening_time: restaurants.openingTime,
-      closing_time: restaurants.closingTime,
-      is_active: restaurants.isActive,
-      image_url: restaurants.imageUrl,
-      created_at: restaurants.createdAt,
-    })
-    .from(restaurants)
-    .orderBy(desc(restaurants.rating));
+  const query = {};
 
-  const conditions = [];
-  if (filters.cuisine)
-    conditions.push(
-      sql`LOWER(${restaurants.cuisine}) = LOWER(${filters.cuisine})`
-    );
-  if (filters.isActive !== undefined)
-    conditions.push(eq(restaurants.isActive, filters.isActive));
-  if (filters.minRating)
-    conditions.push(sql`${restaurants.rating} >= ${filters.minRating}`);
-  if (conditions.length) query = query.where(and(...conditions));
-  if (filters.limit) query = query.limit(Number(filters.limit));
-  return await query;
+  if (filters.search) {
+    query.name = { $regex: new RegExp(filters.search, "i") };
+  }
+  if (filters.cuisine) {
+    query.cuisine = { $regex: new RegExp(filters.cuisine, "i") };
+  }
+  if (filters.isActive !== undefined) {
+    query.isActive = filters.isActive;
+  }
+  if (filters.minRating) {
+    query.rating = { $gte: Number(filters.minRating) };
+  }
+
+  let dbQuery = Restaurant.find(query).sort({ rating: -1 });
+
+  if (filters.limit) {
+    dbQuery = dbQuery.limit(Number(filters.limit));
+  }
+
+  const restaurants = await dbQuery;
+
+  return restaurants.map(r => r.toObject());
 }
 
 export async function toggleRestaurantStatus(restaurantId, isOpen) {
-  await db
-    .update(restaurants)
-    .set({ isOpen })
-    .where(eq(restaurants.id, restaurantId));
+  await Restaurant.findByIdAndUpdate(restaurantId, { isOpen });
 }
 
 export async function getRestaurantStatus(restaurantId) {
-  const rows = await db
-    .select({
-      is_open: restaurants.isOpen,
-      opening_time: restaurants.openingTime,
-      closing_time: restaurants.closingTime,
-      is_active: restaurants.isActive,
-    })
-    .from(restaurants)
-    .where(eq(restaurants.id, restaurantId))
-    .limit(1);
-  return rows[0] || null;
+  return await Restaurant.findById(restaurantId)
+    .select("isOpen openingTime closingTime isActive")
 }
 
 export async function getRestaurantStats() {
-  // total/active/avg rating
-  const summaryRows = await db
-    .select({
-      total_restaurants: sql`COUNT(*)`,
-      active_restaurants: sql`COUNT(*) FILTER (WHERE ${restaurants.isActive} = true)`,
-      average_rating: sql`AVG(${restaurants.rating})`,
-    })
-    .from(restaurants);
-  const summary = summaryRows[0] || {};
+  const totalRestaurants = await Restaurant.countDocuments();
+  const activeRestaurants = await Restaurant.countDocuments({ isActive: true });
+  
+  const ratingResult = await Restaurant.aggregate([
+    { $group: { _id: null, avgRating: { $avg: "$rating" } } }
+  ]);
+  const averageRating = ratingResult.length > 0 
+    ? Number(ratingResult[0].avgRating.toFixed(2)) 
+    : 0;
 
-  // by cuisine
-  const cuisineRows = await db
-    .select({ cuisine: restaurants.cuisine, count: sql`COUNT(*)` })
-    .from(restaurants)
-    .groupBy(restaurants.cuisine)
-    .orderBy(desc(sql`COUNT(*)`));
+  const cuisineResult = await Restaurant.aggregate([
+    { $group: { _id: "$cuisine", count: { $sum: 1 } } },
+    { $sort: { count: -1 } }
+  ]);
+
+  const byCuisine = {};
+  cuisineResult.forEach(item => {
+    byCuisine[item._id] = item.count;
+  });
 
   return {
-    totalRestaurants: parseInt(summary.total_restaurants || 0),
-    activeRestaurants: parseInt(summary.active_restaurants || 0),
-    averageRating: Number(parseFloat(summary.average_rating || 0).toFixed(2)),
-    byCuisine: Object.fromEntries(
-      cuisineRows.map((r) => [r.cuisine, parseInt(r.count)])
-    ),
+    totalRestaurants,
+    activeRestaurants,
+    averageRating,
+    byCuisine,
   };
 }
