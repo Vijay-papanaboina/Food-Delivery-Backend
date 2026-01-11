@@ -7,31 +7,81 @@ Event-driven microservices platform for a food delivery application, built with 
 This backend implements a **microservices architecture** with event-driven communication via Kafka, enabling scalable, loosely-coupled services.
 
 ### **Key Design Patterns:**
-*   **Microservices:** Each service is independently deployable and scalable
-*   **Event-Driven:** Services communicate asynchronously via Kafka topics
-*   **Service Layer Pattern:** Clear separation between controllers, services, and repositories
-*   **API Gateway Ready:** All services expose REST APIs with CORS support
+
+- **Microservices:** Each service is independently deployable and scalable
+- **Event-Driven:** Services communicate asynchronously via Kafka topics
+- **Service Layer Pattern:** Clear separation between controllers, services, and repositories
+- **API Gateway Ready:** All services expose REST APIs with CORS support
 
 ### **Tech Stack**
-*   **Runtime:** Node.js 20.x
-*   **Framework:** Express.js 4.x/5.x
-*   **Database:** MongoDB 5.0+ (via Mongoose ODM)
-*   **Message Broker:** Apache Kafka (via KafkaJS)
-*   **Authentication:** JWT (JSON Web Tokens)
-*   **Payment Processing:** Stripe API
-*   **Container:** Docker + Docker Compose
+
+- **Runtime:** Node.js 20.x
+- **Framework:** Express.js 4.x/5.x
+- **Database:** MongoDB 5.0+ (via Mongoose ODM)
+- **Message Broker:** Apache Kafka (via KafkaJS)
+- **Authentication:** JWT (JSON Web Tokens)
+- **Payment Processing:** Stripe API
+- **Container:** Docker + Docker Compose
+
+## 🏗️ High-Level Architecture
+
+```mermaid
+graph TB
+    subgraph Frontends
+        CF[Customer App<br/>React + TS]
+        RF[Restaurant App<br/>React + TS]
+        DF[Delivery App<br/>React + TS]
+    end
+
+    subgraph Backend["Microservices Layer"]
+        US[User Service<br/>Port 5005]
+        OS[Order Service<br/>Port 5001]
+        PS[Payment Service<br/>Port 5002]
+        RS[Restaurant Service<br/>Port 5006]
+        DS[Delivery Service<br/>Port 5004]
+        NS[Notification Service<br/>Port 5003]
+    end
+
+    subgraph Infrastructure
+        MDB[(MongoDB)]
+        KAFKA[Kafka +<br/>Zookeeper]
+    end
+
+    CF --> US
+    CF --> OS
+    CF --> PS
+    CF --> RS
+
+    RF --> US
+    RF --> RS
+
+    DF --> US
+    DF --> DS
+
+    US --> MDB
+    OS --> MDB
+    PS --> MDB
+    RS --> MDB
+    DS --> MDB
+
+    OS -.->|events| KAFKA
+    PS -.->|events| KAFKA
+    RS -.->|events| KAFKA
+    DS -.->|events| KAFKA
+    KAFKA -.->|consume| NS
+```
 
 ## 📦 Microservices
 
 The platform consists of **6 independent microservices**, each with its own database and responsibilities:
 
-| Service | Port | Database | Key Responsibilities | README |
-|---------|------|----------|---------------------|--------|
-| **User Service** | 5005 | MongoDB | Authentication, profiles, addresses, cart | [README](user-service/README.md) |
-| **Order Service** | 5001 | MongoDB | Order creation, lifecycle, orchestration | [README](order-service/README.md) |
-| **Payment Service** | 5002 | MongoDB | Stripe integration, payment processing | [README](payment-service/README.md) |
-| **Restaurant Service** | 5006 | MongoDB | Restaurants, menus, kitchen orders | [README](restaurant-service/README.md) |
-| **Delivery Service** | 5004 | MongoDB | Driver management, delivery assignments | [README](delivery-service/README.md) |
+| Service                  | Port | Database  | Key Responsibilities                       | README                                   |
+| ------------------------ | ---- | --------- | ------------------------------------------ | ---------------------------------------- |
+| **User Service**         | 5005 | MongoDB   | Authentication, profiles, addresses, cart  | [README](user-service/README.md)         |
+| **Order Service**        | 5001 | MongoDB   | Order creation, lifecycle, orchestration   | [README](order-service/README.md)        |
+| **Payment Service**      | 5002 | MongoDB   | Stripe integration, payment processing     | [README](payment-service/README.md)      |
+| **Restaurant Service**   | 5006 | MongoDB   | Restaurants, menus, kitchen orders         | [README](restaurant-service/README.md)   |
+| **Delivery Service**     | 5004 | MongoDB   | Driver management, delivery assignments    | [README](delivery-service/README.md)     |
 | **Notification Service** | 5003 | In-Memory | Event consumption, notification generation | [README](notification-service/README.md) |
 
 > 📖 **For detailed setup, API endpoints, and configuration for each service, see their individual README files linked above.**
@@ -41,41 +91,98 @@ The platform consists of **6 independent microservices**, each with its own data
 Services communicate via **Kafka topics** to maintain loose coupling:
 
 ```mermaid
-graph LR
-    Customer[Customer] --> Order[Order Service]
-    Order -->|order-created| Payment[Payment Service]
-    Payment -->|payment-processed| Order
-    Order -->|order-confirmed| Restaurant[Restaurant Service]
-    Restaurant -->|food-ready| Delivery[Delivery Service]
-    Delivery -->|delivery-completed| Order
-    
-    Order -.->|events| Notification[Notification Service]
-    Payment -.->|events| Notification
-    Restaurant -.->|events| Notification
-    Delivery -.->|events| Notification
+sequenceDiagram
+    participant Customer
+    participant OrderService
+    participant RestaurantService
+    participant Kafka
+    participant PaymentService
+    participant Stripe
+    participant DeliveryService
+    participant Courier
+    participant NotificationService
+
+    Customer->>OrderService: POST /orders (cart items, address)
+
+    Note over OrderService,RestaurantService: Pre-Payment Validation
+    OrderService->>RestaurantService: GET /status (is restaurant open?)
+    RestaurantService-->>OrderService: Restaurant is open
+    OrderService->>RestaurantService: POST /menu/validate (items, prices)
+    RestaurantService-->>OrderService: Valid items + current prices
+    OrderService->>OrderService: Recalculate total with validated prices
+
+    OrderService->>Kafka: Publish order-created
+    OrderService-->>Customer: Return order ID
+
+    Kafka->>PaymentService: Consume order-created
+    PaymentService->>Stripe: Create payment intent
+    Stripe-->>PaymentService: Payment successful
+    PaymentService->>Kafka: Publish payment-processed
+
+    Kafka->>OrderService: Consume payment-processed
+    OrderService->>OrderService: Update status → confirmed
+    OrderService->>Kafka: Publish order-confirmed
+
+    Kafka->>RestaurantService: Consume order-confirmed
+    RestaurantService->>RestaurantService: Add to kitchen queue
+    Note over RestaurantService: Chef prepares food
+    RestaurantService->>Kafka: Publish food-ready
+
+    Kafka->>DeliveryService: Consume food-ready
+    DeliveryService->>DeliveryService: Find nearest available courier
+    DeliveryService->>Courier: Assign delivery
+
+    alt Courier accepts
+        Courier->>DeliveryService: Accept assignment
+        DeliveryService->>Kafka: Publish delivery-assigned
+
+        Courier->>DeliveryService: Arrive at restaurant
+        Courier->>DeliveryService: Pickup confirmation
+        DeliveryService->>Kafka: Publish delivery-picked-up
+
+        Courier->>DeliveryService: Delivery completed
+        DeliveryService->>Kafka: Publish delivery-completed
+    else Courier declines
+        Courier->>DeliveryService: Decline assignment
+        DeliveryService->>Kafka: Publish delivery-declined
+        Kafka->>DeliveryService: Consume delivery-declined
+        DeliveryService->>DeliveryService: Find next available courier
+        DeliveryService->>Courier: Reassign delivery
+    end
+
+    Kafka->>OrderService: Consume delivery-completed
+    OrderService->>OrderService: Update status → delivered
+    OrderService-->>Customer: Order complete!
+
+    Note over Kafka,NotificationService: Notification Service listens to ALL events
+    Kafka->>NotificationService: All events
+    NotificationService->>Customer: Status updates (SMS)
+    NotificationService->>RestaurantService: New order alerts
+    NotificationService->>Courier: Delivery assignments
 ```
 
 ### **Kafka Topics**
 
-| Topic | Publisher | Consumers | Purpose |
-|-------|-----------|-----------|---------|
-| `order-created` | Order Service | Payment Service | Trigger payment processing |
-| `payment-processed` | Payment Service | Order Service | Confirm order after payment |
-| `order-confirmed` | Order Service | Restaurant Service | Send order to kitchen |
-| `food-ready` | Restaurant Service | Delivery Service | Assign driver when food ready |
-| `delivery-assigned` | Delivery Service | Notification Service | Notify customer of driver |
-| `delivery-picked-up` | Delivery Service | Notification Service | Update order status |
-| `delivery-completed` | Delivery Service | Order Service | Mark order as delivered |
+| Topic                | Publisher          | Consumers            | Purpose                       |
+| -------------------- | ------------------ | -------------------- | ----------------------------- |
+| `order-created`      | Order Service      | Payment Service      | Trigger payment processing    |
+| `payment-processed`  | Payment Service    | Order Service        | Confirm order after payment   |
+| `order-confirmed`    | Order Service      | Restaurant Service   | Send order to kitchen         |
+| `food-ready`         | Restaurant Service | Delivery Service     | Assign driver when food ready |
+| `delivery-assigned`  | Delivery Service   | Notification Service | Notify customer of driver     |
+| `delivery-picked-up` | Delivery Service   | Notification Service | Update order status           |
+| `delivery-completed` | Delivery Service   | Order Service        | Mark order as delivered       |
 
 All events are also consumed by **Notification Service** for customer/driver/restaurant notifications.
 
 ## 🚀 Quick Start
 
 ### **Prerequisites**
-*   **Node.js:** 20.x or higher
-*   **Docker:** For MongoDB and Kafka
-*   **npm:** 9.x or higher
-*   **Stripe Account:** For payment processing (test mode API keys)
+
+- **Node.js:** 20.x or higher
+- **Docker:** For MongoDB and Kafka
+- **npm:** 9.x or higher
+- **Stripe Account:** For payment processing (test mode API keys)
 
 ### **1. Install All Dependencies**
 
@@ -97,6 +204,7 @@ docker-compose up -d
 ```
 
 Verify containers are running:
+
 ```bash
 docker-compose ps
 ```
@@ -110,6 +218,7 @@ npm run seed
 ```
 
 This creates:
+
 - 2 customers, 15 restaurant owners, 5 drivers
 - 15 restaurants with full menus
 - Sample addresses and test accounts
@@ -151,6 +260,7 @@ cd notification-service && npm run dev
 ### **5. Verify Services**
 
 Check health endpoints:
+
 ```bash
 curl http://localhost:5005/api/user-service/health      # User Service
 curl http://localhost:5001/health                       # Order Service
@@ -164,19 +274,19 @@ curl http://localhost:5003/health                       # Notification Service
 
 From the `Food-Delivery-Backend` directory, you can use these npm scripts:
 
-| Script | Command | Description |
-|--------|---------|-------------|
-| **Install All** | `npm run install-all` | Install dependencies for all 6 microservices |
-| **Start All (Dev)** | `npm run dev` | Start all services in development mode using concurrently |
-| **Seed Database** | `npm run seed` | Populate MongoDB with test data from `seed-mongodb.mjs` |
-| **Start All (Prod)** | `npm start` | Start all services in production mode |
+| Script               | Command               | Description                                               |
+| -------------------- | --------------------- | --------------------------------------------------------- |
+| **Install All**      | `npm run install-all` | Install dependencies for all 6 microservices              |
+| **Start All (Dev)**  | `npm run dev`         | Start all services in development mode using concurrently |
+| **Seed Database**    | `npm run seed`        | Populate MongoDB with test data from `seed-mongodb.mjs`   |
+| **Start All (Prod)** | `npm start`           | Start all services in production mode                     |
 
 **Individual Service Scripts:**
 
 Each service directory has these scripts:
+
 - `npm run dev` - Start service with nodemon (auto-restart)
 - `npm start` - Start service in production mode
-
 
 ## 🎓 Service Layer Pattern
 
@@ -195,6 +305,7 @@ Service/
 ```
 
 **Benefits:**
+
 - Clear separation of concerns
 - Easier testing and mocking
 - Reusable business logic
@@ -202,13 +313,13 @@ Service/
 
 ## 🔒 Security Features
 
-*   **JWT Authentication:** Stateless token-based auth with refresh tokens
-*   **Password Hashing:** bcrypt with salt rounds
-*   **Role-Based Access Control:** Customer, restaurant, driver roles
-*   **Rate Limiting:** Protection against brute-force attacks
-*   **CORS:** Configurable origin whitelisting
-*   **Helmet:** Security headers
-*   **Input Validation:** Express-validator + Mongoose schemas
+- **JWT Authentication:** Stateless token-based auth with refresh tokens
+- **Password Hashing:** bcrypt with salt rounds
+- **Role-Based Access Control:** Customer, restaurant, driver roles
+- **Rate Limiting:** Protection against brute-force attacks
+- **CORS:** Configurable origin whitelisting
+- **Helmet:** Security headers
+- **Input Validation:** Express-validator + Mongoose schemas
 
 ## 🔧 Configuration
 
@@ -228,6 +339,7 @@ KAFKA_BROKERS=localhost:9092
 All APIs follow consistent conventions:
 
 ### **Response Format**
+
 ```json
 {
   "success": true,
@@ -237,32 +349,37 @@ All APIs follow consistent conventions:
 ```
 
 ### **Naming Conventions**
-*   **Case:** camelCase for all JSON fields
-*   **Primary Keys:** All entities use `id` (mapped from MongoDB `_id`)
-*   **Foreign Keys:** `userId`, `orderId`, `restaurantId`, etc.
-*   **Timestamps:** ISO 8601 format (`createdAt`, `updatedAt`)
+
+- **Case:** camelCase for all JSON fields
+- **Primary Keys:** All entities use `id` (mapped from MongoDB `_id`)
+- **Foreign Keys:** `userId`, `orderId`, `restaurantId`, etc.
+- **Timestamps:** ISO 8601 format (`createdAt`, `updatedAt`)
 
 ### **HTTP Status Codes**
-*   `200` - Success
-*   `201` - Created
-*   `400` - Bad Request
-*   `401` - Unauthorized
-*   `403` - Forbidden
-*   `404` - Not Found
-*   `500` - Internal Server Error
+
+- `200` - Success
+- `201` - Created
+- `400` - Bad Request
+- `401` - Unauthorized
+- `403` - Forbidden
+- `404` - Not Found
+- `500` - Internal Server Error
 
 ## 🧪 Test Accounts
 
 **Customers:**
+
 - `john@example.com` / `password`
 - `jane@example.com` / `password`
 
 **Restaurant Owners:**
+
 - `mario@pizzapalace.com` / `password` (Mario's Pizza Palace)
 - `burger@junction.com` / `password` (Burger Junction)
 - `thai@garden.com` / `password` (Thai Garden)
 
 **Drivers:**
+
 - `sarah.johnson@driver.com` / `password`
 - `john.smith@driver.com` / `password`
 - `mike.davis@driver.com` / `password`
@@ -272,6 +389,7 @@ All APIs follow consistent conventions:
 Each service includes a `Dockerfile` for containerization.
 
 **Build all services:**
+
 ```bash
 # From project root
 ./build-docker-images.sh  # Linux/Mac
@@ -280,6 +398,7 @@ Each service includes a `Dockerfile` for containerization.
 ```
 
 **Run with Docker Compose:**
+
 ```bash
 docker-compose -f docker-compose-full.yml up -d
 ```
@@ -288,14 +407,15 @@ docker-compose -f docker-compose-full.yml up -d
 
 From backend root directory:
 
-*   `node seed-mongodb.mjs` - Seed database with test data
-*   `npm run start-all` - Start all services (requires pm2)
-*   `docker-compose up -d` - Start infrastructure (MongoDB, Kafka)
-*   `docker-compose down` - Stop infrastructure
+- `node seed-mongodb.mjs` - Seed database with test data
+- `npm run start-all` - Start all services (requires pm2)
+- `docker-compose up -d` - Start infrastructure (MongoDB, Kafka)
+- `docker-compose down` - Stop infrastructure
 
 ## 🔧 Troubleshooting
 
 ### **Kafka Connection Issues**
+
 ```bash
 # Check Kafka is running
 docker-compose ps
@@ -308,6 +428,7 @@ docker-compose restart kafka
 ```
 
 ### **MongoDB Connection Issues**
+
 ```bash
 # Check MongoDB is running
 docker-compose ps mongodb
@@ -322,12 +443,14 @@ show collections
 ```
 
 ### **Service Won't Start**
+
 1. Check port isn't already in use: `netstat -ano | findstr :5005`
 2. Verify `.env` file exists and has required variables
 3. Ensure MongoDB and Kafka are running
 4. Check service logs for errors
 
 ### **Events Not Publishing/Consuming**
+
 1. Verify Kafka broker is running
 2. Check topic names match across services
 3. Look for Kafka connection errors in service logs
@@ -335,18 +458,19 @@ show collections
 
 ## 📚 Documentation
 
-*   **Service READMEs:** Each service directory contains detailed documentation
-*   **API Endpoints:** Documented in individual service READMEs
-*   **Kafka Topics:** See Event-Driven Workflow section above
-*   **Database Schemas:** Defined in service `models/` directories
+- **Service READMEs:** Each service directory contains detailed documentation
+- **API Endpoints:** Documented in individual service READMEs
+- **Kafka Topics:** See Event-Driven Workflow section above
+- **Database Schemas:** Defined in service `models/` directories
 
 ## 🛠️ Development Tools
 
 **Recommended:**
-*   **MongoDB Compass:** GUI for MongoDB
-*   **Kafka Tool / Conduktor:** Kafka topic visualization
-*   **Postman:** API testing
-*   **VS Code:** With ES Lint and Prettier extensions
+
+- **MongoDB Compass:** GUI for MongoDB
+- **Kafka Tool / Conduktor:** Kafka topic visualization
+- **Postman:** API testing
+- **VS Code:** With ES Lint and Prettier extensions
 
 ## 🚦 Service Dependencies
 
@@ -366,11 +490,11 @@ Notification Service → All services (consumes all events)
 
 ## 📈 Scalability Considerations
 
-*   **Horizontal Scaling:** Services are stateless and can be scaled horizontally
-*   **Database Sharding:** Each service has its own MongoDB database
-*   **Kafka Partitioning:** Topics can be partitioned for parallel processing
-*   **Load Balancing:** Use nginx or cloud load balancers for multiple instances
-*   **Caching:** Add Redis for frequently accessed data (future enhancement)
+- **Horizontal Scaling:** Services are stateless and can be scaled horizontally
+- **Database Sharding:** Each service has its own MongoDB database
+- **Kafka Partitioning:** Topics can be partitioned for parallel processing
+- **Load Balancing:** Use nginx or cloud load balancers for multiple instances
+- **Caching:** Add Redis for frequently accessed data (future enhancement)
 
 ## 🎯 Future Enhancements
 
