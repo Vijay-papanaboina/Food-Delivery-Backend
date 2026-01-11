@@ -13,12 +13,13 @@ import {
 } from "../controllers/delivery.controller.js";
 import { authenticateToken } from "../middleware/auth.js";
 import { requireRole } from "../middleware/role.js";
+import { requireInternalKey } from "../middleware/internalAuth.js";
 
 export default function deliveryRoutes() {
   const router = Router();
 
-  // Public read-only routes (no authentication required)
-  router.get("/drivers", listDrivers);
+  // Internal-only routes (not called by frontend, only by backend services)
+  router.get("/drivers", requireInternalKey, listDrivers);
 
   // Protected driver-only routes (require driver role)
   // IMPORTANT: Define specific routes BEFORE parameterized routes
@@ -41,8 +42,8 @@ export default function deliveryRoutes() {
     getDeliveryDetails
   );
 
-  // Parameterized routes - must come AFTER specific routes
-  router.get("/delivery/:orderId", getDeliveryByOrder);
+  // Internal-only: Get delivery by order ID (not used by frontend)
+  router.get("/delivery/:orderId", requireInternalKey, getDeliveryByOrder);
   router.post(
     "/delivery/pickup",
     authenticateToken,

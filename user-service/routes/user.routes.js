@@ -12,6 +12,7 @@ import {
 } from "../controllers/user.controller.js";
 import { authenticateToken } from "../middleware/auth.js";
 import { requireRole } from "../middleware/role.js";
+import { requireInternalKey } from "../middleware/internalAuth.js";
 import {
   validateUpdateProfile,
   validateAddress,
@@ -75,9 +76,9 @@ export default function userRoutes(serviceName) {
     setDefaultAddressById
   );
 
-  // Get user by ID (for inter-service communication - authenticated but no role check)
-  // IMPORTANT: This must be LAST because it's a catch-all route that matches /users/:anything
-  router.get("/users/:id", authenticateToken, getUserByIdController);
+  // Internal-only route for inter-service communication
+  // Protected by API key - only other microservices can call this
+  router.get("/users/:id", requireInternalKey, getUserByIdController);
 
   return router;
 }

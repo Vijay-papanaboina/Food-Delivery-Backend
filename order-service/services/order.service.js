@@ -14,13 +14,8 @@ import { Order } from "../db/schema.js";
 import { transformOrder } from "../utils/dataTransformation.js";
 
 export const createOrder = async (userId, orderData, producer) => {
-  const {
-    restaurantId,
-    items,
-    deliveryAddress,
-    customerName,
-    customerPhone,
-  } = orderData;
+  const { restaurantId, items, deliveryAddress, customerName, customerPhone } =
+    orderData;
 
   logger.info("Order creation started", {
     userId,
@@ -36,7 +31,9 @@ export const createOrder = async (userId, orderData, producer) => {
     !customerName ||
     !customerPhone
   ) {
-    const error = new Error("Missing required fields: restaurantId, items, deliveryAddress, customerName, customerPhone");
+    const error = new Error(
+      "Missing required fields: restaurantId, items, deliveryAddress, customerName, customerPhone"
+    );
     error.statusCode = 400;
     throw error;
   }
@@ -51,12 +48,16 @@ export const createOrder = async (userId, orderData, producer) => {
   // Validate each item in the array
   for (const [index, item] of items.entries()) {
     if (!item.itemId || !item.price || !item.quantity) {
-      const error = new Error(`Item at index ${index} missing required fields: itemId, price, quantity`);
+      const error = new Error(
+        `Item at index ${index} missing required fields: itemId, price, quantity`
+      );
       error.statusCode = 400;
       throw error;
     }
     if (typeof item.price !== "number" || item.price <= 0) {
-      const error = new Error(`Item at index ${index} has invalid price: must be a positive number`);
+      const error = new Error(
+        `Item at index ${index} has invalid price: must be a positive number`
+      );
       error.statusCode = 400;
       throw error;
     }
@@ -65,7 +66,9 @@ export const createOrder = async (userId, orderData, producer) => {
       item.quantity <= 0 ||
       !Number.isInteger(item.quantity)
     ) {
-      const error = new Error(`Item at index ${index} has invalid quantity: must be a positive integer`);
+      const error = new Error(
+        `Item at index ${index} has invalid quantity: must be a positive integer`
+      );
       error.statusCode = 400;
       throw error;
     }
@@ -79,10 +82,7 @@ export const createOrder = async (userId, orderData, producer) => {
   }
 
   // Validate customer info data types
-  if (
-    typeof customerName !== "string" ||
-    typeof customerPhone !== "string"
-  ) {
+  if (typeof customerName !== "string" || typeof customerPhone !== "string") {
     const error = new Error("customerName and customerPhone must be strings");
     error.statusCode = 400;
     throw error;
@@ -97,11 +97,10 @@ export const createOrder = async (userId, orderData, producer) => {
 
   const requiredAddressFields = ["street", "city", "state", "zipCode"];
   for (const field of requiredAddressFields) {
-    if (
-      !deliveryAddress[field] ||
-      typeof deliveryAddress[field] !== "string"
-    ) {
-      const error = new Error(`deliveryAddress.${field} is required and must be a string`);
+    if (!deliveryAddress[field] || typeof deliveryAddress[field] !== "string") {
+      const error = new Error(
+        `deliveryAddress.${field} is required and must be a string`
+      );
       error.statusCode = 400;
       throw error;
     }
@@ -110,9 +109,12 @@ export const createOrder = async (userId, orderData, producer) => {
   // Validate restaurant status and menu items via restaurant-service
   const restaurantServiceUrl =
     process.env.RESTAURANT_SERVICE_URL || "http://localhost:5006";
-  
+
   const statusResp = await fetch(
     `${restaurantServiceUrl}/api/restaurant-service/restaurants/${restaurantId}/status`,
+    {
+      headers: { "x-internal-api-key": process.env.INTERNAL_API_KEY || "" },
+    }
   );
   if (!statusResp.ok) {
     const error = new Error("Restaurant not found");
@@ -127,7 +129,7 @@ export const createOrder = async (userId, orderData, producer) => {
     throw error;
   }
 
-  const itemsToSendForValidation = items.map(item => ({
+  const itemsToSendForValidation = items.map((item) => ({
     itemId: item.itemId,
     quantity: item.quantity,
     price: item.price,
@@ -137,9 +139,12 @@ export const createOrder = async (userId, orderData, producer) => {
     `${restaurantServiceUrl}/api/restaurant-service/restaurants/${restaurantId}/menu/validate`,
     {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-internal-api-key": process.env.INTERNAL_API_KEY || "",
+      },
       body: JSON.stringify({ items: itemsToSendForValidation }),
-    },
+    }
   );
   if (!validateResp.ok) {
     const error = new Error("Failed to validate menu items");
@@ -157,12 +162,12 @@ export const createOrder = async (userId, orderData, producer) => {
   const validatedItems = validateJson.items;
   const subtotal = validatedItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
-    0,
+    0
   );
 
   // Fetch restaurant details to get delivery fee
   const restaurantResp = await fetch(
-    `${restaurantServiceUrl}/api/restaurant-service/restaurants/${restaurantId}`,
+    `${restaurantServiceUrl}/api/restaurant-service/restaurants/${restaurantId}`
   );
   if (!restaurantResp.ok) {
     const error = new Error("Failed to fetch restaurant details");
@@ -170,8 +175,7 @@ export const createOrder = async (userId, orderData, producer) => {
     throw error;
   }
   const restaurantData = await restaurantResp.json();
-  const deliveryFee =
-    parseFloat(restaurantData.restaurant.deliveryFee) || 0;
+  const deliveryFee = parseFloat(restaurantData.restaurant.deliveryFee) || 0;
 
   const total = subtotal + deliveryFee;
 
@@ -213,13 +217,13 @@ export const createOrder = async (userId, orderData, producer) => {
     {
       orderId: createdOrder._id.toString(),
       restaurantId: createdOrder.restaurantId,
-      items: validatedItems, 
+      items: validatedItems,
       userId: createdOrder.userId,
       total: createdOrder.total,
       createdAt: createdOrder.createdAt,
       restaurant: restaurantData.restaurant,
     },
-    createdOrder._id.toString(),
+    createdOrder._id.toString()
   );
 
   logger.info("Order created event published", {
@@ -256,13 +260,13 @@ export const getRestaurantOrderStatsService = async (restaurantId) => {
   const orders = await getRestaurantOrders(restaurantId, { limit: 100 });
   const stats = {
     totalOrders: orders.length,
-    todayOrders: orders.filter(o => {
+    todayOrders: orders.filter((o) => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       return new Date(o.createdAt) >= today;
     }).length,
     todayRevenue: orders
-      .filter(o => {
+      .filter((o) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         return new Date(o.createdAt) >= today;
@@ -274,7 +278,11 @@ export const getRestaurantOrderStatsService = async (restaurantId) => {
   return stats;
 };
 
-export const updateOrderStatusService = async (orderId, status, paymentStatus) => {
+export const updateOrderStatusService = async (
+  orderId,
+  status,
+  paymentStatus
+) => {
   // Check if order exists first
   const existingOrder = await getOrder(orderId);
   if (!existingOrder) {
@@ -283,17 +291,15 @@ export const updateOrderStatusService = async (orderId, status, paymentStatus) =
     throw error;
   }
 
-  const confirmedAt =
-    status === "confirmed" ? new Date().toISOString() : null;
-  const deliveredAt =
-    status === "delivered" ? new Date().toISOString() : null;
+  const confirmedAt = status === "confirmed" ? new Date().toISOString() : null;
+  const deliveredAt = status === "delivered" ? new Date().toISOString() : null;
 
   const updatedOrder = await updateOrderStatus(
     orderId,
     status,
     paymentStatus,
     confirmedAt,
-    deliveredAt,
+    deliveredAt
   );
 
   logger.info("Order status updated successfully", {

@@ -175,6 +175,31 @@ sequenceDiagram
 
 All events are also consumed by **Notification Service** for customer/driver/restaurant notifications.
 
+## 🔐 Security
+
+### **User Authentication**
+
+- JWT tokens for user-facing routes
+- Role-based access control (customer, restaurant, driver)
+- HTTP-only refresh tokens
+
+### **Inter-Service Authentication**
+
+Internal service-to-service routes are protected by a shared API key:
+
+```env
+# Add to each service's .env file
+INTERNAL_API_KEY=your-super-secret-internal-key-change-in-production
+```
+
+**Test value (for local development):**
+
+```env
+INTERNAL_API_KEY=dev-internal-key-12345
+```
+
+This prevents external users from directly calling internal endpoints like `/menu/validate` or `/status`.
+
 ## 🚀 Quick Start
 
 ### **Prerequisites**

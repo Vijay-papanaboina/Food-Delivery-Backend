@@ -22,6 +22,7 @@ import {
 import { authenticateToken } from "../middleware/auth.js";
 import { requireRole } from "../middleware/role.js";
 import { requireRestaurantOwnership } from "../middleware/ownership.js";
+import { requireInternalKey } from "../middleware/internalAuth.js";
 
 export default function restaurantsRoutes(producer) {
   const router = Router();
@@ -41,6 +42,9 @@ export default function restaurantsRoutes(producer) {
   router.get("/restaurants/:id", getRestaurantById);
   router.get("/restaurants/:id/menu", getRestaurantMenu);
   router.get("/menu-items/:itemId", getMenuItem);
+
+  // Cart validation route - public (prices are public data)
+  // Used by both frontend (cart validation) and Order Service (order creation)
   router.post(
     "/restaurants/:restaurantId/menu/validate",
     validateMenuItemsForOrder
@@ -82,7 +86,12 @@ export default function restaurantsRoutes(producer) {
     requireRestaurantOwnership,
     toggleRestaurantStatus
   );
-  router.get("/restaurants/:restaurantId/status", checkRestaurantStatus);
+  // Internal service-to-service route (protected by API key)
+  router.get(
+    "/restaurants/:restaurantId/status",
+    requireInternalKey,
+    checkRestaurantStatus
+  );
 
   // Kitchen orders (restaurant role only, no ownership check needed)
   router.get(

@@ -5,46 +5,50 @@ Order management microservice for the Food Delivery platform. Handles order crea
 ## 🛠️ Tech Stack
 
 ### Core
-*   **Runtime:** Node.js 20.x
-*   **Framework:** Express.js 5.1.0
-*   **Language:** JavaScript (ES Modules)
+
+- **Runtime:** Node.js 20.x
+- **Framework:** Express.js 5.1.0
+- **Language:** JavaScript (ES Modules)
 
 ### Database
-*   **Database:** MongoDB (via Mongoose 8.20.0)
-*   **ODM:** Mongoose with schema validation
+
+- **Database:** MongoDB (via Mongoose 8.20.0)
+- **ODM:** Mongoose with schema validation
 
 ### Message Broker
-*   **Kafka:** KafkaJS 2.2.4 for event-driven communication
-*   **Producer Topics:** `order-created`, `order-confirmed`
-*   **Consumer Topics:** `payment-processed`, `delivery-completed`
+
+- **Kafka:** KafkaJS 2.2.4 for event-driven communication
+- **Producer Topics:** `order-created`, `order-confirmed`
+- **Consumer Topics:** `payment-processed`, `delivery-completed`
 
 ### Security & Middleware
-*   **JWT:** jsonwebtoken 9.0.2 (token verification)
-*   **CORS:** cors 2.8.5
-*   **Logging:** Winston 3.18.3 + Morgan 1.10.1
+
+- **JWT:** jsonwebtoken 9.0.2 (token verification)
+- **CORS:** cors 2.8.5
+- **Logging:** Winston 3.18.3 + Morgan 1.10.1
 
 ## ✨ Features
 
-*   **Order Management:** Create new orders with cart items
-*   **Order Retrieval:** Get order details by ID or list all orders
-*   **Status Tracking:** Track order status through the entire lifecycle
-*   **Order Statistics:** View order analytics and metrics
-*   **Kafka Integration:**
-    - Publish `order-created` events (triggers payment processing)
-    - Publish `order-confirmed` events (after payment, triggers kitchen)
-    - Consume `payment-processed` events (updates order status)
-    - Consume `delivery-completed` events (marks order as delivered)
-*   **Restaurant Integration:** Fetch menu items and restaurant details
-*   **User Association:** Orders linked to customers and restaurants
-*   **Health Checks:** Kubernetes-ready health endpoint
+- **Order Management:** Create new orders with cart items
+- **Order Retrieval:** Get order details by ID or list all orders
+- **Status Tracking:** Track order status through the entire lifecycle
+- **Order Statistics:** View order analytics and metrics
+- **Kafka Integration:**
+  - Publish `order-created` events (triggers payment processing)
+  - Publish `order-confirmed` events (after payment, triggers kitchen)
+  - Consume `payment-processed` events (updates order status)
+  - Consume `delivery-completed` events (marks order as delivered)
+- **Restaurant Integration:** Fetch menu items and restaurant details
+- **User Association:** Orders linked to customers and restaurants
+- **Health Checks:** Kubernetes-ready health endpoint
 
 ## 📋 Prerequisites
 
-*   **Node.js:** 20.x or higher
-*   **MongoDB:** 5.0 or higher (running instance)
-*   **Kafka:** Running Kafka broker (localhost:9092 or configured cluster)
-*   **npm:** 9.x or higher
-*   **Restaurant Service:** For menu item validation
+- **Node.js:** 20.x or higher
+- **MongoDB:** 5.0 or higher (running instance)
+- **Kafka:** Running Kafka broker (localhost:9092 or configured cluster)
+- **npm:** 9.x or higher
+- **Restaurant Service:** For menu item validation
 
 ## 🚀 Getting Started
 
@@ -94,25 +98,26 @@ FRONTEND_URL=http://localhost:5173,http://localhost:5174,http://localhost:5175
 
 **Environment Variable Details:**
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `PORT` | No | `5001` | Port number for the service |
-| `SERVICE_NAME` | No | `order-service` | Service identifier for logging |
-| `NODE_ENV` | No | `development` | Environment mode |
-| `MONGODB_URI` | Yes | - | MongoDB connection string |
-| `DATABASE_URL` | No | - | Alternative MongoDB connection string |
-| `JWT_SECRET` | **Yes** | - | Secret key for verifying JWT tokens (must match user-service) |
-| `RESTAURANT_SERVICE_URL` | No | `http://localhost:5006` | Restaurant service endpoint for menu validation |
-| `KAFKA_CLIENT_ID` | No | `order-service` | Kafka client identifier |
-| `KAFKA_BROKERS` | No | `localhost:9092` | Comma-separated list of Kafka brokers |
-| `TOPIC_ORDER_CREATED` | No | `order-created` | Topic to publish new order events |
-| `TOPIC_PAYMENT_PROCESSED` | No | `payment-processed` | Topic to consume payment events |
-| `TOPIC_ORDER_CONFIRMED` | No | `order-confirmed` | Topic to publish confirmed order events |
-| `TOPIC_FOOD_READY` | No | `food-ready` | Topic for food ready events |
-| `TOPIC_DELIVERY_ASSIGNED` | No | `delivery-assigned` | Topic for delivery assignment events |
-| `TOPIC_DELIVERY_PICKED_UP` | No | `delivery-picked-up` | Topic for pickup events |
-| `TOPIC_DELIVERY_COMPLETED` | No | `delivery-completed` | Topic to consume delivery completion events |
-| `FRONTEND_URL` | No | (see defaults) | Comma-separated list of allowed frontend origins |
+| Variable                   | Required | Default                 | Description                                                   |
+| -------------------------- | -------- | ----------------------- | ------------------------------------------------------------- |
+| `PORT`                     | No       | `5001`                  | Port number for the service                                   |
+| `SERVICE_NAME`             | No       | `order-service`         | Service identifier for logging                                |
+| `NODE_ENV`                 | No       | `development`           | Environment mode                                              |
+| `MONGODB_URI`              | Yes      | -                       | MongoDB connection string                                     |
+| `DATABASE_URL`             | No       | -                       | Alternative MongoDB connection string                         |
+| `JWT_SECRET`               | **Yes**  | -                       | Secret key for verifying JWT tokens (must match user-service) |
+| `RESTAURANT_SERVICE_URL`   | No       | `http://localhost:5006` | Restaurant service endpoint for menu validation               |
+| `KAFKA_CLIENT_ID`          | No       | `order-service`         | Kafka client identifier                                       |
+| `KAFKA_BROKERS`            | No       | `localhost:9092`        | Comma-separated list of Kafka brokers                         |
+| `TOPIC_ORDER_CREATED`      | No       | `order-created`         | Topic to publish new order events                             |
+| `TOPIC_PAYMENT_PROCESSED`  | No       | `payment-processed`     | Topic to consume payment events                               |
+| `TOPIC_ORDER_CONFIRMED`    | No       | `order-confirmed`       | Topic to publish confirmed order events                       |
+| `TOPIC_FOOD_READY`         | No       | `food-ready`            | Topic for food ready events                                   |
+| `TOPIC_DELIVERY_ASSIGNED`  | No       | `delivery-assigned`     | Topic for delivery assignment events                          |
+| `TOPIC_DELIVERY_PICKED_UP` | No       | `delivery-picked-up`    | Topic for pickup events                                       |
+| `TOPIC_DELIVERY_COMPLETED` | No       | `delivery-completed`    | Topic to consume delivery completion events                   |
+| `FRONTEND_URL`             | No       | (see defaults)          | Comma-separated list of allowed frontend origins              |
+| `INTERNAL_API_KEY`         | No       | -                       | Shared secret for internal service-to-service authentication  |
 
 ### 3. Seed Database (Optional)
 
@@ -126,11 +131,13 @@ node seed-mongodb.mjs
 ### 4. Start Dependencies
 
 **Start Kafka:**
+
 ```bash
 docker-compose up -d kafka zookeeper
 ```
 
 **Start Restaurant Service:**
+
 ```bash
 cd ../restaurant-service
 npm run dev
@@ -174,6 +181,7 @@ GET    /health                    - Health check endpoint
 ### Published Events
 
 **Topic:** `order-created`
+
 ```json
 {
   "orderId": "65f2d6c0c0c0c0c0c0c0e001",
@@ -197,6 +205,7 @@ GET    /health                    - Health check endpoint
 ```
 
 **Topic:** `order-confirmed` (after payment)
+
 ```json
 {
   "orderId": "65f2d6c0c0c0c0c0c0c0e001",
@@ -213,6 +222,7 @@ GET    /health                    - Health check endpoint
 ### Consumed Events
 
 **Topic:** `payment-processed`
+
 ```json
 {
   "orderId": "65f2d6c0c0c0c0c0c0c0e001",
@@ -226,6 +236,7 @@ GET    /health                    - Health check endpoint
 ```
 
 **Topic:** `delivery-completed`
+
 ```json
 {
   "orderId": "65f2d6c0c0c0c0c0c0c0e001",
@@ -302,52 +313,57 @@ docker run -p 5001:3000 \
 
 ## 🔒 Security Features
 
-*   **JWT Verification:** All authenticated endpoints verify tokens
-*   **User Authorization:** Users can only view their own orders
-*   **CORS:** Configurable origin whitelist
-*   **Input Validation:** Mongoose schema validation
+- **JWT Verification:** All authenticated endpoints verify tokens
+- **User Authorization:** Users can only view their own orders
+- **CORS:** Configurable origin whitelist
+- **Input Validation:** Mongoose schema validation
 
 ## 📝 Available Scripts
 
-*   `npm start` - Start production server
-*   `npm run dev` - Start development server with nodemon
+- `npm start` - Start production server
+- `npm run dev` - Start development server with nodemon
 
 ## 🔧 Troubleshooting
 
 **MongoDB connection error:**
-*   Ensure MongoDB is running
-*   Check `MONGODB_URI` in `.env`
-*   Verify database name matches other services
+
+- Ensure MongoDB is running
+- Check `MONGODB_URI` in `.env`
+- Verify database name matches other services
 
 **Kafka connection error:**
-*   Ensure Kafka broker is running: `docker-compose ps`
-*   Verify `KAFKA_BROKERS` is correct
-*   Check logs for connection errors
+
+- Ensure Kafka broker is running: `docker-compose ps`
+- Verify `KAFKA_BROKERS` is correct
+- Check logs for connection errors
 
 **Order creation fails:**
-*   Verify restaurant service is running at `RESTAURANT_SERVICE_URL`
-*   Check that menu items exist in restaurant service
-*   Ensure JWT token is valid
-*   Verify customer has delivery address
+
+- Verify restaurant service is running at `RESTAURANT_SERVICE_URL`
+- Check that menu items exist in restaurant service
+- Ensure JWT token is valid
+- Verify customer has delivery address
 
 **Payment not triggering order confirmation:**
-*   Check payment-service is publishing to `payment-processed` topic
-*   Verify topic names match across services
-*   Look for Kafka consumer errors in logs
+
+- Check payment-service is publishing to `payment-processed` topic
+- Verify topic names match across services
+- Look for Kafka consumer errors in logs
 
 **Order status not updating:**
-*   Verify Kafka consumers are connected
-*   Check that events are being published by other services
-*   Ensure `orderId` in events matches database records
+
+- Verify Kafka consumers are connected
+- Check that events are being published by other services
+- Ensure `orderId` in events matches database records
 
 ## 🔗 Dependencies on Other Services
 
-*   **MongoDB:** Required for data persistence
-*   **Kafka:** Required for event-driven communication
-*   **User Service:** JWT token verification (shared secret)
-*   **Restaurant Service:** Menu item validation and restaurant details
-*   **Payment Service:** Receives `order-created` events
-*   **Delivery Service:** Sends `delivery-completed` events
+- **MongoDB:** Required for data persistence
+- **Kafka:** Required for event-driven communication
+- **User Service:** JWT token verification (shared secret)
+- **Restaurant Service:** Menu item validation and restaurant details
+- **Payment Service:** Receives `order-created` events
+- **Delivery Service:** Sends `delivery-completed` events
 
 ## 💡 Example Order Flow
 

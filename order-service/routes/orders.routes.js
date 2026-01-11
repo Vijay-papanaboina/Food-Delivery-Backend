@@ -8,6 +8,7 @@ import {
   updateOrderStatusController,
 } from "../controllers/orders.controller.js";
 import { authenticateToken } from "../middleware/auth.js";
+import { requireInternalKey } from "../middleware/internalAuth.js";
 
 export default function orders(producer, serviceName) {
   const router = Router();
@@ -26,7 +27,13 @@ export default function orders(producer, serviceName) {
     authenticateToken,
     getRestaurantOrderStatsController
   );
-  router.put("/orders/:orderId/status", updateOrderStatusController);
+
+  // Internal-only route - only Kafka handlers should call this
+  router.put(
+    "/orders/:orderId/status",
+    requireInternalKey,
+    updateOrderStatusController
+  );
 
   return router;
 }
