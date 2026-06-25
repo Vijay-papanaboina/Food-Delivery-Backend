@@ -1,4 +1,4 @@
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { createUser, getUserByEmail, getUserById } from "../repositories/user.repo.js";
 import { generateTokens, verifyToken } from "../config/jwt.js";
 import { logger } from "../utils/logger.js";

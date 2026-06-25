@@ -24,7 +24,7 @@
     "kafkajs": "^2.2.4",
     "mongoose": "^8.20.0",
     "morgan": "^1.10.1",
-    "uuid": "^10.0.0",
+    "uuid": "^14.0.1",
     "winston": "^3.18.3"
   },
   "devDependencies": {
